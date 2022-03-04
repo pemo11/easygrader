@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<eag:tasks xmlns:eag="urn:simpleGrader">
+    <eag:task id="1000" name="Aufgabe1" level="LevelA">
+        <actions>
+            <action id="1" active="true" type="compile">compile java file</action>
+        </actions>
+        <tests>
+            <test id="1" active="true">
+                <test-type>JUnit</test-type>
+                <test-class>AppTest</test-class>
+                <test-description>Schaltjahr-Test 1</test-description>
+                <test-method>testSchaltjahrTest1</test-method>
+                <test-score>2</test-score>
+            </test>
+            <test id="2" active="true">
+                <test-type>JUnit</test-type>
+                <test-class>AppTest</test-class>
+                <test-description>Schaltjahr-Test 2</test-description>
+                <test-method>testSchaltjahrTest2</test-method>
+                <test-score>2</test-score>
+            </test>
+            <test id="3" active="true">
+                <test-type>JUnit</test-type>
+                <test-class>AppTest</test-class>
+                <test-description>Schaltjahr-Test 3</test-description>
+                <test-method>testSchaltjahrTest3</test-method>
+                <test-score>2</test-score>
+            </test>
+        </tests>
+    </eag:task>
+</eag:tasks>
