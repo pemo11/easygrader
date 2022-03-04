@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 03/03/22
+# Letztes Update: 04/03/22
 # =============================================================================
 import os
 import re
@@ -16,6 +16,7 @@ from XmlHelper import XmlHelper
 # Globale Variablen
 taskBasePath = "E:\\Graja-Testpool\\Java1"
 submissionPath = "E:\\Graja-Testpool\\Einsendeaufgaben"
+gradingPlan = "gradingplan.xml"
 
 '''
 Main starting point
@@ -28,7 +29,7 @@ def start():
         infoMessage = f"{tempPath} wurde angelegt."
         loghelper.logInfo(infoMessage)
     # Initiate grading plan
-    xmlHelper = XmlHelper("gradingplan.xml")
+    xmlHelper = XmlHelper(gradingplan)
     # new GradeReport object for the output
     gradeReport = GradeReport()
     # List for all grading actions
