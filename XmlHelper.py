@@ -39,7 +39,8 @@ class XmlHelper:
         testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         testList = []
         for test in testElements:
-            tt = TaskTest(test.attrib["id"], test.attrib["active"], test.find("test-type"))
+            testName = test.find("test-name").text
+            tt = TaskTest(test.attrib["id"], testName, test.attrib["active"], test.find("test-type").text)
             tt.testDescription = test.find("test-description").text
             tt.testMethod = test.find("test-method").text
             tt.testScore = test.find("test-score")
