@@ -2,6 +2,7 @@
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
 # Letztes Update: 04/03/22
+# Version 0.1
 # =============================================================================
 import os
 import re
@@ -17,6 +18,7 @@ import JavaHelper
 
 # Globale Variablen
 submissionCount = 0
+appVersion = "0.1"
 
 def initVariables():
     global taskBasePath, submissionPath, gradingPlan
@@ -32,7 +34,7 @@ Main starting point
 def start():
     global submissionCount
     initVariables()
-    infoMessage = f"Starting the mission - executing {gradingPlan}"
+    infoMessage = f"Starting the mission (Version {appVersion}- executing {gradingPlan}"
     loghelper.logInfo(infoMessage)
     # Create temp directory for all temp files
     tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
