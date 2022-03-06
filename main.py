@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 04/03/22
+# Letztes Update: 06/03/22
 # Version 0.1
 # =============================================================================
 import datetime
@@ -97,6 +97,7 @@ def startGradingRun():
                     loghelper.logInfo(infoMessage)
                     if action.type == "compile":
                         gradeAction = GradeAction("compile")
+                        gradeAction.submission = f"{submission}"
                         gradeAction.description = f"Compiling {javaFile}"
                         javaFilePath = os.path.join(levelPath, javaFile)
                         compileResult = JavaHelper.compileJava(javaFilePath)
@@ -112,6 +113,7 @@ def startGradingRun():
                     infoMessage = f"Executing test {test.name} for file {javaFile}"
                     loghelper.logInfo(infoMessage)
                     gradeAction = GradeAction("test")
+                    gradeAction.submission = f"{submission}"
                     gradeAction.description = f"Executing test {test.name}"
                     gradeAction.result = "OK"
                     gradeActionList.append(gradeAction)
@@ -136,7 +138,7 @@ def start():
         loghelper.logInfo(infoMessage)
     exitFlag = False
     while not exitFlag:
-        choice = showMenu()
+        choice = showMenu().upper()
         print(choice)
         if choice == "Q":
             exitFlag = True

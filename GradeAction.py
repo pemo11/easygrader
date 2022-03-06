@@ -10,7 +10,8 @@ class GradeAction:
         self.timestamp = datetime.now()
         self.type = type
         self.description = "None"
-        self.result = ""
+        self.result = "None"
+        self.submission = "None"
 
     def __repr__(self):
         return f"Type: {self.type}"

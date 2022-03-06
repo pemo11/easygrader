@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<eag:tasks xmlns:eag="urn:simpleGrader">
-    <eag:task id="1000" name="Aufgabe1" level="LevelA">
+<sig:tasks xmlns:sig="urn:simpleGrader">
+    <sig:task id="1000" name="Aufgabe1" level="LevelA">
         <actions>
-            <action id="1" active="True" type="compile">compile java file</action>
+            <action id="1" active="True" type="java-compile">compile java file</action>
         </actions>
         <tests>
             <test id="1" active="True">
+                <test-name>Output-Compare</test-name>
+                <test-type>Output-Compare</test-type>
+                <test-description>Compare output with expected text</test-description>
+                <test-input>4,5</test-input>
+                <text-output>Die Summe ist 9</text-output>
+                <test-score>2</test-score>
+            </test>
+            <test id="2" active="True">
                 <test-name>JUnit 1</test-name>
                 <test-type>JUnit</test-type>
                 <test-class>AppTest</test-class>
@@ -13,7 +21,7 @@
                 <test-method>testSchaltjahrTest1</test-method>
                 <test-score>2</test-score>
             </test>
-            <test id="2" active="True">
+            <test id="3" active="True">
                 <test-name>JUnit 2</test-name>
                 <test-type>JUnit</test-type>
                 <test-class>AppTest</test-class>
@@ -21,7 +29,7 @@
                 <test-method>testSchaltjahrTest2</test-method>
                 <test-score>2</test-score>
             </test>
-            <test id="3" active="False">
+            <test id="4" active="False">
                 <test-name>JUnit 3</test-name>
                 <test-type>JUnit</test-type>
                 <test-class>AppTest</test-class>
@@ -30,5 +38,5 @@
                 <test-score>2</test-score>
             </test>
         </tests>
-    </eag:task>
-</eag:tasks>
+    </sig:task>
+</sig:tasks>

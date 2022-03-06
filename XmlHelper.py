@@ -42,7 +42,8 @@ class XmlHelper:
             testName = test.find("test-name").text
             tt = TaskTest(test.attrib["id"], testName, test.attrib["active"], test.find("test-type").text)
             tt.testDescription = test.find("test-description").text
-            tt.testMethod = test.find("test-method").text
+            if test.find("test-type") == "JUNIT":
+                tt.testMethod = test.find("test-method").text
             tt.testScore = test.find("test-score")
             testList.append(tt)
         return testList
@@ -54,7 +55,14 @@ class XmlHelper:
         root = et.Element("report")
         for action in actionList:
             gradeAction = et.SubElement(root, "gradeAction")
-            gradeAction.text = action.description
+            timeStamp = et.SubElement(gradeAction, "timestamp")
+            timeStamp.text = datetime.strftime(action.timestamp, "%d.%m.%Y-%H:%M")
+            gradeDescription = et.SubElement(gradeAction, "description")
+            gradeDescription.text = action.description
+            gradeSubmission = et.SubElement(gradeAction, "submission")
+            gradeSubmission.text = action.submission
+            gradeResult = et.SubElement(gradeAction, "gradeResult")
+            gradeResult.text = action.result
 
         # Write the report
         tree = et.ElementTree(root)
