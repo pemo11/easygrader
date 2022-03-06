@@ -4,6 +4,7 @@
 # Letztes Update: 04/03/22
 # Version 0.1
 # =============================================================================
+import datetime
 import os
 import re
 import shutil
@@ -28,20 +29,43 @@ def initVariables():
     submissionPath = config["path"]["submissionPath"]
     gradingPlan = config["path"]["gradingplan"]
 
+def showMenu():
+    menuList = []
+    menuList.append("Alle Abgaben anzeigen")
+    menuList.append("Alle Abgaben graden")
+    prompt = "Eingabe ("
+    print("*" * 80)
+    print(f"{'*' * 24}{' Welcome to Simple Grader v0.1 '}{'*' * 25}")
+    print("*" * 80)
+    for i, menuItem in enumerate(menuList):
+        print(f"{chr(i+65)}) {menuItem}")
+        prompt += f"{chr(i+65)},"
+    print("Q) Ende")
+    prompt = prompt[:-1] + " oder Q fuer Ende)?"
+    return input(prompt)
+
 '''
-Main starting point
+Show all submissions
 '''
-def start():
+def showSubmissions():
+    for dirTuple in os.walk(submissionPath):
+        # do java files exists?
+        javaFiles = [f for f in dirTuple[2] if f.endswith("java")]
+        if len(javaFiles) > 0:
+            print(f">Scanning {dirTuple[0]}")
+            level = os.path.basename(dirTuple[0])
+            task = os.path.dirname(dirTuple[0])
+            for javaFile in javaFiles:
+                javaFilePath = os.path.join(dirTuple[0], javaFile)
+                fileTimestamp = os.path.getatime(javaFilePath)
+                lastAccessTime = datetime.datetime.fromtimestamp(fileTimestamp)
+                print(f"task={task} level={level} file={javaFile} Last Access={lastAccessTime}")
+
+'''
+Start a grading run
+'''
+def startGradingRun():
     global submissionCount
-    initVariables()
-    infoMessage = f"Starting the mission (Version {appVersion}- executing {gradingPlan}"
-    loghelper.logInfo(infoMessage)
-    # Create temp directory for all temp files
-    tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
-    if not os.path.exists(tempPath):
-        os.mkdir(tempPath)
-        infoMessage = f"{tempPath} wurde angelegt."
-        loghelper.logInfo(infoMessage)
     # Initiate grading plan
     xmlHelper = XmlHelper(gradingPlan)
     # new GradeReport object for the output
@@ -95,7 +119,33 @@ def start():
             # Write XML-Report
             xmlHelper.generateGradingReport(gradeActionList)
 
-    print(f"{submissionCount} Submissions berbeitet")
+        print(f"{submissionCount} Submissions berbeitet")
+
+'''
+Main starting point
+'''
+def start():
+    initVariables()
+    infoMessage = f"Starting the mission (Version {appVersion}- executing {gradingPlan}"
+    loghelper.logInfo(infoMessage)
+    # Create temp directory for all temp files
+    tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
+    if not os.path.exists(tempPath):
+        os.mkdir(tempPath)
+        infoMessage = f"{tempPath} wurde angelegt."
+        loghelper.logInfo(infoMessage)
+    exitFlag = False
+    while not exitFlag:
+        choice = showMenu()
+        print(choice)
+        if choice == "Q":
+            exitFlag = True
+        elif choice == "A":
+            showSubmissions()
+        elif choice == "B":
+            startGradingRun()
+        else:
+            print(f"!!! {choice} ist eine unbekannte Auswahl !!!")
 
 # Starting point
 if __name__ == "__main__":
