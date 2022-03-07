@@ -9,7 +9,7 @@ import re
 
 config = configparser.ConfigParser()
 config.read("simpleparser.ini")
-javaPath = config["path"]["javaPath"]
+javaCPath = config["path"]["javaCompilerPath"]
 
 tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
 
@@ -30,7 +30,7 @@ def compileJava(filePath):
         loghelper.logInfo(infoMessage)
     filePath2 = os.path.join(studentIdPath, "app.java")
     shutil.copy(filePath, filePath2)
-    javaArgs = f"{javaPath} {filePath2}"
+    javaArgs = f"{javaCPath} {filePath2}"
     # shell=True?
     procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     procContext.wait()

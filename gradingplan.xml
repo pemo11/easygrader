@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <sig:tasks xmlns:sig="urn:simpleGrader">
-    <sig:task id="1000" name="Aufgabe1" level="LevelA">
+    <sig:task id="1000" name="EA1" level="LevelA">
         <actions>
             <action id="1" active="True" type="java-compile">compile java file</action>
         </actions>

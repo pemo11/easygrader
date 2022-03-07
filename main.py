@@ -14,13 +14,19 @@ import configparser
 import loghelper
 from GradeReport import GradeReport
 from GradeAction import GradeAction
+from Submission import Submission
 from XmlHelper import XmlHelper
 import JavaHelper
 
 # Globale Variablen
-submissionCount = 0
 appVersion = "0.1"
+taskBasePath = ""
+submissionPath = ""
+gradingPlan = ""
 
+'''
+get values for global variables from ini file
+'''
 def initVariables():
     global taskBasePath, submissionPath, gradingPlan
     config = configparser.ConfigParser()
@@ -29,6 +35,9 @@ def initVariables():
     submissionPath = config["path"]["submissionPath"]
     gradingPlan = config["path"]["gradingplan"]
 
+'''
+Shows application main menue
+'''
 def showMenu():
     menuList = []
     menuList.append("Alle Abgaben anzeigen")
@@ -41,13 +50,48 @@ def showMenu():
         print(f"{chr(i+65)}) {menuItem}")
         prompt += f"{chr(i+65)},"
     print("Q) Ende")
-    prompt = prompt[:-1] + " oder Q fuer Ende)?"
+    prompt = prompt[:-1] + " oder Q fuer Ende)?\n"
     return input(prompt)
 
 '''
-Show all submissions
+Assumes each submission file name:
+EA1_A_PMonadjemi.zip
+EA1_B_PMonadjemi.zip
+or
+EA1_PMonadjemi.zip
+in this case default level is assumed
 '''
-def showSubmissions():
+def getSubmissionFilesMethodA(submissionPath):
+    submissionList = []
+    subnamePattern1 = "(?P<task>\w+)_Level(?P<level>\w)_(?P<student>[_\w]+)\.zip"
+    # Der "Trick des Jahres" - non greedy dank *? anstelle von +, damit der Vorname nicht dem Aufgabenname zugeordnet wird
+    subnamePattern2 = "(?P<task>\w*?)_(?P<student>[_\w]+)\.zip"
+    for i, submissionFile in enumerate(os.listdir(submissionPath)):
+        # import: finditer instead of findall because of the named capture groups
+        nameElements = list(re.finditer(subnamePattern1, submissionFile))
+        if (len(nameElements) == 0):
+            nameElements = list(re.finditer(subnamePattern2, submissionFile))
+        id = f"{i+1:03d}"
+        excercise = nameElements[0].group("task")
+        student = nameElements[0].group("student")
+        level = nameElements[0].group("level") if len(nameElements) == 3 else "A"
+        submission = Submission(id, student)
+        submission.zipPath = os.path.join(submissionPath, submissionFile)
+        submission.exercise = excercise
+        submission.level = level
+        submission.semester = os.path.basename(submissionFile)
+        submissionList.append(submission)
+    return submissionList
+
+'''
+Assumes a directory hierarchy
+not in used at the moment
+EA1
+ -LevelA
+  --EA1_A_PMonadjemi.java
+  --EA1_Tester.java
+'''
+def getSubmissionFilesMethodB(submissionPath):
     for dirTuple in os.walk(submissionPath):
         # do java files exists?
         javaFiles = [f for f in dirTuple[2] if f.endswith("java")]
@@ -62,10 +106,24 @@ def showSubmissions():
                 print(f"task={task} level={level} file={javaFile} Last Access={lastAccessTime}")
 
 '''
+Show all submissions
+'''
+def showSubmissions():
+    submissions = getSubmissions()
+    for submission in submissions:
+        print(submission)
+
+'''
+Get all submissions
+'''
+def getSubmissions():
+    submissions = getSubmissionFilesMethodA(submissionPath)
+    return submissions
+
+'''
 Start a grading run
 '''
 def startGradingRun():
-    global submissionCount
     # Initiate grading plan
     xmlHelper = XmlHelper(gradingPlan)
     # new GradeReport object for the output
@@ -73,16 +131,20 @@ def startGradingRun():
     # List for all grading actions
     gradeActionList = []
     # go through all submissions
-    for submission in os.listdir(submissionPath):
-        taskName = submission
-        submissionCount += 1
-        taskPath = os.path.join(submissionPath, taskName)
-        # List all levels in the submission directory
-        for level in os.listdir(taskPath):
-            taskLevel = level
-            levelPath = os.path.join(taskPath, level)
-            # go through all submitted files
-            javaFiles = [fi for fi in os.listdir(levelPath) if fi.endswith(".java")]
+    submissions = getSubmissions()
+    for submission in submissions:
+        taskName = submission.exercise
+        taskLevel = submission.level
+        student = submission.student
+        zipPath = submission.zipPath
+        # Expand archive
+        archivePath = os.path.join(submissionPath, student)
+        if not os.path.exists(archivePath):
+            os.mkdir(archivePath)
+            infoMessage = f"{archivePath} created"
+            loghelper.logInfo(infoMessage)
+            # go through all submitted files in the archive directory
+            javaFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
             for javaFile in javaFiles:
                 pattern = "(\d+)_App.java"
                 studentId = re.findall(pattern, javaFile)[0]
@@ -99,7 +161,7 @@ def startGradingRun():
                         gradeAction = GradeAction("compile")
                         gradeAction.submission = f"{submission}"
                         gradeAction.description = f"Compiling {javaFile}"
-                        javaFilePath = os.path.join(levelPath, javaFile)
+                        javaFilePath = os.path.join(archivePath, javaFile)
                         compileResult = JavaHelper.compileJava(javaFilePath)
                         gradeAction.result = compileResult
                         gradeActionList.append(gradeAction)
@@ -121,7 +183,7 @@ def startGradingRun():
             # Write XML-Report
             xmlHelper.generateGradingReport(gradeActionList)
 
-        print(f"{submissionCount} Submissions berbeitet")
+        print(f"{len(submissions)} Submissions bearbeitet")
 
 '''
 Main starting point
