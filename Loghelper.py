@@ -1,4 +1,4 @@
-# file: loghelper.py
+# file: Loghelper.py
 import os.path
 from datetime import datetime
 

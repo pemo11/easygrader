@@ -1,9 +1,10 @@
 # file: GradeReport.py
 from datetime import datetime
-import loghelper
+import Loghelper
 
 '''
 Defines the report with all the actions for a grading run
+is not in use yet
 '''
 
 class GradeReport:

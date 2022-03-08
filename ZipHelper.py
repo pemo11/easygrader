@@ -3,7 +3,7 @@ import os
 import zipfile
 import tempfile
 import shutil
-import loghelper
+import Loghelper
 import re
 
 '''
@@ -24,13 +24,13 @@ def extractZip(destPath, zipPath):
     if not os.path.exists(tmpDirPath):
         os.mkdir(tmpDirPath)
         infoMessage = f"ZipHelper-> {tmpDirPath} created"
-        loghelper.logInfo(infoMessage)
+        Loghelper.logInfo(infoMessage)
     # extract all files
     with zipfile.ZipFile(zipPath) as zp:
         zp.extractall(destPath)
 
     infoMessage = f"ZipHelper-> {zipPath} extracted"
-    loghelper.logInfo(infoMessage)
+    Loghelper.logInfo(infoMessage)
     return tmpDirPath
 
     # extract all the other zip files in the same directory
@@ -41,9 +41,9 @@ def extractZip(destPath, zipPath):
             with zipfile.ZipFile(zipPath) as zp:
                 zp.extractall(destPath)
                 infoMessage = f"ZipHelper-> {zipPath} extracted"
-                loghelper.logInfo(infoMessage)
+                Loghelper.logInfo(infoMessage)
             # delete zip file in the temp directory
             os.remove(zipPath)
             infoMessage = f"ZipHelper-> {zipPath} deleted"
-            loghelper.logInfo(infoMessage)
+            Loghelper.logInfo(infoMessage)
 

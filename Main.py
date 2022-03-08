@@ -2,7 +2,7 @@
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
 # Letztes Update: 08/03/22
-# Version 0.11
+# Version 0.12
 # =============================================================================
 import datetime
 import os
@@ -13,7 +13,7 @@ import configparser
 import subprocess
 
 import ZipHelper
-import loghelper
+import Loghelper
 from GradeReport import GradeReport
 from GradeAction import GradeAction
 from Submission import Submission
@@ -21,7 +21,7 @@ from XmlHelper import XmlHelper
 import JavaHelper
 
 # Globale Variablen
-appVersion = "0.1"
+appVersion = "0.12"
 taskBasePath = ""
 submissionPath = ""
 gradingPlan = ""
@@ -34,7 +34,7 @@ get values for global variables from ini file
 def initVariables():
     global taskBasePath, submissionPath, gradingPlan, gradeModule, gradeExercise
     config = configparser.ConfigParser()
-    config.read("simpleparser.ini")
+    config.read("Simpleparser.ini")
     taskBasePath = config["path"]["taskBasePath"]
     submissionPath = config["path"]["submissionPath"]
     gradingPlan = config["run"]["gradingplan"]
@@ -142,13 +142,14 @@ def startGradingRun():
     if not os.path.exists(tmpDirPath):
         os.mkdir(tmpDirPath)
         infoMessage = f"{tmpDirPath} created"
-        loghelper.logInfo(infoMessage)
+        Loghelper.logInfo(infoMessage)
     # go through all submissions
     submissions = getSubmissions()
+    print(f"*** Start grading the submissions in {submissionPath} ***")
     for submission in submissions:
         taskName = submission.exercise
         taskLevel = submission.level
-        student = submission.student
+        studentName = submission.student
         zipPath = submission.zipPath
         # archivePath = os.path.join(submissionPath, student)
         # if not os.path.exists(archivePath):
@@ -162,47 +163,50 @@ def startGradingRun():
         # go through all submitted files in the archive directory
         javaFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
         for javaFile in javaFiles:
-            # pattern = "(\d+)_App.java"
-            # studentId = re.findall(pattern, javaFile)[0]
-            taskName = archiveName.split("_")[0]
-            studentName = archiveName.split("_")[1:2]
-            taskLevel = "A"
             # Get action for the task
             actionList = xmlHelper.getActionList(taskName, taskLevel)
             for action in actionList:
                 if not eval(action.active):
                     infoMessage = f"Leaving out Action {action.command} for {javaFile}"
-                    loghelper.logInfo(infoMessage)
+                    Loghelper.logInfo(infoMessage)
                     continue
                 infoMessage = f"Executing Action {action.command} for {javaFile}/StudentId: {studentName}"
-                loghelper.logInfo(infoMessage)
+                Loghelper.logInfo(infoMessage)
                 if action.type == "java-compile":
                     gradeAction = GradeAction("Java compile")
-                    gradeAction.submission = f"{submission} for {studentName}"
+                    gradeAction.student = studentName
+                    # Wird dieses Attribut benötigt?
+                    gradeAction.submission = f"Submission for {studentName}"
                     gradeAction.description = f"Compiling {javaFile}"
                     javaFilePath = os.path.join(archivePath, javaFile)
                     compileResult = JavaHelper.compileJava(javaFilePath)
                     gradeAction.result = compileResult
+                    gradeAction.success = compileResult == 0
                     gradeActionList.append(gradeAction)
             # Get all the tests for the task
             testList = xmlHelper.getTestList(taskName, taskLevel)
             for test in testList:
                 if not eval(test.active):
                     infoMessage = f"Leaving out Test {test.name} for {javaFile}"
-                    loghelper.logInfo(infoMessage)
+                    Loghelper.logInfo(infoMessage)
                     continue
                 infoMessage = f"Executing test {test.name} for file {javaFile}"
-                loghelper.logInfo(infoMessage)
+                Loghelper.logInfo(infoMessage)
                 gradeAction = GradeAction("test")
                 gradeAction.submission = f"{submission}"
                 gradeAction.description = f"Executing test {test.name}"
+                # TODO: Natürlich nur provisorisch
                 gradeAction.result = "OK"
+                gradeAction.success = True
                 gradeActionList.append(gradeAction)
 
     # Write XML-Report
     reportPath = xmlHelper.generateGradingReport(gradeActionList)
     # display report file
     subprocess.call(["notepad.exe", reportPath])
+
+    htmlPath = xmlHelper.generateHtmlReport(reportPath)
+    os.startfile(htmlPath)
 
     print(f"{len(submissions)} Submissions bearbeitet")
 
@@ -213,13 +217,13 @@ Main starting point
 def start():
     initVariables()
     infoMessage = f"Starting the mission (Version {appVersion}- executing {gradingPlan}"
-    loghelper.logInfo(infoMessage)
+    Loghelper.logInfo(infoMessage)
     # Create temp directory for all temp files
     tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
     if not os.path.exists(tempPath):
         os.mkdir(tempPath)
         infoMessage = f"{tempPath} wurde angelegt."
-        loghelper.logInfo(infoMessage)
+        Loghelper.logInfo(infoMessage)
     exitFlag = False
     while not exitFlag:
         choice = showMenu().upper()

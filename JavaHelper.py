@@ -2,13 +2,13 @@
 import shutil
 import subprocess
 import configparser
-import loghelper
+import Loghelper
 import os
 import tempfile
 import re
 
 config = configparser.ConfigParser()
-config.read("simpleparser.ini")
+config.read("Simpleparser.ini")
 javaCPath = config["path"]["javaCompilerPath"]
 
 tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
@@ -28,15 +28,15 @@ def compileJava_Old(filePath):
     if not os.path.exists(studentIdPath):
         os.mkdir(studentIdPath)
         infoMessage = f"Created directory {studentIdPath}"
-        loghelper.logInfo(infoMessage)
+        Loghelper.logInfo(infoMessage)
     filePath2 = os.path.join(studentIdPath, "app.java")
     shutil.copy(filePath, filePath2)
     javaArgs = f"{javaCPath} {filePath2}"
     # shell=True?
     procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     procContext.wait()
-    infoMessage = f"Exit-Code={procContext.returncode}"
-    loghelper.logInfo(infoMessage)
+    infoMessage = f"java exit code={procContext.returncode}"
+    Loghelper.logInfo(infoMessage)
     # javaCOutput = procContext.stdout.read()
     return procContext.returncode
 
@@ -46,12 +46,12 @@ Compiles a single java file
 def compileJava(filePath):
     dirPath = os.path.dirname(filePath)
     javaArgs = f"{javaCPath} {filePath}"
-    infoMessage = f"Compiling {filePath}"
-    loghelper.logInfo(infoMessage)
+    infoMessage = f"Java compiling {filePath}"
+    Loghelper.logInfo(infoMessage)
     # shell=True?
     procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     procContext.wait()
-    infoMessage = f"Exit-Code={procContext.returncode}"
-    loghelper.logInfo(infoMessage)
+    infoMessage = f"java exit code={procContext.returncode}"
+    Loghelper.logInfo(infoMessage)
     # javaCOutput = procContext.stdout.read()
     return procContext.returncode
