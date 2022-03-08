@@ -15,8 +15,9 @@ tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
 
 '''
 Compiles a single java file
+old version
 '''
-def compileJava(filePath):
+def compileJava_Old(filePath):
     dirPath = os.path.dirname(filePath)
     fileName = os.path.basename(filePath)
     # Copy java file to tmp dir
@@ -31,6 +32,22 @@ def compileJava(filePath):
     filePath2 = os.path.join(studentIdPath, "app.java")
     shutil.copy(filePath, filePath2)
     javaArgs = f"{javaCPath} {filePath2}"
+    # shell=True?
+    procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    procContext.wait()
+    infoMessage = f"Exit-Code={procContext.returncode}"
+    loghelper.logInfo(infoMessage)
+    # javaCOutput = procContext.stdout.read()
+    return procContext.returncode
+
+'''
+Compiles a single java file
+'''
+def compileJava(filePath):
+    dirPath = os.path.dirname(filePath)
+    javaArgs = f"{javaCPath} {filePath}"
+    infoMessage = f"Compiling {filePath}"
+    loghelper.logInfo(infoMessage)
     # shell=True?
     procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     procContext.wait()

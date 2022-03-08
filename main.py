@@ -1,8 +1,8 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 06/03/22
-# Version 0.1
+# Letztes Update: 08/03/22
+# Version 0.11
 # =============================================================================
 import datetime
 import os
@@ -10,7 +10,9 @@ import re
 import shutil
 import tempfile
 import configparser
+import subprocess
 
+import ZipHelper
 import loghelper
 from GradeReport import GradeReport
 from GradeAction import GradeAction
@@ -23,17 +25,21 @@ appVersion = "0.1"
 taskBasePath = ""
 submissionPath = ""
 gradingPlan = ""
+gradeModule = ""
+gradeExercise = ""
 
 '''
 get values for global variables from ini file
 '''
 def initVariables():
-    global taskBasePath, submissionPath, gradingPlan
+    global taskBasePath, submissionPath, gradingPlan, gradeModule, gradeExercise
     config = configparser.ConfigParser()
     config.read("simpleparser.ini")
     taskBasePath = config["path"]["taskBasePath"]
     submissionPath = config["path"]["submissionPath"]
-    gradingPlan = config["path"]["gradingplan"]
+    gradingPlan = config["run"]["gradingplan"]
+    gradeModule = config["run"]["gradeModule"]
+    gradeExercise = config["run"]["gradeExercise"]
 
 '''
 Shows application main menue
@@ -66,7 +72,7 @@ def getSubmissionFilesMethodA(submissionPath):
     subnamePattern1 = "(?P<task>\w+)_Level(?P<level>\w)_(?P<student>[_\w]+)\.zip"
     # Der "Trick des Jahres" - non greedy dank *? anstelle von +, damit der Vorname nicht dem Aufgabenname zugeordnet wird
     subnamePattern2 = "(?P<task>\w*?)_(?P<student>[_\w]+)\.zip"
-    for i, submissionFile in enumerate(os.listdir(submissionPath)):
+    for i, submissionFile in enumerate([fi for fi in os.listdir(submissionPath) if fi.endswith(".zip")]):
         # import: finditer instead of findall because of the named capture groups
         nameElements = list(re.finditer(subnamePattern1, submissionFile))
         if (len(nameElements) == 0):
@@ -130,6 +136,13 @@ def startGradingRun():
     gradeReport = GradeReport()
     # List for all grading actions
     gradeActionList = []
+    # Create temp directory for all submissions
+    tmpDirName = f"{gradeModule}_{gradeExercise}"
+    tmpDirPath = os.path.join(tempfile.gettempdir(), tmpDirName)
+    if not os.path.exists(tmpDirPath):
+        os.mkdir(tmpDirPath)
+        infoMessage = f"{tmpDirPath} created"
+        loghelper.logInfo(infoMessage)
     # go through all submissions
     submissions = getSubmissions()
     for submission in submissions:
@@ -137,53 +150,62 @@ def startGradingRun():
         taskLevel = submission.level
         student = submission.student
         zipPath = submission.zipPath
-        # Expand archive
-        archivePath = os.path.join(submissionPath, student)
-        if not os.path.exists(archivePath):
-            os.mkdir(archivePath)
-            infoMessage = f"{archivePath} created"
-            loghelper.logInfo(infoMessage)
-            # go through all submitted files in the archive directory
-            javaFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
-            for javaFile in javaFiles:
-                pattern = "(\d+)_App.java"
-                studentId = re.findall(pattern, javaFile)[0]
-                # Get action for the task
-                actionList = xmlHelper.getActionList(taskName, taskLevel)
-                for action in actionList:
-                    if not eval(action.active):
-                        infoMessage = f"Leaving out Action {action.command} for {javaFile}"
-                        loghelper.logInfo(infoMessage)
-                        continue
-                    infoMessage = f"Executing Action {action.command} for {javaFile}/StudentId: {studentId}"
+        # archivePath = os.path.join(submissionPath, student)
+        # if not os.path.exists(archivePath):
+        #     os.mkdir(archivePath)
+        #     infoMessage = f"{archivePath} created"
+        #     loghelper.logInfo(infoMessage)
+        # Expand archive and the path back
+        archivePath = ZipHelper.extractZip(tmpDirPath, zipPath)
+        archiveName = os.path.basename(archivePath)
+
+        # go through all submitted files in the archive directory
+        javaFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
+        for javaFile in javaFiles:
+            # pattern = "(\d+)_App.java"
+            # studentId = re.findall(pattern, javaFile)[0]
+            taskName = archiveName.split("_")[0]
+            studentName = archiveName.split("_")[1:2]
+            taskLevel = "A"
+            # Get action for the task
+            actionList = xmlHelper.getActionList(taskName, taskLevel)
+            for action in actionList:
+                if not eval(action.active):
+                    infoMessage = f"Leaving out Action {action.command} for {javaFile}"
                     loghelper.logInfo(infoMessage)
-                    if action.type == "compile":
-                        gradeAction = GradeAction("compile")
-                        gradeAction.submission = f"{submission}"
-                        gradeAction.description = f"Compiling {javaFile}"
-                        javaFilePath = os.path.join(archivePath, javaFile)
-                        compileResult = JavaHelper.compileJava(javaFilePath)
-                        gradeAction.result = compileResult
-                        gradeActionList.append(gradeAction)
-                # Get all the tests for the task
-                testList = xmlHelper.getTestList(taskName, taskLevel)
-                for test in testList:
-                    if not eval(test.active):
-                        infoMessage = f"Leaving out Test {test.name} for {javaFile}"
-                        loghelper.logInfo(infoMessage)
-                        continue
-                    infoMessage = f"Executing test {test.name} for file {javaFile}"
-                    loghelper.logInfo(infoMessage)
-                    gradeAction = GradeAction("test")
-                    gradeAction.submission = f"{submission}"
-                    gradeAction.description = f"Executing test {test.name}"
-                    gradeAction.result = "OK"
+                    continue
+                infoMessage = f"Executing Action {action.command} for {javaFile}/StudentId: {studentName}"
+                loghelper.logInfo(infoMessage)
+                if action.type == "java-compile":
+                    gradeAction = GradeAction("Java compile")
+                    gradeAction.submission = f"{submission} for {studentName}"
+                    gradeAction.description = f"Compiling {javaFile}"
+                    javaFilePath = os.path.join(archivePath, javaFile)
+                    compileResult = JavaHelper.compileJava(javaFilePath)
+                    gradeAction.result = compileResult
                     gradeActionList.append(gradeAction)
+            # Get all the tests for the task
+            testList = xmlHelper.getTestList(taskName, taskLevel)
+            for test in testList:
+                if not eval(test.active):
+                    infoMessage = f"Leaving out Test {test.name} for {javaFile}"
+                    loghelper.logInfo(infoMessage)
+                    continue
+                infoMessage = f"Executing test {test.name} for file {javaFile}"
+                loghelper.logInfo(infoMessage)
+                gradeAction = GradeAction("test")
+                gradeAction.submission = f"{submission}"
+                gradeAction.description = f"Executing test {test.name}"
+                gradeAction.result = "OK"
+                gradeActionList.append(gradeAction)
 
-            # Write XML-Report
-            xmlHelper.generateGradingReport(gradeActionList)
+    # Write XML-Report
+    reportPath = xmlHelper.generateGradingReport(gradeActionList)
+    # display report file
+    subprocess.call(["notepad.exe", reportPath])
 
-        print(f"{len(submissions)} Submissions bearbeitet")
+    print(f"{len(submissions)} Submissions bearbeitet")
+
 
 '''
 Main starting point
@@ -201,7 +223,6 @@ def start():
     exitFlag = False
     while not exitFlag:
         choice = showMenu().upper()
-        print(choice)
         if choice == "Q":
             exitFlag = True
         elif choice == "A":

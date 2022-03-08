@@ -5,7 +5,7 @@ from lxml import etree as et
 from TaskAction import TaskAction
 from TaskTest import TaskTest
 
-nsmap =  {"eag": "urn:simpleGrader"}
+nsmap =  {"sig": "urn:simpleGrader"}
 
 class XmlHelper:
 
@@ -23,7 +23,7 @@ class XmlHelper:
     Get all actions associated with this task and level
     '''
     def getActionList(self, taskName, taskLevel):
-        xPathExpr = f".//eag:task[@name='{taskName}' and @level='{taskLevel}']/actions/action"
+        xPathExpr = f".//sig:task[@name='{taskName}' and @level='{taskLevel}']/actions/action"
         actionElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         actionList = []
         for action in actionElements:
@@ -35,7 +35,7 @@ class XmlHelper:
     Get all tests associated with this task and level
     '''
     def getTestList(self, taskName, taskLevel):
-        xPathExpr = f".//eag:task[@name='{taskName}' and @level='{taskLevel}']/tests/test"
+        xPathExpr = f".//sig:task[@name='{taskName}' and @level='{taskLevel}']/tests/test"
         testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         testList = []
         for test in testElements:
@@ -62,8 +62,10 @@ class XmlHelper:
             gradeSubmission = et.SubElement(gradeAction, "submission")
             gradeSubmission.text = action.submission
             gradeResult = et.SubElement(gradeAction, "gradeResult")
-            gradeResult.text = action.result
+            gradeResult.text = str(action.result)
 
         # Write the report
         tree = et.ElementTree(root)
         tree.write(self.reportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+        return self.reportPath
