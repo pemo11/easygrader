@@ -2,7 +2,7 @@
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
 # Letztes Update: 09/03/22
-# Version 0.13
+# Version 0.2
 # =============================================================================
 import datetime
 import os
@@ -19,29 +19,35 @@ from GradeAction import GradeAction
 from Submission import Submission
 from XmlHelper import XmlHelper
 import JavaHelper
+import DBHelper
 
 # Globale Variablen
-appVersion = "0.13"
+appVersion = "0.2"
 taskBasePath = ""
 submissionPath = ""
+dbPath = ""
 gradingPlan = ""
 gradeModule = ""
 gradeExercise = ""
 gradeSemester = ""
+gradingOperator = ""
 
 '''
 get values for global variables from ini file
 '''
 def initVariables():
-    global taskBasePath, submissionPath, gradingPlan, gradeModule, gradeExercise, gradeSemester
+    global taskBasePath, submissionPath, dbPath
+    global gradingPlan, gradeModule, gradeExercise, gradeSemester, gradingOperator
     config = configparser.ConfigParser()
     config.read("Simpleparser.ini")
     taskBasePath = config["path"]["taskBasePath"]
     submissionPath = config["path"]["submissionPath"]
+    dbPath = config["path"]["dbPath"]
     gradingPlan = config["run"]["gradingplan"]
     gradeModule = config["run"]["gradeModule"]
     gradeExercise = config["run"]["gradeExercise"]
     gradeSemester = config["run"]["gradeSemester"]
+    gradingOperator = config["run"]["gradingOperator"]
 
 '''
 Shows application main menue
@@ -50,7 +56,7 @@ def showMenu():
     menuList = []
     menuList.append("Alle Abgaben anzeigen")
     menuList.append("Alle Abgaben graden")
-    menuList.append("Letzten Grading-Report anzeigen")
+    menuList.append("Alle Grading-Runs anzeigen")
     prompt = "Eingabe ("
     print("*" * 80)
     print(f"{'*' * 24}{f' Welcome to Simple Grader {appVersion} '}{'*' * 25}")
@@ -130,6 +136,19 @@ def getSubmissions():
     return submissions
 
 '''
+Get all grade runs
+'''
+def getGradeRuns():
+    # returns tuples
+    gradeRuns = DBHelper.getGradeRuns(dbPath)
+    print("*" * 80)
+    for gradeRun in gradeRuns:
+        print(f"Id:{gradeRun[0]} Timestamp:{gradeRun[1]} Semester:{gradeRun[2]} Submission-Count:{gradeRun[3]}"
+              f" OK-Count:{gradeRun[4]} ErrorCount:{gradeRun[5]}")
+    print("*" * 80)
+    print()
+
+'''
 Start a grading run
 '''
 def startGradingRun():
@@ -183,8 +202,12 @@ def startGradingRun():
                     gradeAction.description = f"Compiling {javaFile}"
                     javaFilePath = os.path.join(archivePath, javaFile)
                     compileResult = JavaHelper.compileJava(javaFilePath)
-                    gradeAction.result = compileResult
-                    gradeAction.success = compileResult == 0
+                    gradePoints = 1 if compileResult[0] == 0 else 0
+                    gradeAction.points = gradePoints
+                    gradeAction.errorMessage = compileResult[1]
+                    # Muss noch genauer definiert werden
+                    actionSuccess = gradePoints > 0
+                    gradeAction.success = actionSuccess
                     gradeActionList.append(gradeAction)
             # Get all the tests for the task
             testList = xmlHelper.getTestList(taskName, taskLevel)
@@ -203,6 +226,12 @@ def startGradingRun():
                 gradeAction.success = True
                 gradeActionList.append(gradeAction)
 
+    # Store grade run in the database
+    timestamp = datetime.datetime.now()
+    okCount = len([gr for gr in gradeActionList if gr.success])
+    errorCount = len([gr for gr in gradeActionList if not gr.success])
+    DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradingOperator, len(submissions), okCount, errorCount)
+
     # Write XML-Report
     reportPath = xmlHelper.generateGradingReport(gradeActionList)
     # display report file
@@ -210,8 +239,6 @@ def startGradingRun():
 
     htmlPath = xmlHelper.generateHtmlReport(reportPath, gradeSemester, gradeModule, gradeExercise)
     os.startfile(htmlPath)
-    okCount = len([gr for gr in gradeActionList if gr.success])
-    errorCount = len([gr for gr in gradeActionList if not gr.success])
     print(f"{len(submissions)} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
 
 '''
@@ -227,6 +254,10 @@ def start():
         os.mkdir(tempPath)
         infoMessage = f"{tempPath} wurde angelegt."
         Loghelper.logInfo(infoMessage)
+    # Create database
+    if not os.path.exists(dbPath):
+        DBHelper.initDb(dbPath)
+
     exitFlag = False
     while not exitFlag:
         choice = showMenu().upper()
@@ -236,8 +267,10 @@ def start():
             showSubmissions()
         elif choice == "B":
             startGradingRun()
+        elif choice == "C":
+            getGradeRuns()
         else:
-            print(f"!!! {choice} ist eine unbekannte Auswahl !!!")
+            print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
 
 # Starting point
 if __name__ == "__main__":

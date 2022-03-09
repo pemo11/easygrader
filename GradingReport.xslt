@@ -17,7 +17,8 @@
                         <th>Timestamp</th>
                         <th>Student</th>
                         <th>Description</th>
-                        <th>Result</th>
+                        <th>Message</th>
+                        <th>Points</th>
                         <th>Success</th>
                     </tr>
                     <xsl:for-each select="//gradeAction">
@@ -26,7 +27,8 @@
                             <td><xsl:value-of select="timestamp"/></td>
                             <td><xsl:value-of select="student"/></td>
                             <td><xsl:value-of select="description"/></td>
-                            <td><xsl:value-of select="gradeResult"/></td>
+                            <td><xsl:value-of select="message"/></td>
+                            <td><xsl:value-of select="gradePoints"/></td>
                             <xsl:choose>
                                 <xsl:when test="gradeSuccess = 'False'">
                                     <td bgcolor='red'><xsl:value-of select="gradeSuccess"/></td>

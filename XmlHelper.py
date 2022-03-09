@@ -65,10 +65,12 @@ class XmlHelper:
             gradeDescription.text = action.description
             gradeStudent = et.SubElement(gradeAction, "student")
             gradeStudent.text = action.student
-            gradeResult = et.SubElement(gradeAction, "gradeResult")
-            gradeResult.text = str(action.result)
-            gradeSucsess = et.SubElement(gradeAction, "gradeSuccess")
-            gradeSucsess.text = str(action.success)
+            gradePoints = et.SubElement(gradeAction, "gradePoints")
+            gradePoints.text = str(action.points)
+            gradeText = et.SubElement(gradeAction, "message")
+            gradeText.text = action.errorMessage
+            gradeSuccess = et.SubElement(gradeAction, "gradeSuccess")
+            gradeSuccess.text = str(action.success)
 
         # Write the report
         tree = et.ElementTree(root)
@@ -79,7 +81,7 @@ class XmlHelper:
     def generateHtmlReport(self, xmlPath, semester, module, exercise):
         htmlPath = ""
         try:
-            htmlPath = ".".join(xmlPath.split(".")[:-1])
+            htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
             xsltPath = "GradingReport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)

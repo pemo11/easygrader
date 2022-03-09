@@ -53,5 +53,14 @@ def compileJava(filePath):
     procContext.wait()
     infoMessage = f"java exit code={procContext.returncode}"
     Loghelper.logInfo(infoMessage)
-    # javaCOutput = procContext.stdout.read()
-    return procContext.returncode
+    javaCOutput = procContext.stdout.read()
+    outputText = "OK"
+    if len(javaCOutput) > 0:
+        javaCOutput = javaCOutput.decode()
+        outputPattern = "java:\d+:\s+(.*)\r"
+        if len(re.findall(outputPattern,javaCOutput)) > 0:
+            outputText = re.findall(outputPattern,javaCOutput)[0]
+        else:
+            outputText = "Error"
+
+    return (procContext.returncode, outputText)
