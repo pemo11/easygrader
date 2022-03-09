@@ -1,8 +1,8 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 08/03/22
-# Version 0.12
+# Letztes Update: 09/03/22
+# Version 0.13
 # =============================================================================
 import datetime
 import os
@@ -21,18 +21,19 @@ from XmlHelper import XmlHelper
 import JavaHelper
 
 # Globale Variablen
-appVersion = "0.12"
+appVersion = "0.13"
 taskBasePath = ""
 submissionPath = ""
 gradingPlan = ""
 gradeModule = ""
 gradeExercise = ""
+gradeSemester = ""
 
 '''
 get values for global variables from ini file
 '''
 def initVariables():
-    global taskBasePath, submissionPath, gradingPlan, gradeModule, gradeExercise
+    global taskBasePath, submissionPath, gradingPlan, gradeModule, gradeExercise, gradeSemester
     config = configparser.ConfigParser()
     config.read("Simpleparser.ini")
     taskBasePath = config["path"]["taskBasePath"]
@@ -40,6 +41,7 @@ def initVariables():
     gradingPlan = config["run"]["gradingplan"]
     gradeModule = config["run"]["gradeModule"]
     gradeExercise = config["run"]["gradeExercise"]
+    gradeSemester = config["run"]["gradeSemester"]
 
 '''
 Shows application main menue
@@ -48,9 +50,10 @@ def showMenu():
     menuList = []
     menuList.append("Alle Abgaben anzeigen")
     menuList.append("Alle Abgaben graden")
+    menuList.append("Letzten Grading-Report anzeigen")
     prompt = "Eingabe ("
     print("*" * 80)
-    print(f"{'*' * 24}{' Welcome to Simple Grader v0.1 '}{'*' * 25}")
+    print(f"{'*' * 24}{f' Welcome to Simple Grader {appVersion} '}{'*' * 25}")
     print("*" * 80)
     for i, menuItem in enumerate(menuList):
         print(f"{chr(i+65)}) {menuItem}")
@@ -205,11 +208,11 @@ def startGradingRun():
     # display report file
     subprocess.call(["notepad.exe", reportPath])
 
-    htmlPath = xmlHelper.generateHtmlReport(reportPath)
+    htmlPath = xmlHelper.generateHtmlReport(reportPath, gradeSemester, gradeModule, gradeExercise)
     os.startfile(htmlPath)
-
-    print(f"{len(submissions)} Submissions bearbeitet")
-
+    okCount = len([gr for gr in gradeActionList if gr.success])
+    errorCount = len([gr for gr in gradeActionList if not gr.success])
+    print(f"{len(submissions)} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
 
 '''
 Main starting point

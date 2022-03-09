@@ -14,6 +14,7 @@ class GradeAction:
         self.success = False
         self.submission = "None"
         self.student = "None"
+        self.errorMessage = "None"
 
     def __repr__(self):
         return f"Type: {self.type} Description: {self.description} Student: {self.student} Sucess: {self.success}"

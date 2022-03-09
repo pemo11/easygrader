@@ -2,6 +2,8 @@
 from os import path
 from datetime import datetime
 from lxml import etree as et
+
+import Loghelper
 from TaskAction import TaskAction
 from TaskTest import TaskTest
 
@@ -74,16 +76,24 @@ class XmlHelper:
 
         return self.reportPath
 
-    def generateHtmlReport(self, xmlPath):
-        htmlPath = ".".join(xmlPath.split(".")[:-1])
-        xsltPath = "GradingReport.xslt"
-        xmlDom = et.parse(xmlPath)
-        xsltDom = et.parse(xsltPath)
-        transform = et.XSLT(xsltDom)
-        newDom = transform(xmlDom)
-        htmlText = et.tostring(newDom, pretty_print=True)
-        # One more time tostring() returns bytes[] not str
-        htmlLines = htmlText.decode().split("\n")
-        with open(htmlPath, "w", encoding="utf-8") as fh:
-            fh.writelines(htmlLines)
+    def generateHtmlReport(self, xmlPath, semester, module, exercise):
+        htmlPath = ""
+        try:
+            htmlPath = ".".join(xmlPath.split(".")[:-1])
+            xsltPath = "GradingReport.xslt"
+            xmlDom = et.parse(xmlPath)
+            xsltDom = et.parse(xsltPath)
+            transform = et.XSLT(xsltDom)
+            newDom = transform(xmlDom, gradingTime=et.XSLT.strparam(datetime.now().strftime("%d.%m.%Y %H:%M")),
+                                        semester=et.XSLT.strparam(semester),
+                                        module=et.XSLT.strparam(module),
+                                        exercise=et.XSLT.strparam(exercise))
+            htmlText = et.tostring(newDom, pretty_print=True)
+            # One more time tostring() returns bytes[] not str
+            htmlLines = htmlText.decode().split("\n")
+            with open(htmlPath, "w", encoding="utf-8") as fh:
+                fh.writelines(htmlLines)
+        except Exception as ex:
+            infoMessage = f"XmlHelper->generateHtmlReport: Fehler {ex}"
+            Loghelper.logError(infoMessage)
         return htmlPath
