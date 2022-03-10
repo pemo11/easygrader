@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 09/03/22
+# Letztes Update: 10/03/22
 # Version 0.2
 # =============================================================================
 import datetime
@@ -56,7 +56,9 @@ def showMenu():
     menuList = []
     menuList.append("Alle Abgaben anzeigen")
     menuList.append("Alle Abgaben graden")
-    menuList.append("Alle Grading-Runs anzeigen")
+    menuList.append("Grading-Runs anzeigen")
+    menuList.append("Abgaben eines Studenten anzeigen")
+    menuList.append("Gradings eines Studenten anzeigen")
     prompt = "Eingabe ("
     print("*" * 80)
     print(f"{'*' * 24}{f' Welcome to Simple Grader {appVersion} '}{'*' * 25}")
@@ -149,6 +151,22 @@ def getGradeRuns():
     print()
 
 '''
+Get all the submissions by a student name
+'''
+def getStudentSubmissions():
+    studentName = input("Name des Studenten?")
+    rows = DBHelper.getStudentSubmissions(dbPath, studentName)
+    for row in rows:
+        print(row[0])
+
+'''
+Get all the gradings by student name
+'''
+def getGradingsByStudent():
+    studentName = input("Name des Studenten?")
+    pass
+
+'''
 Start a grading run
 '''
 def startGradingRun():
@@ -221,6 +239,13 @@ def startGradingRun():
                 gradeAction = GradeAction("test")
                 gradeAction.submission = f"{submission}"
                 gradeAction.description = f"Executing test {test.name}"
+                if test.type == "JUNIT":
+                    pass
+                elif test.type == "Text-Compare":
+                    pass
+                else:
+                    infoMessage = f"{test.type} ist ein unbekannter Testtyp"
+                    Loghelper.logInfo(infoMessage)
                 # TODO: Natürlich nur provisorisch
                 gradeAction.result = "OK"
                 gradeAction.success = True
@@ -230,7 +255,11 @@ def startGradingRun():
     timestamp = datetime.datetime.now()
     okCount = len([gr for gr in gradeActionList if gr.success])
     errorCount = len([gr for gr in gradeActionList if not gr.success])
-    DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradingOperator, len(submissions), okCount, errorCount)
+    gradeRunId = DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradingOperator, len(submissions), okCount, errorCount)
+
+    # Store all submissions
+    for submission in submissions:
+        DBHelper.storeSubmission(dbPath, gradeRunId, submission.student)
 
     # Write XML-Report
     reportPath = xmlHelper.generateGradingReport(gradeActionList)
@@ -269,6 +298,10 @@ def start():
             startGradingRun()
         elif choice == "C":
             getGradeRuns()
+        elif choice == "D":
+            getStudentSubmissions()
+        elif choice == "E":
+            getStudentGradings()
         else:
             print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
 

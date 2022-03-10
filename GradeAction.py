@@ -2,7 +2,8 @@
 from datetime import datetime
 
 '''
-Defines a single grading action for the grade report
+Defines the result of a grading action for the grade report
+TODO: split GradeAction and GradeResult or rename to GradeResult?
 '''
 class GradeAction:
 
@@ -11,6 +12,7 @@ class GradeAction:
         self.type = type
         self.description = "None"
         self.points = 0
+        # compiles better name?
         self.success = False
         self.submission = "None"
         self.student = "None"
