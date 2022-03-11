@@ -15,6 +15,7 @@ class GradeResult:
         self.success = False
         self.submission = "None"
         self.student = "None"
+        self.remarks = "No Paseran"
         self.errorMessage = "None"
 
     def __repr__(self):

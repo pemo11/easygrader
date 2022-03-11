@@ -1,6 +1,6 @@
 # file: JavaHelper.py
 import shutil
-import subprocess
+from subprocess import Popen, PIPE, STDOUT,TimeoutExpired
 import configparser
 import Loghelper
 import os
@@ -34,7 +34,7 @@ def compileJava_Old(filePath):
     shutil.copy(filePath, filePath2)
     javaArgs = f"{javaCPath} {filePath2}"
     # shell=True?
-    procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    procContext = Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=PIPE, stderr=STDOUT)
     procContext.wait()
     infoMessage = f"java exit code={procContext.returncode}"
     Loghelper.logInfo(infoMessage)
@@ -50,7 +50,7 @@ def compileJava(filePath):
     infoMessage = f"Java compiling {filePath}"
     Loghelper.logInfo(infoMessage)
     # shell=True?
-    procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    procContext = Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=PIPE, stderr=STDOUT)
     procContext.wait()
     infoMessage = f"java exit code={procContext.returncode}"
     Loghelper.logInfo(infoMessage)
@@ -76,17 +76,26 @@ def runJava(filePath, outputChecker):
     javaArgs = f"{javaPath} -cp {dirPath} {filePath}"
     infoMessage = f"Java compiling {filePath}"
     Loghelper.logInfo(infoMessage)
+    outputText = "Leider nix"
     # shell=True?
-    procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    procContext.wait()
-    outputText = procContext.stdout.read()
-    result = 0
-    if outputChecker:
-        result = outputChecker(outputText)
-    return result
+    # Timeout for the java-Process
+    timeOutSeconds = 15
+    try:
+        with Popen(javaArgs, shell=True, env={"PATH": dirPath},
+                              stdout=PIPE, stderr=STDOUT,
+                              encoding=None, errors=None) as proc:
+            proc.wait(timeOutSeconds)
+            outputText = proc.stdout.read()
+            result = 0
+            if outputChecker:
+                result = outputChecker(outputText)
+        return result
+    except TimeoutExpired as ex:
+        infoMessage = f"TimeOutExpired for Process {filePath}"
+        Loghelper.logError(infoMessage)
+
 
 '''
 Extras:
 >Running in a sandbox -> policy file
->Timeout for preventing endless loops (eg. pranks;) - process terminates after 60s
 '''

@@ -23,7 +23,7 @@ import JavaHelper
 import DBHelper
 
 # Globale Variablen
-appVersion = "0.2"
+appVersion = "0.3"
 taskBasePath = ""
 submissionPath = ""
 dbPath = ""
@@ -56,10 +56,11 @@ Shows application main menue
 def showMenu():
     menuList = []
     menuList.append("Alle Abgaben anzeigen")
-    menuList.append("Alle Abgaben graden")
-    menuList.append("Grading-Runs anzeigen")
-    menuList.append("Abgaben eines Studenten anzeigen")
-    menuList.append("Gradings eines Studenten anzeigen")
+    menuList.append("Alle Abgaben eines Studenten anzeigen")
+    menuList.append("Grading-Run starten")
+    menuList.append("Alle Grading-Runs anzeigen")
+    menuList.append("Alle Gradings anzeigen")
+    menuList.append("Alle Gradings eines Studenten anzeigen")
     prompt = "Eingabe ("
     print("*" * 80)
     print(f"{'*' * 24}{f' Welcome to Simple Grader {appVersion} '}{'*' * 25}")
@@ -98,6 +99,7 @@ def getSubmissionFilesMethodA(submissionPath):
         submission.zipPath = os.path.join(submissionPath, submissionFile)
         submission.exercise = excercise
         submission.level = level
+        submission.module = gradeModule
         submission.semester = os.path.basename(submissionFile)
         submissionList.append(submission)
     return submissionList
@@ -125,14 +127,6 @@ def getSubmissionFilesMethodB(submissionPath):
                 print(f"task={task} level={level} file={javaFile} Last Access={lastAccessTime}")
 
 '''
-Show all submissions
-'''
-def showSubmissions():
-    submissions = getSubmissions()
-    for submission in submissions:
-        print(submission)
-
-'''
 Get all submissions
 '''
 def getSubmissions():
@@ -153,20 +147,76 @@ def getGradeRuns():
     print()
 
 '''
-Get all the submissions by a student name from the database
+Get all student submissions from the submission directory
 '''
 def getStudentSubmissions():
+    subnamePattern1 = "(?P<task>\w+)_Level(?P<level>\w)_(?P<student>[_\w]+)\.zip"
+    # Der "Trick des Jahres" - non greedy dank *? anstelle von +, damit der Vorname nicht dem Aufgabenname zugeordnet wird
+    subnamePattern2 = "(?P<task>\w*?)_(?P<student>[_\w]+)\.zip"
+    submiDic = {}
+    for submiFile in [f for f in os.listdir(submissionPath) if f.endswith(".zip")]:
+        # import: finditer instead of findall because of the named capture groups
+        nameElements = list(re.finditer(subnamePattern1, submiFile))
+        if (len(nameElements) == 0):
+            nameElements = list(re.finditer(subnamePattern2, submiFile))
+        student = nameElements[0].group("student")
+        exercise = nameElements[0].group("task")
+        level = nameElements[0].group("level") if len(nameElements) == 3 else "A"
+        # print(f"Submission from {student} for {exercise} (Level {level})")
+        # Already entry in the dic?
+        if submiDic.get(student) == None:
+            submiDic[student] = [exercise]
+        else:
+            submiDic[student].append(exercise)
+    return submiDic
+
+'''
+Outputs all student submissions
+'''
+def showSubmissions():
+    dic = getStudentSubmissions()
+    # go through all entries
+    for student in dic:
+        print(f"Submissions by {student}")
+        for exercise in dic[student]:
+            print(f">> {exercise}")
+
+'''
+Get all submissions for a student by name 
+'''
+def showSubmissionsByStudent():
     studentName = input("Name des Studenten?")
-    rows = DBHelper.getStudentSubmissions(dbPath, studentName)
-    for row in rows:
-        print(row[0])
+    # Name etwas aufbereiten, da die Namen als Vorname_Nachname abgelegt sind
+    studentName = studentName.replace(" ", "_")
+    dic = getStudentSubmissions()
+    if dic.get(studentName):
+        print(f"Submissions by {studentName}")
+        for exercise in dic[studentName]:
+            print(f">> {exercise}")
+    else:
+        print(f"Keine Submissions by {studentName}")
+        # TODO: Später auch alternative Namen anzeigen
+
+'''
+Shows all gradings from the database
+'''
+def showGradings():
+    rows = DBHelper.getSubmissionResults(dbPath)
+    if rows != None and len(rows) > 0:
+        for row in rows:
+            print(row[0])
 
 '''
 Get all the gradings by student name from the database
 '''
-def getStudentGradings():
+def showGradingsByStudent():
     studentName = input("Name des Studenten?")
-    pass
+    rows = DBHelper.getStudentSubmissionResults(dbPath, studentName)
+    if rows != None and len(rows) > 0:
+        for row in rows:
+            print(row[0])
+    else:
+        print(f"*** Keine Gradings für {studentName} in der Datenbank ***")
 
 '''
 Start a grading run
@@ -176,19 +226,22 @@ def startGradingRun():
     xmlHelper = XmlHelper(gradingPlan)
     # new GradeReport object for the output
     # gradeReport = GradeReport()
-    # List for all grading actions
+    # List for all grading actions for the grading Action report
     gradeActionList = []
-    # List for all grading results
+    # List for all grading results for the grading Result report
     gradeResultList = []
     # Create temp directory for all submissions
     tmpDirName = f"{gradeModule}_{gradeExercise}"
     tmpDirPath = os.path.join(tempfile.gettempdir(), tmpDirName)
+    # if the directory not exists it will be created
     if not os.path.exists(tmpDirPath):
         os.mkdir(tmpDirPath)
-        infoMessage = f"{tmpDirPath} created"
+        infoMessage = f"directory {tmpDirPath} created"
         Loghelper.logInfo(infoMessage)
-    # get all Submissions
+    # get all Submissions from the file system
     submissions = getSubmissions()
+    # for the grading run duration
+    startTime = datetime.datetime.now()
     print(f"*** Start grading the submissions in {submissionPath} ***")
     # go through all submissions
     for submission in submissions:
@@ -208,21 +261,26 @@ def startGradingRun():
         # go through all submitted files in the archive directory
         javaFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
         for javaFile in javaFiles:
-            # Get action for the task
+            # Get all actions for the task and level from the xml file
             actionList = xmlHelper.getActionList(taskName, taskLevel)
+            # Go through all the actions
             for action in actionList:
+                # skip not active actions
                 if not eval(action.active):
                     infoMessage = f"Leaving out Action {action.command} for {javaFile}"
                     Loghelper.logInfo(infoMessage)
                     continue
+                # Execute the action
                 infoMessage = f"Executing Action {action.command} for {javaFile}/StudentId: {studentName}"
                 Loghelper.logInfo(infoMessage)
+                # the action depends on the action type
                 if action.type == "java-compile":
-                    gradeAction = GradeAction("Java compile")
-
-                    # Weitere Daten?
+                    # a new item for the action report
+                    gradeAction = GradeAction("Java compile", "compile")
+                    gradeAction.student = submission.student
+                    gradeAction.fileName = javaFile
                     gradeActionList.append(gradeAction)
-
+                    # a new item for the grade result report
                     gradeResult = GradeResult("Java compile")
                     gradeResult.student = studentName
                     # Wird dieses Attribut benötigt?
@@ -237,6 +295,7 @@ def startGradingRun():
                     actionSuccess = gradePoints > 0
                     gradeResult.success = actionSuccess
                     gradeResultList.append(gradeResult)
+
             # Get all the tests for the task
             testList = xmlHelper.getTestList(taskName, taskLevel)
             for test in testList:
@@ -247,13 +306,15 @@ def startGradingRun():
                 infoMessage = f"Executing test {test.name} for file {javaFile}"
                 Loghelper.logInfo(infoMessage)
 
-                gradeAction = GradeAction("test")
+                gradeAction = GradeAction(test.type, "test")
+                gradeAction.student = submission.student
+                gradeAction.javaFile = javaFile
                 gradeActionList.append(gradeAction)
 
-                gradeResult = GradeResult("test")
+                gradeResult = GradeResult(f"{test.type}-Test")
                 gradeResult.submission = f"{submission}"
                 gradeResult.description = f"Executing test {test.name}"
-                if test.type == "JUNIT":
+                if test.type == "JUnit":
                     pass
                 elif test.type == "Text-Compare":
                     pass
@@ -269,14 +330,19 @@ def startGradingRun():
     timestamp = datetime.datetime.now()
     okCount = len([gr for gr in gradeResultList if gr.success])
     errorCount = len([gr for gr in gradeResultList if not gr.success])
-    gradeRunId = DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradingOperator, len(submissions), okCount, errorCount)
+    gradeRunId = DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradeModule, gradingOperator, len(submissions), okCount, errorCount)
 
     # Store all submissions in the database
     for submission in submissions:
-        DBHelper.storeSubmission(dbPath, gradeRunId, submission.student)
+        # ResultPoints und Remarks müssen noch eingefügt werden
+        DBHelper.storeSubmissionResult(dbPath, gradeRunId, submission.student, submission.exercise,
+                                       submission.level, submission.semester, submission.module,
+                                       submission.fileName, 0, "Keine")
 
     # Write XML-Reports
-    # reportPath = xmlHelper.generateActionReport(gradeActionList)
+    actionReportPath = xmlHelper.generateActionReport(gradeActionList)
+    # display report file
+    subprocess.call(["notepad.exe", actionReportPath])
 
     gradeReportPath = xmlHelper.generateGradingReport(gradeResultList)
     # display report file
@@ -311,13 +377,15 @@ def start():
         elif choice == "A":
             showSubmissions()
         elif choice == "B":
-            startGradingRun()
+            showSubmissionsByStudent()
         elif choice == "C":
-            getGradeRuns()
+            startGradingRun()
         elif choice == "D":
-            getStudentSubmissions()
+            getGradeRuns()
         elif choice == "E":
-            getStudentGradings()
+            showGradings()
+        elif choice == "F":
+            showGradingsByStudent()
         else:
             print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
 

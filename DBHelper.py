@@ -27,6 +27,7 @@ def initDb(dbPath):
      Id integer PRIMARY KEY,
      Timestamp datetime NOT NULL,
      Semester text NOT NULL,
+     Module text NOT NULL,
      Operator text NOT NULL,
      SubmissionCount integer NOT NULL,
      OKCount integer NOT NULL,
@@ -47,21 +48,29 @@ def initDb(dbPath):
         infoMessage = "*** Datenbankverbindung wurde geschlossen ***"
         Loghelper.logInfo(infoMessage)
 
-    # Tabelle Submission anlegen
+    # Tabelle SubmissionResult anlegen
     sqlKommando = """
-    CREATE TABLE IF NOT EXISTS Submission (
+    CREATE TABLE IF NOT EXISTS SubmissionResult (
      Id integer PRIMARY KEY,
      GradeRun integer NOT NULL,
-     Student text NOT NULL
+     Student text NOT NULL,
+     Exercise text NOT NULL,
+     Level text NOT NULL,
+     Semester text NOT NULL,
+     Module text NOT NULL,
+     Filename text,
+     ResultPoints integer,
+     ResultComment text,
+     ResultRemarks text
     );
     """
     try:
         dbCon = sqlite3.connect(dbPath)
         dbCon.execute(sqlKommando)
-        infoMessage = "*** Tabelle Submission wurde angelegt ***"
+        infoMessage = "*** Tabelle SubmissionResult wurde angelegt ***"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
-        infoMessage = f"Fehler beim Anlegen der Tabelle Submission {ex}"
+        infoMessage = f"Fehler beim Anlegen der Tabelle SubmissionResult {ex}"
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
@@ -71,7 +80,7 @@ def initDb(dbPath):
 '''
 Stores a grade run 
 '''
-def storeGradeRun(dbPath, Timestamp, Semester, Operator, SubmissionCount, OKCount, ErrorCount):
+def storeGradeRun(dbPath, Timestamp, Semester, Module, Operator, SubmissionCount, OKCount, ErrorCount):
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
@@ -79,8 +88,8 @@ def storeGradeRun(dbPath, Timestamp, Semester, Operator, SubmissionCount, OKCoun
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Insert Into GradeRun (Timestamp,Semester,Operator,SubmissionCount,"
-    sqlKommando += f"OKCount,ErrorCount) Values('{Timestamp}','{Semester}','{Operator}',"
+    sqlKommando = "Insert Into GradeRun (Timestamp,Semester,Module, Operator,SubmissionCount,"
+    sqlKommando += f"OKCount,ErrorCount) Values('{Timestamp}','{Semester}','{Module}','{Operator}',"
     sqlKommando += f"{SubmissionCount},{OKCount},{ErrorCount})"
     try:
         dbCur = dbCon.cursor()
@@ -97,9 +106,9 @@ def storeGradeRun(dbPath, Timestamp, Semester, Operator, SubmissionCount, OKCoun
     dbCon.close()
 
 '''
-Stores a grade run 
+Stores the grading for a single submission during a grade run
 '''
-def storeSubmission(dbPath, GradeRunId, Student):
+def storeSubmissionResult(dbPath, GradeRunId, Student, Exercise, Level, Semester, Module, Filename, ResultPoints, ResultRemarks):
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
@@ -107,16 +116,17 @@ def storeSubmission(dbPath, GradeRunId, Student):
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Insert Into Submission (GradeRun,Student) "
-    sqlKommando += f"Values({GradeRunId}, '{Student}')"
+    sqlKommando = "Insert Into SubmissionResult (GradeRun,Student,Exercise,Level,Semester,Module,Filename,ResultPoints,ResultRemarks) "
+    sqlKommando += f"Values({GradeRunId}, '{Student}','{Exercise}','{Level}','{Semester}',"
+    sqlKommando += f"'{Module}','{Filename}','{ResultPoints}','{ResultRemarks}')"
     try:
         dbCur = dbCon.cursor()
         dbCur.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = "*** Datensatz wurde zur Tabelle Submission hinzugefügt ***"
+        infoMessage = "*** Datensatz wurde zur Tabelle SubmissionResult hinzugefügt ***"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
-        infoMessage = f"Fehler beim Einfügen eines Datensatzes in die Submission-Tabelle {ex}"
+        infoMessage = f"Fehler beim Einfügen eines Datensatzes in die SubmissionResult-Tabelle {ex}"
         Loghelper.logError(infoMessage)
 
     dbCon.close()
@@ -162,19 +172,49 @@ def getGradeRun(dbPath, runId):
             return 0
         else:
             return row[0]
-    except Error as e:
+    except Error as ex:
         infoMessage = f"Fehler beim Abfragen der GradeRun-Tabelle {ex}"
         Loghelper.logError(infoMessage)
 
 '''
-Get all submissions
+Get all submission results
 '''
-def getSubmissions(dbPath):
-    pass
+def getSubmissionResults(dbPath):
+    try:
+        dbCon = sqlite3.connect(dbPath)
+    except Error as ex:
+        infoMessage = f"Fehler beim Herstellen der Datenbankverbindung {ex}"
+        Loghelper.logError(infoMessage)
+        return
 
+    sqlKommando = "Select * From SubmissionResult"
+    try:
+        cur = dbCon.cursor()
+        cur.execute(sqlKommando)
+        rows = cur.fetchall()
+        return rows
+    except Error as ex:
+        infoMessage = f"Fehler beim Abfragen der SubmissionResult-Tabelle {ex}"
+        Loghelper.logError(infoMessage)
 
 '''
-Get all student submissions
+Get all the submission results for a single student
 '''
-def getStudentSubmissions(dbPath, Student):
-    pass
+def getStudentSubmissionResults(dbPath, Student):
+    try:
+        dbCon = sqlite3.connect(dbPath)
+    except Error as ex:
+        infoMessage = f"Fehler beim Herstellen der Datenbankverbindung {ex}"
+        Loghelper.logError(infoMessage)
+        return
+
+    sqlKommando = "Select * From SubmissionResult Where Student = ?"
+    try:
+        cur = dbCon.cursor()
+        cur.execute(sqlKommando, (Student,))
+        rows = cur.fetchall()
+        return rows
+    except Error as ex:
+        infoMessage = f"Fehler beim Abfragen der SubmissionResult-Tabelle {ex}"
+        Loghelper.logError(infoMessage)
+        return None

@@ -17,8 +17,10 @@ class XmlHelper:
     def __init__(self, xmlFile):
         self.xmlPath = path.join(path.dirname(__file__), xmlFile)
         today = datetime.now().strftime("%d-%m-%Y")
-        gradingReportName = f"GradingReport_{today}.xml"
-        self.reportPath = path.join(path.dirname(__file__), gradingReportName)
+        gradingReportName = f"GradingResultReport_{today}.xml"
+        self.gradeReportPath = path.join(path.dirname(__file__), gradingReportName)
+        actionReportName = f"GradingActionReport_{today}.xml"
+        self.actionReportPath = path.join(path.dirname(__file__), actionReportName)
         self.root = et.parse(self.xmlPath)
 
     '''
@@ -53,30 +55,47 @@ class XmlHelper:
     '''
     Generates a Xml file for all grading actions
     '''
-    def generateGradingReport(self, actionList):
+    def generateGradingReport(self, resultList):
         root = et.Element("report")
-        for action in actionList:
+        for gradeResult in resultList:
             gradeAction = et.SubElement(root, "gradeAction")
             actionType = et.SubElement(gradeAction, "type")
-            actionType.text = action.type
+            actionType.text = gradeResult.type
             timeStamp = et.SubElement(gradeAction, "timestamp")
-            timeStamp.text = datetime.strftime(action.timestamp, "%d.%m.%Y-%H:%M")
+            timeStamp.text = datetime.strftime(gradeResult.timestamp, "%d.%m.%Y-%H:%M")
             gradeDescription = et.SubElement(gradeAction, "description")
-            gradeDescription.text = action.description
+            gradeDescription.text = gradeResult.description
             gradeStudent = et.SubElement(gradeAction, "student")
-            gradeStudent.text = action.student
+            gradeStudent.text = gradeResult.student
             gradePoints = et.SubElement(gradeAction, "gradePoints")
-            gradePoints.text = str(action.points)
+            gradePoints.text = str(gradeResult.points)
             gradeText = et.SubElement(gradeAction, "message")
-            gradeText.text = action.errorMessage
+            gradeText.text = gradeResult.errorMessage
             gradeSuccess = et.SubElement(gradeAction, "gradeSuccess")
-            gradeSuccess.text = str(action.success)
+            gradeSuccess.text = str(gradeResult.success)
 
         # Write the report
         tree = et.ElementTree(root)
-        tree.write(self.reportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        tree.write(self.gradeReportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
 
-        return self.reportPath
+        return self.gradeReportPath
+
+    def generateActionReport(self, actionList):
+        xlRoot = et.Element("report")
+        for gradeAction in actionList:
+            xlGradeAction = et.SubElement(xlRoot, "gradeAction")
+            actionType = et.SubElement(xlGradeAction, "type")
+            actionType.text = gradeAction.type
+            timeStamp = et.SubElement(xlGradeAction, "timestamp")
+            timeStamp.text = datetime.strftime(gradeAction.timestamp, "%d.%m.%Y-%H:%M")
+            action = et.SubElement(xlGradeAction, "action")
+            action.text = gradeAction.action
+
+        # Write the report
+        tree = et.ElementTree(xlRoot)
+        tree.write(self.actionReportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+        return self.actionReportPath
 
     def generateHtmlReport(self, xmlPath, semester, module, exercise):
         htmlPath = ""
