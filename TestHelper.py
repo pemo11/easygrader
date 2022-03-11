@@ -1,4 +1,5 @@
 # file: TestHelper.py
+import re
 
 '''
 Output comparison with regex

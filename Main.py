@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 10/03/22
+# Letztes Update: 11/03/22
 # Version 0.2
 # =============================================================================
 import datetime
@@ -16,6 +16,7 @@ import ZipHelper
 import Loghelper
 from GradeReport import GradeReport
 from GradeAction import GradeAction
+from GradeResult import GradeResult
 from Submission import Submission
 from XmlHelper import XmlHelper
 import JavaHelper
@@ -71,12 +72,13 @@ def showMenu():
     return input(prompt)
 
 '''
+Gets a list of all submissions in a single (flat) directory
 Assumes each submission file name:
 EA1_A_PMonadjemi.zip
 EA1_B_PMonadjemi.zip
 or
 EA1_PMonadjemi.zip
-in this case default level is assumed
+in this case default level A is assumed
 '''
 def getSubmissionFilesMethodA(submissionPath):
     submissionList = []
@@ -138,7 +140,7 @@ def getSubmissions():
     return submissions
 
 '''
-Get all grade runs
+Get all grade runs from the database
 '''
 def getGradeRuns():
     # returns tuples
@@ -151,7 +153,7 @@ def getGradeRuns():
     print()
 
 '''
-Get all the submissions by a student name
+Get all the submissions by a student name from the database
 '''
 def getStudentSubmissions():
     studentName = input("Name des Studenten?")
@@ -160,9 +162,9 @@ def getStudentSubmissions():
         print(row[0])
 
 '''
-Get all the gradings by student name
+Get all the gradings by student name from the database
 '''
-def getGradingsByStudent():
+def getStudentGradings():
     studentName = input("Name des Studenten?")
     pass
 
@@ -173,9 +175,11 @@ def startGradingRun():
     # Initiate grading plan
     xmlHelper = XmlHelper(gradingPlan)
     # new GradeReport object for the output
-    gradeReport = GradeReport()
+    # gradeReport = GradeReport()
     # List for all grading actions
     gradeActionList = []
+    # List for all grading results
+    gradeResultList = []
     # Create temp directory for all submissions
     tmpDirName = f"{gradeModule}_{gradeExercise}"
     tmpDirPath = os.path.join(tempfile.gettempdir(), tmpDirName)
@@ -183,9 +187,10 @@ def startGradingRun():
         os.mkdir(tmpDirPath)
         infoMessage = f"{tmpDirPath} created"
         Loghelper.logInfo(infoMessage)
-    # go through all submissions
+    # get all Submissions
     submissions = getSubmissions()
     print(f"*** Start grading the submissions in {submissionPath} ***")
+    # go through all submissions
     for submission in submissions:
         taskName = submission.exercise
         taskLevel = submission.level
@@ -198,7 +203,7 @@ def startGradingRun():
         #     loghelper.logInfo(infoMessage)
         # Expand archive and the path back
         archivePath = ZipHelper.extractZip(tmpDirPath, zipPath)
-        archiveName = os.path.basename(archivePath)
+        # archiveName = os.path.basename(archivePath)
 
         # go through all submitted files in the archive directory
         javaFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
@@ -214,19 +219,24 @@ def startGradingRun():
                 Loghelper.logInfo(infoMessage)
                 if action.type == "java-compile":
                     gradeAction = GradeAction("Java compile")
-                    gradeAction.student = studentName
+
+                    # Weitere Daten?
+                    gradeActionList.append(gradeAction)
+
+                    gradeResult = GradeResult("Java compile")
+                    gradeResult.student = studentName
                     # Wird dieses Attribut benötigt?
-                    gradeAction.submission = f"Submission for {studentName}"
-                    gradeAction.description = f"Compiling {javaFile}"
+                    gradeResult.submission = f"Submission for {studentName}"
+                    gradeResult.description = f"Compiling {javaFile}"
                     javaFilePath = os.path.join(archivePath, javaFile)
                     compileResult = JavaHelper.compileJava(javaFilePath)
                     gradePoints = 1 if compileResult[0] == 0 else 0
-                    gradeAction.points = gradePoints
-                    gradeAction.errorMessage = compileResult[1]
+                    gradeResult.points = gradePoints
+                    gradeResult.errorMessage = compileResult[1]
                     # Muss noch genauer definiert werden
                     actionSuccess = gradePoints > 0
-                    gradeAction.success = actionSuccess
-                    gradeActionList.append(gradeAction)
+                    gradeResult.success = actionSuccess
+                    gradeResultList.append(gradeResult)
             # Get all the tests for the task
             testList = xmlHelper.getTestList(taskName, taskLevel)
             for test in testList:
@@ -236,9 +246,13 @@ def startGradingRun():
                     continue
                 infoMessage = f"Executing test {test.name} for file {javaFile}"
                 Loghelper.logInfo(infoMessage)
+
                 gradeAction = GradeAction("test")
-                gradeAction.submission = f"{submission}"
-                gradeAction.description = f"Executing test {test.name}"
+                gradeActionList.append(gradeAction)
+
+                gradeResult = GradeResult("test")
+                gradeResult.submission = f"{submission}"
+                gradeResult.description = f"Executing test {test.name}"
                 if test.type == "JUNIT":
                     pass
                 elif test.type == "Text-Compare":
@@ -247,26 +261,28 @@ def startGradingRun():
                     infoMessage = f"{test.type} ist ein unbekannter Testtyp"
                     Loghelper.logInfo(infoMessage)
                 # TODO: Natürlich nur provisorisch
-                gradeAction.result = "OK"
-                gradeAction.success = True
-                gradeActionList.append(gradeAction)
+                gradeResult.result = "OK"
+                gradeResult.success = True
+                gradeResultList.append(gradeResult)
 
     # Store grade run in the database
     timestamp = datetime.datetime.now()
-    okCount = len([gr for gr in gradeActionList if gr.success])
-    errorCount = len([gr for gr in gradeActionList if not gr.success])
+    okCount = len([gr for gr in gradeResultList if gr.success])
+    errorCount = len([gr for gr in gradeResultList if not gr.success])
     gradeRunId = DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradingOperator, len(submissions), okCount, errorCount)
 
-    # Store all submissions
+    # Store all submissions in the database
     for submission in submissions:
         DBHelper.storeSubmission(dbPath, gradeRunId, submission.student)
 
-    # Write XML-Report
-    reportPath = xmlHelper.generateGradingReport(gradeActionList)
-    # display report file
-    subprocess.call(["notepad.exe", reportPath])
+    # Write XML-Reports
+    # reportPath = xmlHelper.generateActionReport(gradeActionList)
 
-    htmlPath = xmlHelper.generateHtmlReport(reportPath, gradeSemester, gradeModule, gradeExercise)
+    gradeReportPath = xmlHelper.generateGradingReport(gradeResultList)
+    # display report file
+    subprocess.call(["notepad.exe", gradeReportPath])
+
+    htmlPath = xmlHelper.generateHtmlReport(gradeReportPath, gradeSemester, gradeModule, gradeExercise)
     os.startfile(htmlPath)
     print(f"{len(submissions)} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
 

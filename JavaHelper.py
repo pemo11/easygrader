@@ -10,6 +10,7 @@ import re
 config = configparser.ConfigParser()
 config.read("Simpleparser.ini")
 javaCPath = config["path"]["javaCompilerPath"]
+javaPath = config["path"]["javaLauncherPath"]
 
 tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
 
@@ -57,6 +58,7 @@ def compileJava(filePath):
     outputText = "OK"
     if len(javaCOutput) > 0:
         javaCOutput = javaCOutput.decode()
+        # Pattern for error message
         outputPattern = "java:\d+:\s+(.*)\r"
         if len(re.findall(outputPattern,javaCOutput)) > 0:
             outputText = re.findall(outputPattern,javaCOutput)[0]
@@ -64,3 +66,27 @@ def compileJava(filePath):
             outputText = "Error"
 
     return (procContext.returncode, outputText)
+
+'''
+Runs a class file
+outputChecker is a lambda/function that does determine if the output is correct
+'''
+def runJava(filePath, outputChecker):
+    dirPath = os.path.dirname(filePath)
+    javaArgs = f"{javaPath} -cp {dirPath} {filePath}"
+    infoMessage = f"Java compiling {filePath}"
+    Loghelper.logInfo(infoMessage)
+    # shell=True?
+    procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": dirPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    procContext.wait()
+    outputText = procContext.stdout.read()
+    result = 0
+    if outputChecker:
+        result = outputChecker(outputText)
+    return result
+
+'''
+Extras:
+>Running in a sandbox -> policy file
+>Timeout for preventing endless loops (eg. pranks;) - process terminates after 60s
+'''
