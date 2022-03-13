@@ -247,7 +247,7 @@ def showStudentsWithoutSubmission(csvPath):
         if dicSubmissions.get(student) == None:
             print(f"*** Keine Submissions von {studentName} ***")
         else:
-            submissions = [s for s in dicSubmissions[student] if s == 1]
+            submissions = [s for s in dicRoster[student] if s == "1"]
             print(f"*** Student {studentName} {len(submissions)} von {len(dicSubmissions[student])} bewertet")
 '''
 Start a grading run
