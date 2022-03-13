@@ -1,8 +1,8 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 11/03/22
-# Version 0.2
+# Letztes Update: 13/03/22
+# Version 0.32
 # =============================================================================
 import datetime
 import os
@@ -11,6 +11,7 @@ import shutil
 import tempfile
 import configparser
 import subprocess
+import csv
 
 import ZipHelper
 import Loghelper
@@ -23,11 +24,12 @@ import JavaHelper
 import DBHelper
 
 # Globale Variablen
-appVersion = "0.3"
+appVersion = "0.32"
 taskBasePath = ""
 submissionPath = ""
+gradingPlanPath = ""
+studentRosterPath = ""
 dbPath = ""
-gradingPlan = ""
 gradeModule = ""
 gradeExercise = ""
 gradeSemester = ""
@@ -37,14 +39,15 @@ gradingOperator = ""
 get values for global variables from ini file
 '''
 def initVariables():
-    global taskBasePath, submissionPath, dbPath
-    global gradingPlan, gradeModule, gradeExercise, gradeSemester, gradingOperator
+    global taskBasePath, submissionPath, gradingPlanPath, studentRosterPath, dbPath
+    global gradeModule, gradeExercise, gradeSemester, gradingOperator
     config = configparser.ConfigParser()
     config.read("Simpleparser.ini")
     taskBasePath = config["path"]["taskBasePath"]
     submissionPath = config["path"]["submissionPath"]
+    gradingPlanPath = config["path"]["gradingPlanPath"]
+    studentRosterPath = config["path"]["studentRosterPath"]
     dbPath = config["path"]["dbPath"]
-    gradingPlan = config["run"]["gradingplan"]
     gradeModule = config["run"]["gradeModule"]
     gradeExercise = config["run"]["gradeExercise"]
     gradeSemester = config["run"]["gradeSemester"]
@@ -61,6 +64,7 @@ def showMenu():
     menuList.append("Alle Grading-Runs anzeigen")
     menuList.append("Alle Gradings anzeigen")
     menuList.append("Alle Gradings eines Studenten anzeigen")
+    menuList.append("Studenten ohne Abgaben anzeigen")
     prompt = "Eingabe ("
     print("*" * 80)
     print(f"{'*' * 24}{f' Welcome to Simple Grader {appVersion} '}{'*' * 25}")
@@ -219,11 +223,38 @@ def showGradingsByStudent():
         print(f"*** Keine Gradings für {studentName} in der Datenbank ***")
 
 '''
+Gets the content of the roster file (CSV)
+'''
+def getStudentRoster(rosterPath):
+    dic = {}
+    with open(rosterPath, encoding="utf-8") as fh:
+        csvReader = csv.reader(fh)
+        next(fh)
+        for row in csvReader:
+            name = row[0].replace(" ", "_")
+            # dic[row[0]] = row[1:-1]
+            dic[name] = row[1:-1]
+    return dic
+
+'''
+Shows all students without submissions for single assigments
+'''
+def showStudentsWithoutSubmission(csvPath):
+    dicSubmissions = getStudentSubmissions()
+    dicRoster = getStudentRoster(csvPath)
+    for student in dicRoster:
+        studentName = student.replace("_", " ")
+        if dicSubmissions.get(student) == None:
+            print(f"*** Keine Submissions von {studentName} ***")
+        else:
+            submissions = [s for s in dicSubmissions[student] if s == 1]
+            print(f"*** Student {studentName} {len(submissions)} von {len(dicSubmissions[student])} bewertet")
+'''
 Start a grading run
 '''
 def startGradingRun():
     # Initiate grading plan
-    xmlHelper = XmlHelper(gradingPlan)
+    xmlHelper = XmlHelper(gradingPlanPath)
     # new GradeReport object for the output
     # gradeReport = GradeReport()
     # List for all grading actions for the grading Action report
@@ -357,7 +388,7 @@ Main starting point
 '''
 def start():
     initVariables()
-    infoMessage = f"Starting the mission (Version {appVersion}- executing {gradingPlan}"
+    infoMessage = f"Starting the mission (Version {appVersion}- executing {gradingPlanPath}"
     Loghelper.logInfo(infoMessage)
     # Create temp directory for all temp files
     tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
@@ -386,6 +417,8 @@ def start():
             showGradings()
         elif choice == "F":
             showGradingsByStudent()
+        elif choice == "G":
+            showStudentsWithoutSubmission(studentRosterPath)
         else:
             print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
 
