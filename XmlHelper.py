@@ -53,6 +53,15 @@ class XmlHelper:
         return testList
 
     '''
+    Get all files associated with this task and level
+    '''
+    def getFileList(self, taskName, taskLevel):
+        xPathExpr = f".//sig:task[@name='{taskName}' and @level='{taskLevel}']/files/file"
+        fileElements = self.root.xpath(xPathExpr, namespaces=nsmap)
+        fileList = [fi for fi in fileElements] # May be a filter if fi.endswith(".java") is needed
+        return fileList
+
+    '''
     Generates a Xml file for all grading actions
     '''
     def generateGradingReport(self, resultList):

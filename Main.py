@@ -1,8 +1,8 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 13/03/22
-# Version 0.32
+# Letztes Update: 15/03/22
+# Version 0.36
 # =============================================================================
 import datetime
 import os
@@ -19,12 +19,13 @@ from GradeReport import GradeReport
 from GradeAction import GradeAction
 from GradeResult import GradeResult
 from Submission import Submission
+from SubmissionFile import SubmissionFile
 from XmlHelper import XmlHelper
 import JavaHelper
 import DBHelper
 
 # Globale Variablen
-appVersion = "0.32"
+appVersion = "0.36"
 taskBasePath = ""
 submissionPath = ""
 gradingPlanPath = ""
@@ -87,21 +88,25 @@ in this case default level A is assumed
 '''
 def getSubmissionFilesMethodA(submissionPath):
     submissionList = []
-    subnamePattern1 = "(?P<task>\w+)_Level(?P<level>\w)_(?P<student>[_\w]+)\.zip"
+    # subnamePattern1 = "(?P<task>\w+)_Level(?P<level>\w)_(?P<student>[_\w]+)\.zip"
     # Der "Trick des Jahres" - non greedy dank *? anstelle von +, damit der Vorname nicht dem Aufgabenname zugeordnet wird
-    subnamePattern2 = "(?P<task>\w*?)_(?P<student>[_\w]+)\.zip"
+    # subnamePattern2 = "(?P<task>\w*?)_(?P<student>[_\w]+)\.zip"
     for i, submissionFile in enumerate([fi for fi in os.listdir(submissionPath) if fi.endswith(".zip")]):
         # import: finditer instead of findall because of the named capture groups
-        nameElements = list(re.finditer(subnamePattern1, submissionFile))
-        if (len(nameElements) == 0):
-            nameElements = list(re.finditer(subnamePattern2, submissionFile))
+        # nameElements = list(re.finditer(subnamePattern1, submissionFile))
+        # if (len(nameElements) == 0):
+        #     nameElements = list(re.finditer(subnamePattern2, submissionFile))
+        fileName = SubmissionFile(submissionFile)
         id = f"{i+1:03d}"
-        excercise = nameElements[0].group("task")
-        student = nameElements[0].group("student")
-        level = nameElements[0].group("level") if len(nameElements) == 3 else "A"
+        # excercise = nameElements[0].group("task")
+        exercise = fileName.excercise
+        student = fileName.student
+        # student = nameElements[0].group("student")
+        # level = nameElements[0].group("level") if len(nameElements) == 3 else "A"
+        level = fileName.level
         submission = Submission(id, student)
         submission.zipPath = os.path.join(submissionPath, submissionFile)
-        submission.exercise = excercise
+        submission.exercise = exercise
         submission.level = level
         submission.module = gradeModule
         submission.semester = os.path.basename(submissionFile)
@@ -160,12 +165,17 @@ def getStudentSubmissions():
     submiDic = {}
     for submiFile in [f for f in os.listdir(submissionPath) if f.endswith(".zip")]:
         # import: finditer instead of findall because of the named capture groups
-        nameElements = list(re.finditer(subnamePattern1, submiFile))
-        if (len(nameElements) == 0):
-            nameElements = list(re.finditer(subnamePattern2, submiFile))
-        student = nameElements[0].group("student")
-        exercise = nameElements[0].group("task")
-        level = nameElements[0].group("level") if len(nameElements) == 3 else "A"
+        file = SubmissionFile(submiFile)
+
+        # nameElements = list(re.finditer(subnamePattern1, submiFile))
+        # if (len(nameElements) == 0):
+        #     nameElements = list(re.finditer(subnamePattern2, submiFile))
+        # student = nameElements[0].group("student")
+        # exercise = nameElements[0].group("task")
+        # level = nameElements[0].group("level") if len(nameElements) == 3 else "A"
+        student = file.student
+        exercise = file.exercise
+        level = file.level
         # print(f"Submission from {student} for {exercise} (Level {level})")
         # Already entry in the dic?
         if submiDic.get(student) == None:
@@ -290,8 +300,18 @@ def startGradingRun():
         # archiveName = os.path.basename(archivePath)
 
         # go through all submitted files in the archive directory
-        javaFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
-        for javaFile in javaFiles:
+        # get all file names from the gradinglan xml
+        exerciseFiles = xmlHelper.getFileList(taskName, taskLevel)
+        # get all file names from the submission
+        submittedFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
+        # javaFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
+        # check if files are missing in submitted files
+        missingFiles = [fi for fi in exerciseFiles if fi not in submittedFiles]
+        if len(missingFiles) > 0:
+            infoMessage = f"!!! Missing files in Submission {zipPath}: {','.join(missingFiles)} !!!"
+            Loghelper.logError(infoMessage)
+            return -1
+        for javaFile in submittedFiles:
             # Get all actions for the task and level from the xml file
             actionList = xmlHelper.getActionList(taskName, taskLevel)
             # Go through all the actions
