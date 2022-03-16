@@ -13,7 +13,7 @@ class SubmissionFile:
         nameElements = list(re.finditer(subnamePattern1, submissionFile))
         if (len(nameElements) == 0):
             nameElements = list(re.finditer(subnamePattern2, submissionFile))
-        self.excercise = nameElements[0].group("task")
+        self.exercise = nameElements[0].group("task")
         self.student = nameElements[0].group("student")
         self.level = nameElements[0].group("level") if len(nameElements) == 3 else "A"
 

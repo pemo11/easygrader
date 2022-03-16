@@ -12,7 +12,7 @@
         <tests>
             <test id="1" active="True">
                 <test-type>TestDriver</test-type>
-                <test-name>Output-Comparsion</test-name>
+                <test-name>Output-Comparison</test-name>
                 <test-description>Compares output with test driver</test-description>
                 <test-driver>MyMathTester</test-driver>
                 <test-score>4</test-score>
