@@ -3,6 +3,7 @@
 def getFiles(xmlPath, Exercise, Level):
     Level = "A" if Level == None else Level
 
-
+def extractArchive(submissionPath):
+    pass
 
 
