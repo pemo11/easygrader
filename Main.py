@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 17/03/22
+# Letztes Update: 18/03/22
 # Version 0.40
 # =============================================================================
 import datetime
@@ -31,9 +31,10 @@ appVersion = "0.40"
 appName = "SimpleGrader"
 taskBasePath = ""
 submissionPath = ""
+# Dieser Pfad enthält die ausgepackten Zip-Archive
+submissionTmpPath = ""
 gradingPlanPath = ""
 studentRosterPath = ""
-tmpPath = ""
 dbPath = ""
 gradeModule = ""
 gradeSemester = ""
@@ -47,7 +48,7 @@ gradingOperator = ""
 get values for global variables from ini file
 '''
 def initVariables():
-    global taskBasePath, submissionPath, gradingPlanPath, studentRosterPath, dbPath, tmpPath
+    global taskBasePath, submissionPath, gradingPlanPath, studentRosterPath, dbPath, submissionTmpPath
     global gradeModule, gradeSemester, gradingOperator
     config = configparser.ConfigParser()
     config.read("Simpleparser.ini")
@@ -61,18 +62,26 @@ def initVariables():
     gradeSemester = gradeSemester.replace(" ", "")
     gradeSemester = gradeSemester.replace("/", "_")
     gradingOperator = config["run"]["gradingOperator"]
-    tmpPath = os.path.join(tempfile.gettempdir(), appName, gradeSemester, gradeModule)
+    submissionTmpPath = os.path.join(tempfile.gettempdir(), appName, gradeSemester, gradeModule)
     # Delete the directory if it already exists
-    if os.path.exists(tmpPath):
-        shutil.rmtree(tmpPath)
+    if os.path.exists(submissionTmpPath):
+        shutil.rmtree(submissionTmpPath)
     # create directory with all the subdirectories
-    os.makedirs(tmpPath)
-    infoMessage = f"Verzeichnis {tmpPath} wurde angelegt."
+    os.makedirs(submissionTmpPath)
+    infoMessage = f"Verzeichnis {submissionTmpPath} wurde angelegt."
     Loghelper.logInfo(infoMessage)
 
 # =============================================================================
 # Main Menue
 # =============================================================================
+
+'''
+Shows the Welcome Banner
+'''
+def showBanner():
+    print("*" * 80)
+    print(f"{'*' * 24}{f' Welcome to Simple Grader {appVersion} '}{'*' * 25}")
+    print("*" * 80)
 
 '''
 Shows application main menue
@@ -88,14 +97,13 @@ def showMenu():
     menuList.append("Alle Bewertungsdurchläufe anzeigen")
     menuList.append("Alle Bewertungen anzeigen")
     menuList.append("Alle Bewertungen eines Studenten anzeigen")
+    print("=" * 80)
     prompt = "Eingabe ("
-    print("*" * 80)
-    print(f"{'*' * 24}{f' Welcome to Simple Grader {appVersion} '}{'*' * 25}")
-    print("*" * 80)
     for i, menuItem in enumerate(menuList):
         print(f"{chr(i+65)}) {menuItem}")
         prompt += f"{chr(i+65)},"
     print("Q) Ende")
+    print("=" * 80)
     prompt = prompt[:-1] + " oder Q fuer Ende)?\n"
     return input(prompt)
 
@@ -107,24 +115,67 @@ def showMenu():
 Extracts all submission files
 '''
 def extractSubmissions():
-    ZipHelper.extractSubmissions2(submissionPath, tmpPath)
+    submissionCount = ZipHelper.extractSubmissions2(submissionPath, submissionTmpPath)
+    infoMessage = f"{submissionCount} Abgaben erfolgreich nach {submissionTmpPath} extrahiert"
+    Loghelper.logInfo(infoMessage)
+    print(infoMessage)
 
 '''
 Outputs all student submissions
 '''
 def showSubmissions():
-    dic = getStudentSubmissions()
-    # go through all entries
-    for student in dic:
-        print(f"Submissions by {student}")
-        for exercise in dic[student]:
-            print(f">> {exercise}")
+    dicSubmissions = getStudentSubmissions()
+    # go through all exercises
+    for exercise in dicSubmissions:
+        print(f"Abgaben für {exercise}")
+        for student in dicSubmissions[exercise]:
+            print(f">> {student}")
+            for file in dicSubmissions[exercise][student]:
+                print(f">>> {file}")
 
 '''
-Check for missing submissions
+Check for missing submissions of all students
 '''
 def showMissingSubmissions():
-    pass
+    # key= exercise - values=dic with student as key and files as value
+    dicSubmissions = getStudentSubmissions()
+    # Hole ein dic mit Student als key und einem dic mit exercise als key und den files als values
+    # exerciseTupels = [(ex, dicSubmissions[ex]) for ex in dicSubmissions]
+    dicStudents = {}
+    for exercise in dicSubmissions:
+        for student in dicSubmissions[exercise]:
+            if dicStudents.get(student) == None:
+                dicStudents[student] = [{exercise:dicSubmissions[exercise][student]}]
+            else:
+                dicStudents[student].append({exercise:dicSubmissions[exercise][student]})
+
+    dicRoster = getStudentRoster(studentRosterPath)
+    for student in dicRoster:
+        studentName = student.replace("_", " ")
+        if dicStudents.get(student) == None:
+            print(f"*** Student: {studentName} - keine Abgaben !")
+        else:
+            # Alle Exercises durchgehen
+            for exerciseDic in dicStudents[student]:
+                if len(dicStudents[student]) == 0:
+                    for exercise in exerciseDic:
+                        print(f"*** Student: {studentName} - keine Abgaben !")
+                else:
+                    for exercise in exerciseDic:
+                        files = ",".join([f for f in dicSubmissions[exercise][student]])
+                        print(f"*** Student: {studentName} - Abgaben für {exercise}: {files}")
+
+    '''
+    for exercise, students in exerciseTupels:
+        print(f"Abgaben für Aufgabe {exercise}")
+        for student in students:
+            print(f">> {student}")
+        if dicSubmissions.get(student) == None:
+            print(f"*** Keine Submissions von {studentName} ***")
+        else:
+            submissions = [s for s in dicRoster[student] if s == "1"]
+            print(f"*** Student {studentName} {len(submissions)} von {len(dicSubmissions[student])} bewertet")
+    '''
 
 '''
 Output all submissions for a student by name 
@@ -135,11 +186,11 @@ def showSubmissionsByStudent():
     studentName = studentName.replace(" ", "_")
     dic = getStudentSubmissions()
     if dic.get(studentName):
-        print(f"Submissions by {studentName}")
+        print(f"Abgaben von {studentName}")
         for exercise in dic[studentName]:
             print(f">> {exercise}")
     else:
-        print(f"Keine Submissions by {studentName}")
+        print(f"Keine Abgaben von {studentName}")
         # TODO: Später auch alternative Namen anzeigen
 
 '''
@@ -396,33 +447,22 @@ def getSubmissions():
     return submissions
 
 '''
-Get all student submissions from the submission directory
+Get all student submissions from the tmp submission directory with the extracted files
 '''
 def getStudentSubmissions():
-    subnamePattern1 = "(?P<task>\w+)_Level(?P<level>\w)_(?P<student>[_\w]+)\.zip"
-    # Der "Trick des Jahres" - non greedy dank *? anstelle von +, damit der Vorname nicht dem Aufgabenname zugeordnet wird
-    subnamePattern2 = "(?P<task>\w*?)_(?P<student>[_\w]+)\.zip"
-    submiDic = {}
-    for submiFile in [f for f in os.listdir(submissionPath) if f.endswith(".zip")]:
-        # import: finditer instead of findall because of the named capture groups
-        file = SubmissionFile(submiFile)
-
-        # nameElements = list(re.finditer(subnamePattern1, submiFile))
-        # if (len(nameElements) == 0):
-        #     nameElements = list(re.finditer(subnamePattern2, submiFile))
-        # student = nameElements[0].group("student")
-        # exercise = nameElements[0].group("task")
-        # level = nameElements[0].group("level") if len(nameElements) == 3 else "A"
-        student = file.student
-        exercise = file.exercise
-        level = file.level
-        # print(f"Submission from {student} for {exercise} (Level {level})")
-        # Already entry in the dic?
-        if submiDic.get(student) == None:
-            submiDic[student] = [exercise]
-        else:
-            submiDic[student].append(exercise)
-    return submiDic
+    studentDic = {}
+    for tEntry in os.walk(submissionTmpPath):
+        if len(tEntry[2]) > 0:
+            basePath = tEntry[0]
+            student = os.path.basename(basePath)
+            exercise =tEntry[0].split("\\")[-2]
+            if studentDic.get(exercise) == None:
+                studentDic[exercise] = {}
+            if studentDic[exercise].get(student) == None:
+                studentDic[exercise][student] = []
+            for file in tEntry[2]:
+                studentDic[exercise][student].append(file)
+    return studentDic
 
 
 '''
@@ -447,6 +487,8 @@ def start():
     initVariables()
     infoMessage = f"Starting SimpleGrader (Version {appVersion}) - executing {gradingPlanPath}"
     Loghelper.logInfo(infoMessage)
+
+    showBanner()
 
     # Create database
     if not os.path.exists(dbPath):

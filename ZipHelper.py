@@ -63,7 +63,9 @@ dest directory:
 '''
 def extractSubmissions2(submissionPath, destPath):
     # enumerates every submission file
-    for file in [fi for fi in os.path.listdir(submissionPath) if fi.endswith("zip")]:
+    submissionCount = 0
+    for file in [fi for fi in os.listdir(submissionPath) if fi.endswith("zip")]:
+        submissionCount += 1
         submissionFile = SubmissionFile(file)
         exercise = submissionFile.exercise
         exercisePath = os.path.join(destPath, exercise)
@@ -79,7 +81,7 @@ def extractSubmissions2(submissionPath, destPath):
             os.mkdir(studentPath)
             infoMessage = f"directory {studentPath} created"
             Loghelper.logInfo(infoMessage)
-       # Expand the archive
+        # Expand the archive
         zipPath = os.path.join(submissionPath, file)
         # Get all the files from the zip archive
         with zipfile.ZipFile(zipPath) as zp:
@@ -96,3 +98,4 @@ def extractSubmissions2(submissionPath, destPath):
                     shutil.copyfileobj(source, target)
                     infoMessage = f"{filename} extracted to {studentPath}"
                     Loghelper.logInfo(infoMessage)
+    return submissionCount
