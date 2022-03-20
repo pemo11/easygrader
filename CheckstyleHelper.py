@@ -9,7 +9,7 @@ import tempfile
 import Loghelper
 
 config = configparser.ConfigParser()
-config.read("Simpleparser.ini")
+config.read("Simplegrader.ini")
 javaCPath = config["path"]["checkstylePath"]
 rulePath = config["path"]["checkstyleRulePath"]
 checkstyleJarPath = config["path"]["checkstyJarPath"]

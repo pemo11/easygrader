@@ -18,7 +18,7 @@ def initDb(dbPath):
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
-        infoMessage = "*** Datenbankverbindung wurde geschlossen ***"
+        infoMessage = "Datenbankverbindung wurde geschlossen."
         Loghelper.logInfo(infoMessage)
 
     # Tabelle GradRun anlegen
@@ -45,7 +45,33 @@ def initDb(dbPath):
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
-        infoMessage = "*** Datenbankverbindung wurde geschlossen ***"
+        infoMessage = "Datenbankverbindung wurde geschlossen."
+        Loghelper.logInfo(infoMessage)
+
+    # Tabelle Submission anlegen
+    sqlKommando = """
+    CREATE TABLE IF NOT EXISTS Submission (
+     Id integer PRIMARY KEY AUTOINCREMENT,
+     Timestamp datetime NOT NULL,
+     Semester text NOT NULL,
+     Module text NOT NULL,
+     Exercise text NOT NULL,
+     Student text NOT NULL,
+     Complete boolean NOT NULL
+    );
+    """
+
+    try:
+        dbCon = sqlite3.connect(dbPath)
+        dbCon.execute(sqlKommando)
+        infoMessage = "*** Tabelle Submission wurde angelegt ***"
+        Loghelper.logInfo(infoMessage)
+    except Error as ex:
+        infoMessage = f"Fehler beim Anlegen der Tabelle Submission {ex}"
+        Loghelper.logError(infoMessage)
+    finally:
+        dbCon.close()
+        infoMessage = "Datenbankverbindung wurde geschlossen."
         Loghelper.logInfo(infoMessage)
 
     # Tabelle SubmissionResult anlegen
@@ -74,7 +100,7 @@ def initDb(dbPath):
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
-        infoMessage = "*** Datenbankverbindung wurde geschlossen ***"
+        infoMessage = "Datenbankverbindung wurde geschlossen."
         Loghelper.logInfo(infoMessage)
 
 '''
@@ -101,6 +127,57 @@ def storeGradeRun(dbPath, Timestamp, Semester, Module, Operator, SubmissionCount
         return dbCur.lastrowid
     except Error as ex:
         infoMessage = f"Fehler beim Einfügen eines Datensatzes in die GradeRun-Tabelle {ex}"
+        Loghelper.logError(infoMessage)
+
+    dbCon.close()
+
+'''
+Stores a single submission of a student
+'''
+def storeSubmission(dbPath, Timestamp, Semester, Module, Exercise, Student, Complete):
+    try:
+        dbCon = sqlite3.connect(dbPath)
+    except Error as ex:
+        infoMessage = f"Fehler beim Herstellen der Datenbankverbindung {ex}"
+        Loghelper.logError(infoMessage)
+        return
+
+    sqlKommando = "Insert Into Submission (Timestamp,Semester,Module,Exercise,Student,Complete) "
+    sqlKommando += f"Values('{Timestamp}','{Semester}','{Module}','{Exercise}',"
+    sqlKommando += f"'{Student}','{Complete}')"
+    try:
+        dbCur = dbCon.cursor()
+        dbCur.execute(sqlKommando)
+        dbCon.commit()
+        infoMessage = "*** Datensatz wurde zur Tabelle Submission hinzugefügt ***"
+        Loghelper.logInfo(infoMessage)
+        # return the id of the new record
+        return dbCur.lastrowid
+    except Error as ex:
+        infoMessage = f"Fehler beim Einfügen eines Datensatzes in die Submission-Tabelle {ex}"
+        Loghelper.logError(infoMessage)
+
+    dbCon.close()
+
+'''
+Clears all the submission
+'''
+def clearAllSubmission(dbPath):
+    try:
+        dbCon = sqlite3.connect(dbPath)
+    except Error as ex:
+        infoMessage = f"Fehler beim Herstellen der Datenbankverbindung {ex}"
+        Loghelper.logError(infoMessage)
+        return
+
+    sqlKommando = "Delete From Submission"
+    try:
+        dbCon.execute(sqlKommando)
+        dbCon.commit()
+        infoMessage = "*** Alle Datensätze in der Tabelle Submission wurden gelöscht ***"
+        Loghelper.logInfo(infoMessage)
+    except Error as ex:
+        infoMessage = f"Fehler beim Löschen aller Datensätze in die Submission-Tabelle {ex}"
         Loghelper.logError(infoMessage)
 
     dbCon.close()

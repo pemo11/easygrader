@@ -8,7 +8,7 @@ import tempfile
 import re
 
 config = configparser.ConfigParser()
-config.read("Simpleparser.ini")
+config.read("Simplegrader.ini")
 javaCPath = config["path"]["javaCompilerPath"]
 javaPath = config["path"]["javaLauncherPath"]
 

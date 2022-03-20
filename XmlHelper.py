@@ -127,3 +127,18 @@ class XmlHelper:
             infoMessage = f"XmlHelper->generateHtmlReport: Fehler {ex}"
             Loghelper.logError(infoMessage)
         return htmlPath
+
+    '''
+    Validates a gradingplan file against the xsd schema
+    '''
+    def validateXml(self, xmlPath: str, xsdPath: str) -> bool:
+        try:
+            xmlSchemaDoc = et.parse(xsdPath)
+            xmlSchema = et.XMLSchema(xmlSchemaDoc)
+            xmlDoc = et.parse(xmlPath)
+            result = xmlSchema.validate(xmlDoc)
+        except Exception as ex:
+            Loghelper.logError(f"validateXml: Fehler bei der Xml-Validierung ({ex})")
+            result = False
+        return result
+
