@@ -7,7 +7,7 @@ import Loghelper
 from TaskAction import TaskAction
 from TaskTest import TaskTest
 
-nsmap =  {"sig": "urn:simpleGrader"}
+nsmap =  {"sig": "urn:simpelGrader"}
 
 class XmlHelper:
 
@@ -21,6 +21,8 @@ class XmlHelper:
         self.gradeReportPath = path.join(path.dirname(__file__), gradingReportName)
         actionReportName = f"GradingActionReport_{today}.xml"
         self.actionReportPath = path.join(path.dirname(__file__), actionReportName)
+        submissionErrorReportName = f"SubmissionErrorReport_{today}.xml"
+        self.submissionErrorReportPath = path.join(path.dirname(__file__), submissionErrorReportName)
         self.root = et.parse(self.xmlPath)
 
     '''
@@ -89,6 +91,9 @@ class XmlHelper:
 
         return self.gradeReportPath
 
+    '''
+    Generates an XML report from the list of submission errors
+    '''
     def generateActionReport(self, actionList):
         xlRoot = et.Element("report")
         for gradeAction in actionList:
@@ -106,7 +111,10 @@ class XmlHelper:
 
         return self.actionReportPath
 
-    def generateHtmlReport(self, xmlPath, semester, module, exercise):
+    '''
+    Converts a grading xml report into html
+    '''
+    def convertGradingReport2Html(self, xmlPath, semester, module, exercise):
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
@@ -124,7 +132,7 @@ class XmlHelper:
             with open(htmlPath, "w", encoding="utf-8") as fh:
                 fh.writelines(htmlLines)
         except Exception as ex:
-            infoMessage = f"XmlHelper->generateHtmlReport: Fehler {ex}"
+            infoMessage = f"XmlHelper->convertGradingReport2Html: Fehler {ex}"
             Loghelper.logError(infoMessage)
         return htmlPath
 
@@ -142,3 +150,44 @@ class XmlHelper:
             result = False
         return result
 
+    '''
+    Generates a Xml file for all submission errors
+    '''
+    def generateSubmissioErrorReport(self, submissionErrorList):
+        root = et.Element("report")
+        for submissionError in submissionErrorList:
+            subError = et.SubElement(root, "submissionError")
+            errorType = et.SubElement(subError, "type")
+            errorMessage = et.SubElement(subError, "message")
+            errorMessage.text = submissionError.message
+            errorType.text = submissionError.type
+            timeStamp = et.SubElement(subError, "timestamp")
+            timeStamp.text = datetime.strftime(submissionError.timestamp, "%d.%m.%Y-%H:%M")
+
+        # Write the report
+        tree = et.ElementTree(root)
+        tree.write(self.submissionErrorReportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+        return self.submissionErrorReportPath
+
+    '''
+    Converts a submission error xml report into html
+    '''
+    def convertSubmissionErrorReport2Html(self, xmlPath):
+        htmlPath = ""
+        try:
+            htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
+            xsltPath = "SubmissionErrorReport.xslt"
+            xmlDom = et.parse(xmlPath)
+            xsltDom = et.parse(xsltPath)
+            transform = et.XSLT(xsltDom)
+            newDom = transform(xmlDom, gradingTime=et.XSLT.strparam(datetime.now().strftime("%d.%m.%Y %H:%M")))
+            htmlText = et.tostring(newDom, pretty_print=True)
+            # One more time tostring() returns bytes[] not str
+            htmlLines = htmlText.decode().split("\n")
+            with open(htmlPath, "w", encoding="utf-8") as fh:
+                fh.writelines(htmlLines)
+        except Exception as ex:
+            infoMessage = f"XmlHelper->convertSubmissionErrorReport2Html: Fehler {ex}"
+            Loghelper.logError(infoMessage)
+        return htmlPath

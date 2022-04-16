@@ -1,6 +1,6 @@
-# file: JavaHelper.py
+# file: JavaRunHelper.py
 import shutil
-from subprocess import Popen, PIPE, STDOUT,TimeoutExpired
+from subprocess import Popen, PIPE, STDOUT, TimeoutExpired
 import configparser
 import Loghelper
 import os
@@ -8,11 +8,11 @@ import tempfile
 import re
 
 config = configparser.ConfigParser()
-config.read("Simplegrader.ini")
+config.read("Simpelgrader.ini")
 javaCPath = config["path"]["javaCompilerPath"]
 javaPath = config["path"]["javaLauncherPath"]
 
-tempPath = os.path.join(tempfile.gettempdir(), "simplegrader")
+tempPath = os.path.join(tempfile.gettempdir(), "simpelgrader")
 
 '''
 Compiles a single java file

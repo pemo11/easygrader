@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<sig:tasks xmlns:sig="urn:simpleGrader">
+<sig:tasks xmlns:sig="urn:simpelGrader">
     <sig:task id="1000" exercise="EA1" passingMark="0.9" level="A" title="Math-Tester">
         <description>Simple math functions</description>
         <files>

@@ -58,3 +58,37 @@ def extractSubmissions(submissionPath, destPath):
                     infoMessage = f"{filename} extracted to {studentPath}"
                     Loghelper.logInfo(infoMessage)
     return submissionCount
+
+'''
+Extract each submission zip file into its own directory
+'''
+def extractSubmissionZips(submissionDestPath, deleteZip=False) -> int:
+    fileCount = 0
+    for fiZip in [fi for fi in os.listdir(submissionDestPath) if fi.endswith("zip")]:
+        fiZipPath = os.path.join(submissionDestPath, fiZip)
+        fiFilename = fiZip.split(".")[0]
+        destPath = os.path.join(submissionDestPath, fiFilename)
+        fileCount += extractArchive(fiZipPath, destPath)
+        # delete zip?
+        if deleteZip:
+            os.remove(fiZipPath)
+            infoMessage = f"extractSubmissionZips: {fiZipPath} deleted"
+            Loghelper.logInfo(infoMessage)
+    return fileCount
+
+'''
+Extracts a single zip file
+'''
+def extractArchive(zipPath, destPath) -> int:
+    fileCount = 0
+    try:
+        with zipfile.ZipFile(zipPath, mode="r") as fh:
+            fh.extractall(destPath)
+        fileCount = len([fi for fi in os.listdir(destPath) if fi.endswith("zip")])
+    except Exception as ex:
+        infoMessage = f"extractArchive - error {ex}"
+        Loghelper.logError(infoMessage)
+    infoMessage = f"extractArchive - {fileCount} files extracted"
+    Loghelper.logInfo(infoMessage)
+    return fileCount
+
