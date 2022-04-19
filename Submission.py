@@ -2,19 +2,19 @@
 from datetime import datetime
 
 '''
-Defines a single submission by a student
+Defines a single submission by a student id
 '''
 class Submission:
 
-    def __init__(self, id, student):
-        self.timestamp = datetime.now()
+    def __init__(self, id, studentId):
+        self.timestamp = datetime.now().strftime("%d.%m.%y %H:%M")
         self.id = id
-        self.student = student
+        self.studentId = studentId
         self.semester = ""
         self.module = ""
         self.exercise = ""
         self.level = ""
-        self.filePath = ""
+        self.files = ""
 
     def __repr__(self):
-        return f"Id={self.id} Student={self.student} Exercise={self.exercise}/{self.level} Time={self.timestamp}"
+        return f"Id={self.id} Student={self.studentId} Exercise={self.exercise}/{self.level} Time={self.timestamp}"

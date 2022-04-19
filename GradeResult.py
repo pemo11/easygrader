@@ -7,7 +7,7 @@ Defines the result of a grading action for the grade report
 class GradeResult:
 
     def __init__(self, type):
-        self.timestamp = datetime.now()
+        self.timestamp = datetime.now().strftime("%d.%m.%y %H:%M")
         self.type = type
         self.description = "None"
         self.points = 0

@@ -168,3 +168,50 @@ def getSubmissions():
             for file in tEntry[2]:
                 submissionDic[exercise][student].append(file)
     return submissionDic
+
+'''
+store submissions in the database
+'''
+def storeSubmissions() -> None:
+    # delete all previous submissions
+    DBHelper.clearAllSubmission(dbPath)
+    submissionCounter = 0
+    # get all submissions from the file system - key = exercise
+    dicSubmissions = getSubmissions()
+    for exercise in dicSubmissions:
+        for studentId in dicSubmissions[exercise]:
+            timestamp = datetime.datetime.now().strftime("%d.%m.%y %H:%M")
+            try:
+                result = DBHelper.storeSubmission(dbPath, timestamp, gradeSemester, gradeModule, exercise, studentId, False)
+                if result != -1:
+                    submissionCounter += 1
+                    infoMessage = f"submission for student {studentId} successfully stored in database"
+                    Loghelper.logInfo(infoMessage)
+                else:
+                    infoMessage = f"submission for student {studentId} could not be stored in database"
+                    Loghelper.logError(infoMessage)
+            except Exception as ex:
+                result = DBHelper.getStudentById(studentId)
+                student = result[0] if len(result > 0) else ""
+                infoMessage = f"submission for semester={gradeSemester} module={gradeModule} exercise={exercise} and student={student} could not store in the database ({ex})"
+                Loghelper.logError(infoMessage)
+    infoMessage = f"{submissionCounter} submissions were stored in the database"
+    Loghelper.logInfo(infoMessage)
+    print(f"*** {infoMessage} ***")
+
+    # put all current submissions in a dict
+    submissionDic2 = {}
+    for submissionDir in [d for d in os.listdir(submissionDestPath) if d != "rejects"]:
+        submission = SubmissionFile(submissionDir)
+        exercise = submission.exercise
+        if submissionDic.get(exercise) == None:
+            submissionDic[exercise] = []
+        student = submission.student
+        submissionDic[exercise].append(student)
+
+'''
+Gets all submissions from the database
+'''
+def getSubmissions() -> dict:
+    submissionDic = DBHelper.getSubmissions(dbPath)
+    print(submissionDic)

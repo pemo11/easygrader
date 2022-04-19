@@ -19,11 +19,13 @@ import zipfile
 import JavaFileHelper
 import ZipHelper
 import Loghelper
+import SubmissionValidationHelper
 
 from GradeAction import GradeAction
 from GradeResult import GradeResult
 from Submission import Submission
 from SubmissionFile import SubmissionFile
+from SubmissionValidationEntry import SubmissionValidationEntry
 import RosterHelper
 from XmlHelper import XmlHelper
 import JavaRunHelper
@@ -71,15 +73,15 @@ def initVariables():
     gradingOperator = config["run"]["gradingOperator"]
     submissionDestPath = os.path.join(tempfile.gettempdir(), appName, gradeSemester, gradeModule)
     # Delete the directory if it already exists
-    deleteSubmissionTree =  config["start"]["deleteSubmissionTree"]
+    deleteSubmissionTree = config["start"]["deleteSubmissionTree"]
     if not deleteSubmissionTree.upper().startswith("Y") and os.path.exists(submissionDestPath):
         shutil.rmtree(submissionDestPath)
-        infoMessage = f"Verzeichnis {submissionDestPath} wurde mit seinem Inhalt entfernt."
+        infoMessage = f"Deleted directory {submissionDestPath} with its content"
         Loghelper.logInfo(infoMessage)
     if not os.path.exists(submissionDestPath):
         # create directory with all the subdirectories
         os.makedirs(submissionDestPath)
-        infoMessage = f"Verzeichnis {submissionDestPath} wurde angelegt."
+        infoMessage = f"Created directory {submissionDestPath}"
         Loghelper.logInfo(infoMessage)
 
 # =============================================================================
@@ -126,7 +128,7 @@ Update: Its based on the fact that the Moodle download is a single zip file that
 another submission zip file which finally contains the submitted (zip) file
 the submission directory contains only one zip file, eg moodle_Submission_110422.zip
 '''
-def extractMoodleSubmissions() -> int:
+def extractMoodleSubmissions() -> dict:
     # extract zip file with all the submission zip files
     zipFiles = [fi for fi in os.listdir(submissionPath) if fi.endswith("zip")]
     # only one zip file allowed
@@ -159,7 +161,7 @@ def extractMoodleSubmissions() -> int:
         else:
             # check if the zip file only contains at least on file but not directories
             zipFi = zipfile.ZipFile(filePath)
-            fileNotValid = len(zipFi.namelist()) == 0 or len([f for f in zipFi.namelist() if len(f.split("/")) > 0]) > 0
+            fileNotValid = len(zipFi.namelist()) == 0 or len([f for f in zipFi.namelist() if len(f.split("/")) > 1]) > 0
             if fileNotValid:
                 infoMessage = f"extractMoodleSubmissions: {fi} does not contains files or contains directories"
                 Loghelper.logError(infoMessage)
@@ -185,8 +187,8 @@ def extractMoodleSubmissions() -> int:
     # go through all extracted submission files and extract all submitted files
     # submissionCount = ZipHelper.extractSubmissions(submissionDestPath, submissionDestPath)
     # Extract each submission zip file into its own directory
-    submissionCount = ZipHelper.extractSubmissionZips(submissionDestPath)
-    infoMessage = f"extractSubmissions - {submissionCount} submissions successfully extracted to {submissionDestPath}"
+    submissionFileCount = ZipHelper.extractSubmissionZips(submissionDestPath)
+    infoMessage = f"extractSubmissions - {submissionFileCount} submissions files successfully extracted to {submissionDestPath}"
     Loghelper.logInfo(infoMessage)
 
     # delete all zip files
@@ -198,65 +200,48 @@ def extractMoodleSubmissions() -> int:
 
     # start over with the extracted directories
     submissionProcessedCount = 0
-    studentId = ""
-    # Stores all submissions in the database - leave out the rejects dir
+    studentIdList = []
+    # delete all previous submissions
+    DBHelper.clearAllSubmission(dbPath)
+
+    # Process all submissions directories but leave out the rejects dir
     for submissionDir in [d for d in os.listdir(submissionDestPath) if d != "rejects"]:
         submissionDirPath = os.path.join(submissionDestPath, submissionDir)
-        for fi in [f for f in os.listdir(submissionDirPath) if os.path.isfile(f)]:
+        # for fi in [f for f in os.listdir(submissionDirPath) if os.path.isfile(os.path.join(submissionDirPath, f))]:
+        for fi in [f for f in os.listdir(submissionDirPath)]:
             if len(fi.split(".")) > 0 and fi.split(".")[1].lower() == "java":
                 javaFilePath = os.path.join(submissionDirPath, fi)
                 # get the studentid from java file
                 studentId = JavaFileHelper.getStudentId(javaFilePath)
-        # nur provisorisch - es dürfen nur files durchlaufen werden
-        if studentId == "":
-            # get the name of all files as string
-            files = ",".join(os.listdir(submissionDirPath))
+                if studentId != "":
+                    studentIdList.append(studentId)
+        # studentId in one of the java files?
+        if len(studentIdList) > 0:
+            studentId = studentIdList[0]
+        else:
+            # get id of student from the database
             submission = SubmissionFile(submissionDir)
-            exercise = submission.exercise
-            timestamp = datetime.now().strftime("%d.%m.%y %H:%M")
-            DBHelper.storeSubmission(dbPath, timestamp, gradeSemester, gradeModule, exercise, studentId, files, False)
-            submissionProcessedCount += 1
+            studentName = submission.student
+            studentId = DBHelper.getStudentId(dbPath, studentName)
+        # get the name of all files as string
+        files = ",".join(os.listdir(submissionDirPath))
+        submission = SubmissionFile(submissionDir)
+        exercise = submission.exercise
+        timestamp = datetime.now().strftime("%d.%m.%y %H:%M")
+        DBHelper.storeSubmission(dbPath, timestamp, gradeSemester, gradeModule, exercise, studentId, files, False)
+        submissionProcessedCount += 1
 
     infoMessage = f"{submissionProcessedCount} submissions stored in the database."
     Loghelper.logInfo(infoMessage)
 
-    return submissionCount
-
-
-'''
-'''
-def storeSubmissions():
-    # delete all previous submissions
-    DBHelper.clearAllSubmission(dbPath)
-    submissionCounter = 0
-    # get all submissions from the file system - key = exercise
-    dicSubmissions = getSubmissions()
-    for exercise in dicSubmissions:
-        for studentId in dicSubmissions[exercise]:
-            timestamp = datetime.datetime.now()
-            try:
-                DBHelper.storeSubmission(dbPath, timestamp, gradeSemester, gradeModule, exercise, studentId, False)
-                submissionCounter += 1
-            except Exception as ex:
-                result = DBHelper.getStudentById(studentId)
-                student = result[0] if len(result > 0) else ""
-                infoMessage = f"Submission für Semester={gradeSemester} Modul={gradeModule} Exercise={exercise} Student={student} konnte nicht in der Datenbank gespeichert werden. ({ex})"
-                Loghelper.logError(infoMessage)
-    infoMessage = f"{submissionCounter} Abgaben wurden in der Datenbank gespeichert."
-    Loghelper.logInfo(infoMessage)
-    print(f"*** {infoMessage} ***")
-
-'''
-Gets all submissions from the database
-'''
-def getSubmissions() -> dict:
     submissionDic = DBHelper.getSubmissions(dbPath)
-    print(submissionDic)
+
+    return submissionDic
 
 '''
 Output all submissions for a student by name 
 '''
-def showSubmissionsByStudent():
+def showSubmissionsByStudent() -> None:
     studentName = input("Name des Studenten?")
     # Replace blank with _ if necessary
     studentName = studentName.replace(" ", "_")
@@ -271,7 +256,7 @@ def showSubmissionsByStudent():
 '''
 Get all the gradings by student name from the database
 '''
-def showGradingsByStudent():
+def showGradingsByStudent() -> None:
     studentName = input("Name des Studenten?")
     rows = DBHelper.getStudentSubmissionResults(dbPath, studentName)
     if rows != None and len(rows) > 0:
@@ -283,7 +268,7 @@ def showGradingsByStudent():
 '''
 Outputs all grade runs from the database
 '''
-def showGradingRuns():
+def showGradingRuns() -> None:
     # returns tuples
     gradeRuns = DBHelper.getGradeRuns(dbPath)
     print("*" * 80)
@@ -296,7 +281,7 @@ def showGradingRuns():
 '''
 Start a grading run
 '''
-def startGradingRun():
+def startGradingRun() -> None:
     # Initiate grading plan
     xmlHelper = XmlHelper(gradingPlanPath)
     # XSD validation - but no consequences yet
@@ -310,11 +295,7 @@ def startGradingRun():
     gradeActionList = []
     # List for all grading results for the grading Result report
     gradeResultList = []
-    # Check if submissions had been already extracted
-    if not os.path.exists(submissionDestPath):
-        infoMessage = "Bitte zuerst alle Abgaben extrahieren!"
-        print(infoMessage)
-        return
+
     # get all Submissions from the file system as submission objects
     submissions = getSubmissions()
     # for clocking the grading run duration
@@ -323,17 +304,16 @@ def startGradingRun():
     # go through all submissions
     for submission in submissions:
         # get all the details from the submission object
-        taskName = submission.exercise
-        taskLevel = submission.level
+        exercise = submission.exercise
+        level = submission.level
         studentName = submission.student
         filePath = submission.filePath
 
         # go through all submitted files in the archive directory
         # get all file names from the gradinglan xml
-        exerciseFiles = xmlHelper.getFileList(taskName, taskLevel)
+        exerciseFiles = xmlHelper.getFileList(exercise, level)
         # get all file names from the submission
         submittedFiles = [fi for fi in os.listdir(filePath) if fi.endswith(".java")]
-        # javaFiles = [fi for fi in os.listdir(archivePath) if fi.endswith(".java")]
         # check if files are missing in submitted files
         missingFiles = [fi for fi in exerciseFiles if fi not in submittedFiles]
         if len(missingFiles) > 0:
@@ -342,7 +322,7 @@ def startGradingRun():
             return -1
         for javaFile in submittedFiles:
             # Get all actions for the task and level from the xml file
-            actionList = xmlHelper.getActionList(taskName, taskLevel)
+            actionList = xmlHelper.getActionList(exercise, level)
             # Go through all the actions
             for action in actionList:
                 # skip not active actions
@@ -376,8 +356,8 @@ def startGradingRun():
                     gradeResult.success = actionSuccess
                     gradeResultList.append(gradeResult)
 
-            # Get all the tests for the task
-            testList = xmlHelper.getTestList(taskName, taskLevel)
+            # Get all the tests for the exercise
+            testList = xmlHelper.getTestList(exercise, level)
             for test in testList:
                 if not eval(test.active):
                     infoMessage = f"Leaving out Test {test.name} for {javaFile}"
@@ -407,7 +387,7 @@ def startGradingRun():
                 gradeResultList.append(gradeResult)
 
     # Store grade run in the database
-    timestamp = datetime.datetime.now()
+    timestamp = datetime.datetime.now().strftime("%d.%m.%y %H:%M")
     okCount = len([gr for gr in gradeResultList if gr.success])
     errorCount = len([gr for gr in gradeResultList if not gr.success])
     gradeRunId = DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradeModule, gradingOperator, len(submissions), okCount, errorCount)
@@ -440,21 +420,18 @@ def startGradingRun():
 '''
 extract all submissions from file system and store them in the database
 '''
-def processSubmissions():
-    submissionCount = extractMoodleSubmissions()
-    infoMessage = f"{submissionCount} submissions extracted from the Moodle zip file"
-    Loghelper.logInfo(infoMessage)
-    if submissionDic == None:
-        print("*** Bitte zuerst alle Abgaben einlesen (Menüpunkt A) ***")
-        return
-
-    # Stores all submissions in the database
-    storeSubmissions()
-
-    # validate the roster file
+def processSubmissions() -> None:
+    # validate the roster file first
     if not RosterHelper.validateRoster(studentRosterPath):
         # roster file is not valid exit
         return
+
+    # extract alle the submissions from the downloaded zip file
+    submissionDic = extractMoodleSubmissions()
+    # flatten a list of lists and get the element count
+    submissionCount = len([item for sublist in [submissionDic[k] for k in submissionDic] for item in sublist])
+    infoMessage = f"{submissionCount} submissions for {len(submissionDic)} exercise extracted from the Moodle zip file"
+    Loghelper.logInfo(infoMessage)
 
     # Store the complete student roster in the database
     RosterHelper.saveRosterInDb(dbPath, gradeSemester, gradeModule, studentRosterPath)
@@ -462,13 +439,36 @@ def processSubmissions():
 '''
 validates all submissions in the database
 '''
-def validateSubmissions():
-    pass
+def validateSubmissions() -> None:
+    if submissionDic == None:
+        print("*** Bitte zuerst alle Abgaben einlesen (Menüpunkt A) ***")
+        return
+    validationEntrylist = []
+    for exercise in submissionDic:
+        # check if all student from the roster have valid submissions
+        exerciseSubmissions = submissionDic[exercise]
+        for studentSubmission in exerciseSubmissions:
+            studentId = studentSubmission.studentId
+            level = studentSubmission.level
+            submittedFiles = studentSubmission.files.split(",")
+            exerciseFiles = XmlHelper.getFileList(exercise, level)
+            # check if all submissions are complete
+            missingFiles = [fi for fi in exerciseFiles if fi not in submittedFiles]
+            if len(missingFiles) > 0:
+                infoMessage = f"!!! Missing files in Submission {studentSubmission.filePath}: {','.join(missingFiles)} !!!"
+                Loghelper.logError(infoMessage)
+                validationEntry = SubmissionValidationEntry()
+                validationEntry.message = infoMessage
+                validationEntrylist.append(validationEntry)
+            else:
+                pass
+
+        XmlHelper.generateSubmissionValidationReport(validationEntrylist)
 
 '''
 Main starting point
 '''
-def start():
+def start() -> None:
     initVariables()
     infoMessage = f"Starting {appName} (Version {appVersion}) - executing {gradingPlanPath}"
     Loghelper.logInfo(infoMessage)
@@ -492,7 +492,7 @@ def start():
         if choice == "Q":
             exitFlag = True
         elif choice == "A":                 # Process all submissions from the submission zip file
-           processSubmissions()
+            processSubmissions()
         elif choice == "B":                 # Validates submissions in the database for missing submissions and files
             validateSubmissions()
         elif choice == "C":                 # Start grading all submissions

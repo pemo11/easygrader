@@ -84,7 +84,7 @@ def extractArchive(zipPath, destPath) -> int:
     try:
         with zipfile.ZipFile(zipPath, mode="r") as fh:
             fh.extractall(destPath)
-        fileCount = len([fi for fi in os.listdir(destPath) if fi.endswith("zip")])
+        fileCount = len([fi for fi in os.listdir(destPath) if not fi.endswith("zip")])
     except Exception as ex:
         infoMessage = f"extractArchive - error {ex}"
         Loghelper.logError(infoMessage)

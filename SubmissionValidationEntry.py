@@ -1,9 +1,9 @@
-# file: SubmissionErrorEntry
+# file: SubmissionValidationEntry.py
 
 '''
 Represents a single submission error
 '''
-class SubmissionErrorEntry:
+class SubmissionValidationEntry:
 
     def __init__(self, type, message):
         self.type = type

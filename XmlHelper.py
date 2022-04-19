@@ -17,19 +17,19 @@ class XmlHelper:
     def __init__(self, xmlFile):
         self.xmlPath = path.join(path.dirname(__file__), xmlFile)
         today = datetime.now().strftime("%d-%m-%Y")
-        gradingReportName = f"GradingResultReport_{today}.xml"
-        self.gradeReportPath = path.join(path.dirname(__file__), gradingReportName)
+        gradingReportname = f"GradingResultReport_{today}.xml"
+        self.gradeReportpath = path.join(path.dirname(__file__), gradingReportname)
         actionReportName = f"GradingActionReport_{today}.xml"
         self.actionReportPath = path.join(path.dirname(__file__), actionReportName)
-        submissionErrorReportName = f"SubmissionErrorReport_{today}.xml"
-        self.submissionErrorReportPath = path.join(path.dirname(__file__), submissionErrorReportName)
+        submissionValidationReportname = f"SubmissionValidationReport_{today}.xml"
+        self.submissionErrorReportpath = path.join(path.dirname(__file__), submissionValidationReportname)
         self.root = et.parse(self.xmlPath)
 
     '''
-    Get all actions associated with this task and level
+    Get all actions associated with this exercise and level
     '''
-    def getActionList(self, taskName, taskLevel):
-        xPathExpr = f".//sig:task[@name='{taskName}' and @level='{taskLevel}']/actions/action"
+    def getActionList(self, exercise, level):
+        xPathExpr = f".//sig:task[@name='{exercise}' and @level='{level}']/actions/action"
         actionElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         actionList = []
         for action in actionElements:
@@ -38,10 +38,10 @@ class XmlHelper:
         return actionList
 
     '''
-    Get all tests associated with this task and level
+    Get all tests associated with this exercise and level
     '''
-    def getTestList(self, taskName, taskLevel):
-        xPathExpr = f".//sig:task[@name='{taskName}' and @level='{taskLevel}']/tests/test"
+    def getTestList(self, exercise, level):
+        xPathExpr = f".//sig:task[@name='{exercise}' and @level='{level}']/tests/test"
         testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         testList = []
         for test in testElements:
@@ -57,8 +57,8 @@ class XmlHelper:
     '''
     Get all files associated with this task and level
     '''
-    def getFileList(self, taskName, taskLevel):
-        xPathExpr = f".//sig:task[@name='{taskName}' and @level='{taskLevel}']/files/file"
+    def getFileList(self, exercise, level):
+        xPathExpr = f".//sig:task[@name='{exercise}' and @level='{level}']/files/file"
         fileElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         fileList = [fi for fi in fileElements] # May be a filter if fi.endswith(".java") is needed
         return fileList
@@ -132,7 +132,7 @@ class XmlHelper:
             with open(htmlPath, "w", encoding="utf-8") as fh:
                 fh.writelines(htmlLines)
         except Exception as ex:
-            infoMessage = f"XmlHelper->convertGradingReport2Html: Fehler {ex}"
+            infoMessage = f"XmlHelper: convertGradingReport2Html: Fehler {ex}"
             Loghelper.logError(infoMessage)
         return htmlPath
 
@@ -151,33 +151,33 @@ class XmlHelper:
         return result
 
     '''
-    Generates a Xml file for all submission errors
+    Generates a Xml file for all submission validation entries
     '''
-    def generateSubmissioErrorReport(self, submissionErrorList):
+    def generateSubmissionValidationReport(self, submissionValidationList):
         root = et.Element("report")
-        for submissionError in submissionErrorList:
-            subError = et.SubElement(root, "submissionError")
-            errorType = et.SubElement(subError, "type")
-            errorMessage = et.SubElement(subError, "message")
-            errorMessage.text = submissionError.message
-            errorType.text = submissionError.type
-            timeStamp = et.SubElement(subError, "timestamp")
-            timeStamp.text = datetime.strftime(submissionError.timestamp, "%d.%m.%Y-%H:%M")
+        for submissionEntry in submissionValidationList:
+            subValidation = et.SubElement(root, "submissionValidation")
+            validationType = et.SubElement(subValidation, "type")
+            validationType.text = subValidation.type
+            validationMessage = et.SubElement(subValidation, "message")
+            validationMessage.text = subValidation.message
+            timeStamp = et.SubElement(subValidation, "timestamp")
+            timeStamp.text = datetime.strftime(submissionEntry.timestamp, "%d.%m.%Y-%H:%M")
 
         # Write the report
         tree = et.ElementTree(root)
-        tree.write(self.submissionErrorReportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        tree.write(self.submissionValidationReportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
 
-        return self.submissionErrorReportPath
+        return self.submissionValidationReportPath
 
     '''
-    Converts a submission error xml report into html
+    Converts a submission validation xml report into html
     '''
-    def convertSubmissionErrorReport2Html(self, xmlPath):
+    def convertSubmissionValidationReport2Html(self, xmlPath):
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
-            xsltPath = "SubmissionErrorReport.xslt"
+            xsltPath = "SubmissionValidationReport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
@@ -188,6 +188,6 @@ class XmlHelper:
             with open(htmlPath, "w", encoding="utf-8") as fh:
                 fh.writelines(htmlLines)
         except Exception as ex:
-            infoMessage = f"XmlHelper->convertSubmissionErrorReport2Html: Fehler {ex}"
+            infoMessage = f"XmlHelper: convertSubmissionErrorReport2Html: Fehler {ex}"
             Loghelper.logError(infoMessage)
         return htmlPath
