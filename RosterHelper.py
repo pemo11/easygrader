@@ -1,4 +1,5 @@
 # file: RosterHelper.py
+import re
 
 import DBHelper
 import Loghelper
@@ -7,9 +8,9 @@ import csv
 ''''
 Stores the roster CSV file into the database
 '''
-def saveRosterInDb(dbPath, semester, module, csvPath) -> None:
+def saveRosterInDb(dbPath, semester, module, rosterPath) -> None:
     try:
-        with open(csvPath, mode="r", encoding="utf8") as fh:
+        with open(rosterPath, mode="r", encoding="utf8") as fh:
             csvReader = csv.reader(fh, delimiter=",")
             # Immer wieder genial
             keys = next(fh).split(",")
@@ -24,15 +25,59 @@ def saveRosterInDb(dbPath, semester, module, csvPath) -> None:
                 exercises = ",".join(row[3:])
                 # store roster entry in database
                 DBHelper.storeRoster(dbPath, semester, module, studentId, exercises)
-        infoMessage = f"saveRosterInDb: Roster from {csvPath} file was saved in db"
+        infoMessage = f"saveRosterInDb: Roster from {rosterPath} file was saved in db"
         Loghelper.logInfo(infoMessage)
     except Exception as ex:
         infoMessage = f"saveRosterInDb: {ex}"
         Loghelper.logError(infoMessage)
 
-''''
+'''
+Validates the roster file for missing columns and unique keys
+'''
+def validateRoster(rosterPath) -> bool:
+    try:
+        with open(rosterPath, mode="r", encoding="utf8") as fh:
+            csvReader = csv.reader(fh, delimiter=",")
+            # Immer wieder genial
+            csvKeys = next(fh).split(",")
+            # Letztes \n abtrennen (auch irgendwie genial)
+            csvKeys[-1] = csvKeys[-1].strip()
+            # check for all keys
+            keysNeeded = ["Name","StudentId","EMail","Exercises"]
+            for key in keysNeeded:
+                if not key in keysNeeded:
+                    infoMessage = f"validateRoster->missing {key} in {rosterPath}"
+                    Loghelper.logError(infoMessage)
+                    return False
+
+            # check for unique ids
+            dictId = {}
+            for row in csvReader:
+                studentId = row[1]
+                if dictId.get(studentId) != None:
+                    infoMessage = f"validateRoster->{studentId} is not unique in {rosterPath}"
+                    Loghelper.logError(infoMessage)
+                    return False
+
+            # check for valid email address
+            # TODO: Better pattern
+            mailPattern = "(.+)@(.+)"
+            for row in csvReader:
+                studentMail = row[2]
+                if not re.match(mailPattern, studentMail):
+                    infoMessage = f"validateRoster->{studentMail} is not valid in {rosterPath}"
+                    Loghelper.logError(infoMessage)
+                    return False
+
+            return True
+    except Exception as ex:
+        infoMessage = f"validateRoster: {ex}"
+        Loghelper.logError(infoMessage)
+
+'''
 Updates the roster with the submissions
 '''
 def updateStudentRoster():
     pass
+
 

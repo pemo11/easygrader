@@ -10,11 +10,12 @@ class SubmissionFile:
         # subnamePattern1 = "(?P<task>\w+)_Level(?P<level>\w)_(?P<student>[_\w]+)\.zip"
         # Der "Trick des Jahres" - non greedy dank *? anstelle von +, damit der Vorname nicht dem Aufgabenname zugeordnet wird
         # subnamePattern = "(?P<task>\w*?)_(?P<student>[_\w]+)\.zip"
-        subnamePattern = "(?P<exercise>\w*?)_(?P<first>[\w]+)_(?P<last>[\w]+)\.zip"
+        # subnamePattern = "(?P<exercise>\w*?)_(?P<first>[\w]+)_(?P<last>[\w]+)\.zip"
+        subnamePattern = "(?P<exercise>\w*?)_(?P<first>[\w]+)_(?P<last>[\w]+)"
         # nameElements = list(re.finditer(subnamePattern, submissionFile))
         # findall only returns a list - use finditer to get the named capture groups
         # eg. list(re.finditer(pa, fiName))[0].group("exercise")
-        matchList = re.findall(subnamePattern, submissionFile)
+        matchList = list(re.finditer(subnamePattern, submissionFile))[0].groups()
         # all matches matched?
         if len(matchList) == 3:
             exercise = matchList[0]

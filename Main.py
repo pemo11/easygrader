@@ -1,10 +1,10 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 16/04/22
+# Letztes Update: 19/04/22
 # Version 0.5
 # =============================================================================
-import datetime
+from datetime import datetime
 import os
 import re
 import shutil
@@ -14,6 +14,9 @@ import subprocess
 import csv
 import colorama
 from colorama import Fore, Back, Style
+import zipfile
+
+import JavaFileHelper
 import ZipHelper
 import Loghelper
 
@@ -96,11 +99,11 @@ Shows application main menue
 '''
 def showMenu():
     menuList = []
-    menuList.append("Alle Abgaben einlesen")
-    menuList.append("Alle Abgaben verarbeiten")
+    menuList.append("Abgaben einlesen")
+    menuList.append("Abgaben validieren (optional)")
     menuList.append(Fore.LIGHTYELLOW_EX + "Bewertungsdurchlauf starten" + Style.RESET_ALL)
-    menuList.append("Alle Bewertungsdurchläufe anzeigen")
-    menuList.append("Alle Bewertungen eines Studenten anzeigen")
+    menuList.append("Bewertungsdurchläufe anzeigen")
+    menuList.append("Bewertungen eines Studenten anzeigen")
     print("=" * 80)
     prompt = "Eingabe ("
     for i, menuItem in enumerate(menuList):
@@ -120,7 +123,7 @@ Extracts all submission files downloaded from Moodle
 This methods is always run first to make the submissions accessible for grading and 
 other operations
 Update: Its based on the fact that the Moodle download is a single zip file that contains
-another submission zip file which finally contains the submitted zip file
+another submission zip file which finally contains the submitted (zip) file
 the submission directory contains only one zip file, eg moodle_Submission_110422.zip
 '''
 def extractMoodleSubmissions() -> int:
@@ -144,24 +147,37 @@ def extractMoodleSubmissions() -> int:
     filePattern = "(\w+)_(\w+)_(\w+)\.zip"
     fileErrorCount = 0
     fileCount = len(os.listdir(submissionDestPath))
-    # check only files not directories if they match the name pattern for a submission zip file
-    for fi in [f for f in os.listdir(submissionDestPath) if os.path.isfile(f)]:
+    # check all files (not directories) if they match the name pattern for a submission zip file
+    for fi in [f for f in os.listdir(submissionDestPath) if os.path.isfile(os.path.join(submissionDestPath, f))]:
+        fileNotValid = False
         # does the filename matches the pattern?
-        if not re.match(filePattern, fi):
-            # move file to special directory
+        filePath = os.path.join(submissionDestPath, fi)
+        fileNotValid = not re.match(filePattern, fi)
+        if fileNotValid:
+            infoMessage = f"extractMoodleSubmissions: {fi} does not match name pattern"
+            Loghelper.logError(infoMessage)
+        else:
+            # check if the zip file only contains at least on file but not directories
+            zipFi = zipfile.ZipFile(filePath)
+            fileNotValid = len(zipFi.namelist()) == 0 or len([f for f in zipFi.namelist() if len(f.split("/")) > 0]) > 0
+            if fileNotValid:
+                infoMessage = f"extractMoodleSubmissions: {fi} does not contains files or contains directories"
+                Loghelper.logError(infoMessage)
+            # to prevent PermissionError
+            zipFi.close()
+        # if file is not valid move file to special directory
+        if fileNotValid:
             rejectDirPath = os.path.join(submissionDestPath, "rejects")
             if not os.path.exists(rejectDirPath):
                 os.mkdir(rejectDirPath)
                 infoMessage = f"extractMoodleSubmissions: {rejectDirPath} directory created"
                 Loghelper.logInfo(infoMessage)
             fileErrorCount += 1
-            infoMessage = f"extractMoodleSubmissions: {fi} does not match name pattern"
-            Loghelper.logError(infoMessage)
             # Move fi to the rejects directory
-            filePath = os.path.join(submissionDestPath, fi)
-            shutil.move(filePath, rejectDirPath)
-            infoMessage = f"extractMoodleSubmissions: {filePath} moved to {rejectDirPath}"
-            Loghelper.logInfo(infoMessage)
+            if not os.path.exists(os.path.join(rejectDirPath, fi)):
+                shutil.move(filePath, rejectDirPath)
+                infoMessage = f"extractMoodleSubmissions: {fi} moved to {rejectDirPath}"
+                Loghelper.logInfo(infoMessage)
     if fileErrorCount > 0:
         infoMessage = f"extractMoodleSubmissions: {fileErrorCount} of {fileCount} does not match name pattern"
         Loghelper.logError(infoMessage)
@@ -172,23 +188,42 @@ def extractMoodleSubmissions() -> int:
     submissionCount = ZipHelper.extractSubmissionZips(submissionDestPath)
     infoMessage = f"extractSubmissions - {submissionCount} submissions successfully extracted to {submissionDestPath}"
     Loghelper.logInfo(infoMessage)
+
     # delete all zip files
     for fiZip in [fi for fi in os.listdir(submissionDestPath) if fi.endswith("zip")]:
         fiPath = os.path.join(submissionDestPath, fiZip)
         os.remove(fiPath)
-        infoMessage = f"extractSubmissions - {fiPath} deleted"
+        infoMessage = f"extractSubmissions - {fiZip} deleted"
         Loghelper.logInfo(infoMessage)
+
+    # start over with the extracted directories
+    submissionProcessedCount = 0
+    studentId = ""
+    # Stores all submissions in the database - leave out the rejects dir
+    for submissionDir in [d for d in os.listdir(submissionDestPath) if d != "rejects"]:
+        submissionDirPath = os.path.join(submissionDestPath, submissionDir)
+        for fi in [f for f in os.listdir(submissionDirPath) if os.path.isfile(f)]:
+            if len(fi.split(".")) > 0 and fi.split(".")[1].lower() == "java":
+                javaFilePath = os.path.join(submissionDirPath, fi)
+                # get the studentid from java file
+                studentId = JavaFileHelper.getStudentId(javaFilePath)
+        # nur provisorisch - es dürfen nur files durchlaufen werden
+        if studentId == "":
+            # get the name of all files as string
+            files = ",".join(os.listdir(submissionDirPath))
+            submission = SubmissionFile(submissionDir)
+            exercise = submission.exercise
+            timestamp = datetime.now().strftime("%d.%m.%y %H:%M")
+            DBHelper.storeSubmission(dbPath, timestamp, gradeSemester, gradeModule, exercise, studentId, files, False)
+            submissionProcessedCount += 1
+
+    infoMessage = f"{submissionProcessedCount} submissions stored in the database."
+    Loghelper.logInfo(infoMessage)
+
     return submissionCount
 
-'''
-Gets all submissions from the database
-'''
-def getSubmissions() -> dict:
-    submissionDic = DBHelper.getSubmissions(dbPath)
-    print(submissionDic)
 
 '''
-Stores all submissions in the database
 '''
 def storeSubmissions():
     # delete all previous submissions
@@ -210,6 +245,13 @@ def storeSubmissions():
     infoMessage = f"{submissionCounter} Abgaben wurden in der Datenbank gespeichert."
     Loghelper.logInfo(infoMessage)
     print(f"*** {infoMessage} ***")
+
+'''
+Gets all submissions from the database
+'''
+def getSubmissions() -> dict:
+    submissionDic = DBHelper.getSubmissions(dbPath)
+    print(submissionDic)
 
 '''
 Output all submissions for a student by name 
@@ -250,7 +292,6 @@ def showGradingRuns():
               f" OK-Count:{gradeRun[4]} ErrorCount:{gradeRun[5]}")
     print("*" * 80)
     print()
-
 
 '''
 Start a grading run
@@ -397,17 +438,12 @@ def startGradingRun():
 # =============================================================================
 
 '''
-reads all the submissions from the file system
-'''
-def readSubmissions():
-    submissionCount = extractMoodleSubmissions()
-    infoMessage = f"{submissionCount} submissions eingelesen"
-    Loghelper.logInfo(infoMessage)
-
-'''
-processes the submissions and store them in the database
+extract all submissions from file system and store them in the database
 '''
 def processSubmissions():
+    submissionCount = extractMoodleSubmissions()
+    infoMessage = f"{submissionCount} submissions extracted from the Moodle zip file"
+    Loghelper.logInfo(infoMessage)
     if submissionDic == None:
         print("*** Bitte zuerst alle Abgaben einlesen (Menüpunkt A) ***")
         return
@@ -415,8 +451,19 @@ def processSubmissions():
     # Stores all submissions in the database
     storeSubmissions()
 
+    # validate the roster file
+    if not RosterHelper.validateRoster(studentRosterPath):
+        # roster file is not valid exit
+        return
+
     # Store the complete student roster in the database
     RosterHelper.saveRosterInDb(dbPath, gradeSemester, gradeModule, studentRosterPath)
+
+'''
+validates all submissions in the database
+'''
+def validateSubmissions():
+    pass
 
 '''
 Main starting point
@@ -444,10 +491,10 @@ def start():
         choice = showMenu().upper()
         if choice == "Q":
             exitFlag = True
-        elif choice == "A":                 # Read all submissions from the submission zip file
-            readSubmissions()
-        elif choice == "B":                 # Process all submissions from the submission directory
-            processSubmissions()
+        elif choice == "A":                 # Process all submissions from the submission zip file
+           processSubmissions()
+        elif choice == "B":                 # Validates submissions in the database for missing submissions and files
+            validateSubmissions()
         elif choice == "C":                 # Start grading all submissions
             startGradingRun()
         elif choice == "D":                 # Show all grading runs

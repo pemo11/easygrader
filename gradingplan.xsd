@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="urn:simpleGrader" xmlns:sig="urn:simpleGrader">
+  <xs:element name="tasks">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="sig:task"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="task">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="description" form="unqualified" type="xs:string"/>
+        <xs:element name="files" form="unqualified">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" name="file" form="unqualified" type="xs:NCName"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="actions" form="unqualified">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="action" form="unqualified">
+                <xs:complexType mixed="true">
+                  <xs:attribute name="active" use="required" type="xs:NCName"/>
+                  <xs:attribute name="id" use="required" type="xs:integer"/>
+                  <xs:attribute name="type" use="required" type="xs:NCName"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="tests" form="unqualified">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" name="test" form="unqualified">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="test-type" form="unqualified" type="xs:NCName"/>
+                    <xs:element name="test-name" form="unqualified" type="xs:string"/>
+                    <xs:element minOccurs="0" name="test-class" form="unqualified" type="xs:NCName"/>
+                    <xs:element name="test-description" form="unqualified" type="xs:string"/>
+                    <xs:choice>
+                      <xs:element name="test-driver" form="unqualified" type="xs:NCName"/>
+                      <xs:element name="test-method" form="unqualified" type="xs:NCName"/>
+                    </xs:choice>
+                    <xs:element name="test-score" form="unqualified" type="xs:integer"/>
+                  </xs:sequence>
+                  <xs:attribute name="active" use="required" type="xs:NCName"/>
+                  <xs:attribute name="id" use="required" type="xs:integer"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="exercise" use="required" type="xs:NCName"/>
+      <xs:attribute name="id" use="required" type="xs:integer"/>
+      <xs:attribute name="level" use="required" type="xs:NCName"/>
+      <xs:attribute name="passingMark" use="required" type="xs:decimal"/>
+      <xs:attribute name="title" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

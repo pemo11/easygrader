@@ -40,7 +40,7 @@ def initDb(dbPath):
     try:
         dbCon = sqlite3.connect(dbPath)
         dbCon.execute(sqlKommando)
-        infoMessage = "*** Tabelle GradeRun wurde angelegt ***"
+        infoMessage = f"Tabelle GradeRun wurde angelegt"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
         infoMessage = f"Fehler beim Anlegen der Tabelle GradeRun {ex}"
@@ -66,7 +66,7 @@ def initDb(dbPath):
     try:
         dbCon = sqlite3.connect(dbPath)
         dbCon.execute(sqlKommando)
-        infoMessage = "*** Tabelle Submission wurde angelegt ***"
+        infoMessage = f"Tabelle Submission wurde angelegt"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
         infoMessage = f"Fehler beim Anlegen der Tabelle Submission {ex}"
@@ -95,7 +95,7 @@ def initDb(dbPath):
     try:
         dbCon = sqlite3.connect(dbPath)
         dbCon.execute(sqlKommando)
-        infoMessage = "*** Tabelle SubmissionResult wurde angelegt ***"
+        infoMessage = f"Tabelle SubmissionResult wurde angelegt"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
         infoMessage = f"Fehler beim Anlegen der Tabelle SubmissionResult {ex}"
@@ -118,7 +118,7 @@ def initDb(dbPath):
     try:
         dbCon = sqlite3.connect(dbPath)
         dbCon.execute(sqlKommando)
-        infoMessage = "*** Tabelle Student wurde angelegt ***"
+        infoMessage = f"Tabelle Student wurde angelegt"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
         infoMessage = f"Fehler beim Anlegen der Tabelle Student {ex}"
@@ -140,7 +140,7 @@ def initDb(dbPath):
     try:
         dbCon = sqlite3.connect(dbPath)
         dbCon.execute(sqlKommando)
-        infoMessage = "*** Tabelle Roster wurde angelegt ***"
+        infoMessage = f"Tabelle Roster wurde angelegt"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
         infoMessage = f"Fehler beim Anlegen der Tabelle Roster {ex}"
@@ -168,7 +168,7 @@ def storeGradeRun(dbPath, timestamp, semester, module, operator, submissionCount
         dbCur = dbCon.cursor()
         dbCur.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = "*** Datensatz wurde zur Tabelle GradeRun hinzugefügt ***"
+        infoMessage = f"Ein Datensatz wurde zur Tabelle GradeRun hinzugefügt"
         Loghelper.logInfo(infoMessage)
         # return the id of the new record
         return dbCur.lastrowid
@@ -181,7 +181,7 @@ def storeGradeRun(dbPath, timestamp, semester, module, operator, submissionCount
 '''
 Stores a single submission of a student
 '''
-def storeSubmission(dbPath, timestamp, semester, module, exercise, student, matricleId, files, complete):
+def storeSubmission(dbPath, timestamp, semester, module, exercise, studentId, files, complete):
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
@@ -189,14 +189,14 @@ def storeSubmission(dbPath, timestamp, semester, module, exercise, student, matr
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Insert Into Submission (Timestamp,Semester,Module,Exercise,Student,MatricleId,Files,Complete) "
+    sqlKommando = "Insert Into Submission (Timestamp,Semester,Module,Exercise,StudentId,Files,Complete) "
     sqlKommando += f"Values('{timestamp}','{semester}','{module}','{exercise}',"
-    sqlKommando += f"'{student}',{matricleId},'{files}','{complete}')"
+    sqlKommando += f"'{studentId}','{files}','{complete}')"
     try:
         dbCur = dbCon.cursor()
         dbCur.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = "*** Datensatz wurde zur Tabelle Submission hinzugefügt ***"
+        infoMessage = f"Ein Datensatz wurde zur Tabelle Submission hinzugefügt"
         Loghelper.logInfo(infoMessage)
         # return the id of the new record
         return dbCur.lastrowid
@@ -221,7 +221,7 @@ def clearAllSubmission(dbPath):
     try:
         dbCon.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = "*** Alle Datensätze in der Tabelle Submission wurden gelöscht ***"
+        infoMessage = f"Alle Datensätze in der Tabelle Submission wurden gelöscht"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
         infoMessage = f"Fehler beim Löschen aller Datensätze in die Submission-Tabelle {ex}"
@@ -309,7 +309,7 @@ def storeSubmissionResult(dbPath, gradeRunId, student, exercise, level, semester
         dbCur = dbCon.cursor()
         dbCur.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = "*** Datensatz wurde zur Tabelle SubmissionResult hinzugefügt ***"
+        infoMessage = f"Ein Datensatz wurde zur Tabelle SubmissionResult hinzugefügt"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
         infoMessage = f"Fehler beim Einfügen eines Datensatzes in die SubmissionResult-Tabelle {ex}"
@@ -448,9 +448,11 @@ def storeStudent(dbPath, studentId, studentName, studentEMail) -> int:
         # any data?
         if row != None:
             # what data to return?
+            infoMessage = f"Student with id={row[0]} already exists"
+            Loghelper.logInfo(infoMessage)
             return row[0]
     except Error as ex:
-        infoMessage = f"Fehler beim Abfragen der Student-Tabelle {ex}"
+        infoMessage = f"error querying student table {ex}"
         Loghelper.logError(infoMessage)
         return -1
 
@@ -467,7 +469,7 @@ def storeStudent(dbPath, studentId, studentName, studentEMail) -> int:
         dbCur = dbCon.cursor()
         dbCur.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = "*** Datensatz wurde zur Tabelle Student hinzugefügt (id={dbCur.lastrowid}) ***"
+        infoMessage = f"Ein Datensatz wurde zur Tabelle Student hinzugefügt (id={dbCur.lastrowid})"
         Loghelper.logInfo(infoMessage)
         # return the id of the new record
         return dbCur.lastrowid
@@ -480,7 +482,7 @@ def storeStudent(dbPath, studentId, studentName, studentEMail) -> int:
 '''
 stores a student roster 
 '''
-def storeRoster(dbPath, studentId, semester, module, exercises) -> int:
+def storeRoster(dbPath, semester, module, studentId, exercises) -> int:
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
@@ -488,11 +490,12 @@ def storeRoster(dbPath, studentId, semester, module, exercises) -> int:
         Loghelper.logError(infoMessage)
 
     try:
-        sqlKommando = f"Insert Into Roster Values ('{studentId}','{semester}','{module}','{exercises}')"
+        studentId = int(studentId)
+        sqlKommando = f"Insert Into Roster Values ({studentId},'{semester}','{module}','{exercises}')"
         dbCur = dbCon.cursor()
         dbCur.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = "*** Datensatz wurde zur Tabelle Roster hinzugefügt (id={dbCur.lastrowid}) ***"
+        infoMessage = f"Ein Datensatz wurde zur Tabelle Roster hinzugefügt (id={dbCur.lastrowid})"
         Loghelper.logInfo(infoMessage)
         # return the id of the new record
         return dbCur.lastrowid
