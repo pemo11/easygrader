@@ -173,7 +173,7 @@ def storeGradeRun(dbPath, timestamp, semester, module, operator, submissionCount
         dbCur = dbCon.cursor()
         dbCur.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = f"Inserted row into table GradeRun"
+        infoMessage = f"Inserted row into table GradeRun (id={dbCur.lastrowid})"
         Loghelper.logInfo(infoMessage)
         # return the id of the new record
         return dbCur.lastrowid
@@ -201,7 +201,7 @@ def storeSubmission(dbPath, timestamp, semester, module, exercise, studentId, fi
         dbCur = dbCon.cursor()
         dbCur.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = f"storeSubmission: row inserted into Submission table"
+        infoMessage = f"storeSubmission: row inserted into Submission table (id={dbCur.lastrowid})"
         Loghelper.logInfo(infoMessage)
         # return the id of the new record
         return dbCur.lastrowid
@@ -270,7 +270,7 @@ def getSubmissions(dbPath) -> dict:
                 dict[exercise] = {}
             if dict[exercise].get(student) == None:
                 dict[exercise][student] = []
-            submission = Submission(id)
+            submission = Submission(id, studentId)
             submission.studentId = studentId
             submission.exercise = exercise
             submission.level = level
@@ -467,16 +467,18 @@ def getStudentById(dbPath, studentId) -> Student:
         cur = dbCon.cursor()
         cur.execute(sqlKommando, (studentId,))
         row = cur.fetchone()
-        student = Student(studentId)
-        student.firstName = row[0]
-        student.lastName = row[1]
-        student.EMail = row[2]
-        return student
+        if row != None:
+            student = Student(studentId)
+            student.firstName = row[0]
+            student.lastName = row[1]
+            student.email = row[2]
+            return student
+        else:
+            return None
     except Error as ex:
         infoMessage = f"getStudentById: error querying student table ({ex})"
         Loghelper.logError(infoMessage)
         return None
-
 
 '''
 stores a student
@@ -519,7 +521,7 @@ def storeStudent(dbPath, studentId, studentName, studentEMail) -> int:
         dbCur = dbCon.cursor()
         dbCur.execute(sqlKommando)
         dbCon.commit()
-        infoMessage = f"storeStudent: row added to table Student (id={dbCur.lastrowid})"
+        infoMessage = f"storeStudent: row inserted in Student table (id={dbCur.lastrowid})"
         Loghelper.logInfo(infoMessage)
         # return the id of the new record
         return dbCur.lastrowid

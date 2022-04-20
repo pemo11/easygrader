@@ -20,11 +20,10 @@ class XmlHelper:
         gradingReportname = f"GradingResultReport_{today}.xml"
         self.gradeReportpath = path.join(path.dirname(__file__), gradingReportname)
         actionReportName = f"GradingActionReport_{today}.xml"
-        self.actionReportPath = path.join(path.dirname(__file__), actionReportName)
+        self.actionReportpath = path.join(path.dirname(__file__), actionReportName)
         submissionValidationReportname = f"SubmissionValidationReport_{today}.xml"
-        self.submissionErrorReportpath = path.join(path.dirname(__file__), submissionValidationReportname)
+        self.submissionValidationReportpath = path.join(path.dirname(__file__), submissionValidationReportname)
         self.root = et.parse(self.xmlPath)
-
     '''
     Get all actions associated with this exercise and level
     '''
@@ -60,7 +59,7 @@ class XmlHelper:
     def getFileList(self, exercise, level):
         xPathExpr = f".//sig:task[@name='{exercise}' and @level='{level}']/files/file"
         fileElements = self.root.xpath(xPathExpr, namespaces=nsmap)
-        fileList = [fi for fi in fileElements] # May be a filter if fi.endswith(".java") is needed
+        fileList = [fi.text for fi in fileElements] # May be a filter if fi.endswith(".java") is needed
         return fileList
 
     '''
@@ -87,9 +86,9 @@ class XmlHelper:
 
         # Write the report
         tree = et.ElementTree(root)
-        tree.write(self.gradeReportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        tree.write(self.gradeReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
 
-        return self.gradeReportPath
+        return self.gradeReportpath
 
     '''
     Generates an XML report from the list of submission errors
@@ -158,17 +157,17 @@ class XmlHelper:
         for submissionEntry in submissionValidationList:
             subValidation = et.SubElement(root, "submissionValidation")
             validationType = et.SubElement(subValidation, "type")
-            validationType.text = subValidation.type
+            validationType.text = submissionEntry.type
             validationMessage = et.SubElement(subValidation, "message")
-            validationMessage.text = subValidation.message
+            validationMessage.text = submissionEntry.message
             timeStamp = et.SubElement(subValidation, "timestamp")
             timeStamp.text = datetime.strftime(submissionEntry.timestamp, "%d.%m.%Y-%H:%M")
 
         # Write the report
         tree = et.ElementTree(root)
-        tree.write(self.submissionValidationReportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        tree.write(self.submissionValidationReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
 
-        return self.submissionValidationReportPath
+        return self.submissionValidationReportpath
 
     '''
     Converts a submission validation xml report into html

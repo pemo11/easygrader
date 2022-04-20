@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 19/04/22
+# Letztes Update: 20/04/22
 # Version 0.5
 # =============================================================================
 from datetime import datetime
@@ -200,12 +200,12 @@ def extractMoodleSubmissions() -> dict:
 
     # start over with the extracted directories
     submissionProcessedCount = 0
-    studentIdList = []
     # delete all previous submissions
     DBHelper.clearAllSubmission(dbPath)
 
     # Process all submissions directories but leave out the rejects dir
     for submissionDir in [d for d in os.listdir(submissionDestPath) if d != "rejects"]:
+        studentIdList = []
         submissionDirPath = os.path.join(submissionDestPath, submissionDir)
         # for fi in [f for f in os.listdir(submissionDirPath) if os.path.isfile(os.path.join(submissionDirPath, f))]:
         for fi in [f for f in os.listdir(submissionDirPath)]:
@@ -234,9 +234,10 @@ def extractMoodleSubmissions() -> dict:
     infoMessage = f"{submissionProcessedCount} submissions stored in the database."
     Loghelper.logInfo(infoMessage)
 
-    submissionDic = DBHelper.getSubmissions(dbPath)
-
-    return submissionDic
+    # return value is a dictionary with exercise as a key for a dict with student as key for each submission
+    dic = DBHelper.getSubmissions(dbPath)
+    # return dictionary to the caller
+    return dic
 
 '''
 Output all submissions for a student by name 
@@ -421,11 +422,11 @@ def startGradingRun() -> None:
 extract all submissions from file system and store them in the database
 '''
 def processSubmissions() -> None:
+    global submissionDic
     # validate the roster file first
     if not RosterHelper.validateRoster(studentRosterPath):
         # roster file is not valid exit
         return
-
     # extract alle the submissions from the downloaded zip file
     submissionDic = extractMoodleSubmissions()
     # flatten a list of lists and get the element count
@@ -447,23 +448,29 @@ def validateSubmissions() -> None:
     for exercise in submissionDic:
         # check if all student from the roster have valid submissions
         exerciseSubmissions = submissionDic[exercise]
-        for studentSubmission in exerciseSubmissions:
-            studentId = studentSubmission.studentId
-            level = studentSubmission.level
-            submittedFiles = studentSubmission.files.split(",")
-            exerciseFiles = XmlHelper.getFileList(exercise, level)
-            # check if all submissions are complete
-            missingFiles = [fi for fi in exerciseFiles if fi not in submittedFiles]
-            if len(missingFiles) > 0:
-                infoMessage = f"!!! Missing files in Submission {studentSubmission.filePath}: {','.join(missingFiles)} !!!"
-                Loghelper.logError(infoMessage)
-                validationEntry = SubmissionValidationEntry()
-                validationEntry.message = infoMessage
-                validationEntrylist.append(validationEntry)
-            else:
-                pass
+        for student in exerciseSubmissions:
+            studentId = student.id
+            infoMessage = f"validateSubmissions: validating submission for student {studentId}"
+            Loghelper.logInfo(infoMessage)
+            for submission in submissionDic[exercise][student]:
+                level = submission.level
+                exerciseName = submission.exercise
+                submittedFiles = submission.files.split(",")
+                xmlHelper = XmlHelper(gradingPlanPath)
+                exerciseFiles = xmlHelper.getFileList(exerciseName, level)
+                # check if all submissions are complete
+                missingFiles = [fi for fi in exerciseFiles if fi not in submittedFiles]
+                if len(missingFiles) > 0:
+                    infoMessage = f"Missing files in submission {submission.id}: {','.join(missingFiles)}"
+                    Loghelper.logError(infoMessage)
+                    validationEntry = SubmissionValidationEntry("Error", infoMessage)
+                    validationEntrylist.append(validationEntry)
+                else:
+                    infoMessage = f"All files complete"
+                    validationEntry = SubmissionValidationEntry("OK", infoMessage)
+                    validationEntrylist.append(validationEntry)
 
-        XmlHelper.generateSubmissionValidationReport(validationEntrylist)
+        xmlHelper.generateSubmissionValidationReport(validationEntrylist)
 
 '''
 Main starting point

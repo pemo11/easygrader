@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <sig:tasks xmlns:sig="urn:simpelGrader">
-    <sig:task id="1000" exercise="EA1" level="A" title="Math-Tester">
+    <sig:task id="1000" name="EA1" level="A" title="Math-Tester">
         <description>Simple math functions</description>
         <files>
             <file>MyMath.java</file>
@@ -43,7 +43,7 @@
             </test>
         </tests>
     </sig:task>
-    <sig:task id="1001" exercise="EA2" level="A" title="SimpleCar-Tester">
+    <sig:task id="1001" name="EA2" level="A" title="SimpleCar-Tester">
         <description>Tests for the simple car class</description>
         <files>
             <file>SimpleCar.java</file>
@@ -62,7 +62,7 @@
             </test>
         </tests>
     </sig:task>
-    <sig:task id="1003" exercise="EA3" level="A" title="Resistor Codes">
+    <sig:task id="1003" name="EA3" level="A" title="Resistor Codes">
         <description>Tests for Resistor ring coloring</description>
         <files>
             <file>ElectronicColorCode.java</file>
