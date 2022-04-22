@@ -87,7 +87,6 @@ def initDb(dbPath):
      GradeRun integer NOT NULL,
      StudentId integer NOT NULL,
      Exercise text NOT NULL,
-     Level text NOT NULL,
      Semester text NOT NULL,
      Module text NOT NULL,
      Filename text,
@@ -258,10 +257,6 @@ def getSubmissions(dbPath) -> dict:
             semester = row[1]
             module = row[2]
             exercise = row[4]
-            level = "A"
-            if len(exercise) == 4:
-                level = exercise[3]
-                exercise = exercise[:2]
             studentId = row[5]
             files = row[6]
             # returns Student object or None
@@ -273,7 +268,6 @@ def getSubmissions(dbPath) -> dict:
             submission = Submission(id, studentId)
             submission.studentId = studentId
             submission.exercise = exercise
-            submission.level = level
             submission.module = module
             submission.semester = semester
             submission.files = files
@@ -314,7 +308,7 @@ def getSubmissionByStudentId(dbPath, studentId) -> [Submission]:
 '''
 Stores the grading for a single submission during a grade run
 '''
-def storeSubmissionResult(dbPath, gradeRunId, student, exercise, level, semester, module, filename, resultPoints, resultRemarks):
+def storeSubmissionResult(dbPath, gradeRunId, student, exercise, semester, module, filename, resultPoints, resultRemarks):
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
@@ -322,8 +316,8 @@ def storeSubmissionResult(dbPath, gradeRunId, student, exercise, level, semester
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Insert Into SubmissionResult (GradeRun,Student,Exercise,Level,Semester,Module,Filename,ResultPoints,ResultRemarks) "
-    sqlKommando += f"Values({gradeRunId}, '{student}','{exercise}','{level}','{semester}',"
+    sqlKommando = "Insert Into SubmissionResult (GradeRun,Student,Exercise,Semester,Module,Filename,ResultPoints,ResultRemarks) "
+    sqlKommando += f"Values({gradeRunId}, '{student}','{exercise}','{semester}',"
     sqlKommando += f"'{module}','{filename}','{resultPoints}','{resultRemarks}')"
     try:
         dbCur = dbCon.cursor()
@@ -426,7 +420,7 @@ def getSubmissionResultByStudent(dbPath, student):
         return None
 
 '''
-get student id by name
+get a single student id by name
 '''
 def getStudentId(dbPath, studentName):
     try:
@@ -436,20 +430,59 @@ def getStudentId(dbPath, studentName):
         Loghelper.logError(infoMessage)
         return
 
-    # currently consider only the lastname
-    if len(studentName.split("_") > 1):
-        studentName = studentName.split("_")[2]
+    # currently consider only the lastname for the query
+    if len(studentName.split("_")) > 1:
+        studentName = studentName.split("_")[1]
+    # if a blank is used instead of _
+    elif len(studentName.split(" ")) > 1:
+        studentName = studentName.split(" ")[1]
 
     sqlKommando = "Select Id From Student Where Lastname = ?"
     try:
         cur = dbCon.cursor()
         cur.execute(sqlKommando, (studentName,))
         row = cur.fetchone()
-        return row[0]
+        if row != None:
+            return row[0]
+        else:
+            infoMessage = f"getStudentId: no student id for {studentName}"
+            Loghelper.logError(infoMessage)
+            return None
     except Error as ex:
         infoMessage = f"getStudentId: error querying Student table ({ex})"
         Loghelper.logError(infoMessage)
         return None
+
+'''
+get a list of student ids by a single name
+'''
+def getStudentIdList(dbPath, studentName) -> []:
+    try:
+        dbCon = sqlite3.connect(dbPath)
+    except Error as ex:
+        infoMessage = f"getStudentIdList: error connecting to database ({ex})"
+        Loghelper.logError(infoMessage)
+        return None
+
+    # currently consider only the lastname for the query
+    if len(studentName.split("_")) > 1:
+        studentName = studentName.split("_")[1]
+    # if a blank is used instead of _
+    elif len(studentName.split(" ")) > 1:
+        studentName = studentName.split(" ")[1]
+
+    sqlKommando = "Select Id From Student Where Lastname = ?"
+    try:
+        cur = dbCon.cursor()
+        cur.execute(sqlKommando, (studentName,))
+        rows = cur.fetchall()
+        studentIdList = [row[0] for row in rows]
+        return studentIdList
+    except Error as ex:
+        infoMessage = f"getStudentIdList: error querying Student table ({ex})"
+        Loghelper.logError(infoMessage)
+        return None
+
 
 '''
 get student name by id

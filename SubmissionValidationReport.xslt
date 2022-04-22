@@ -6,18 +6,22 @@
     <xsl:param name="gradingTime"/>
     <xsl:template match="/">
         <html>
+            <head>
+                <meta charset="UTF-8" />
+                <link href="SubmissionValidation.css" type="text/css" rel="stylesheet" />
+            </head>
             <body>
-                <h3>Grading-Report <xsl:value-of select="$gradingTime"/> </h3>
-                <table border="1">
+                <h3>Submission-Validation-Report <xsl:value-of select="$gradingTime"/> </h3>
+                <table id="entries">
                     <tr bgcolor="#9acd32">
-                        <th>Type</th>
                         <th>Timestamp</th>
+                        <th>Type</th>
                         <th>Message</th>
                     </tr>
-                    <xsl:for-each select="//submissionError">
+                    <xsl:for-each select="//submissionValidation">
                         <tr>
-                            <td><xsl:value-of select="type"/></td>
                             <td><xsl:value-of select="timestamp"/></td>
+                            <td><xsl:value-of select="type"/></td>
                             <td><xsl:value-of select="message"/></td>
                         </tr>
                     </xsl:for-each>

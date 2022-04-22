@@ -1,14 +1,14 @@
-# file: SubmissionFile.py
+# file: SubmissionName.py
 import re
 
 import Loghelper
 
 '''
-Represents the "meta data" of a submission file name
+Represents the "meta data" of a submission file or directory name
 '''
-class SubmissionFile:
+class SubmissionName:
 
-    def __init__(self, submissionFile):
+    def __init__(self, submissionName):
         # subnamePattern1 = "(?P<task>\w+)_Level(?P<level>\w)_(?P<student>[_\w]+)\.zip"
         # Der "Trick des Jahres" - non greedy dank *? anstelle von +, damit der Vorname nicht dem Aufgabenname zugeordnet wird
         # subnamePattern = "(?P<task>\w*?)_(?P<student>[_\w]+)\.zip"
@@ -20,45 +20,30 @@ class SubmissionFile:
         # eg. list(re.finditer(pa, fiName))[0].group("exercise")
 
         # does the exercise_firstname_lastname-Pattern?
-        if len(list(re.finditer(subnamePattern1, submissionFile))) > 0:
-            matchList = list(re.finditer(subnamePattern1, submissionFile))[0].groups()
+        if len(list(re.finditer(subnamePattern1, submissionName))) > 0:
+            matchList = list(re.finditer(subnamePattern1, submissionName))[0].groups()
             # all matches matched?
             if len(matchList) == 3:
                 exercise = matchList[0]
-                # does the exercise name ends with the level (eg. EA1A)?
-                if len(exercise) == 4:
-                    level = exercise[3]
-                    exercise = exercise[0:3]
-                else:
-                    level = "A"
                 first = matchList[1]
                 last = matchList[2]
                 self.exercise = exercise
                 self.student = f"{first}_{last}"
-                self.level = level
         # does the exercise_name pattern fits?
-        elif len(list(re.finditer(subnamePattern2, submissionFile))) > 0:
-            matchList = list(re.finditer(subnamePattern2, submissionFile))[0].groups()
+        elif len(list(re.finditer(subnamePattern2, submissionName))) > 0:
+            matchList = list(re.finditer(subnamePattern2, submissionName))[0].groups()
             # all matches matched?
             if len(matchList) == 2:
                 exercise = matchList[0]
-            # does the exercise name ends with the level (eg. EA1A)?
-            if len(exercise) == 4:
-                level = exercise[3]
-                exercise = exercise[0:3]
-            else:
-                level = "A"
             lastname = matchList[1]
             self.exercise = exercise
             self.student = f"{lastname}"
-            self.level = level
         else:
             # should not happen but...
             self.exercise = ""
             self.student = ""
-            self.level = ""
-            infoMessage = f"SubmissionFile: {submissionFile} does not match the name patterns"
+            infoMessage = f"SubmissionName: {submissionName} does not match the name patterns"
             Loghelper.logError(infoMessage)
 
     def __repr__(self):
-        return f"Student: {self.student} Exercise: {self.exercise} Level: {self.level}"
+        return f"Student: {self.student} Exercise: {self.exercise}"
