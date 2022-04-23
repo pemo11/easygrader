@@ -15,12 +15,28 @@
                 <table id="entries">
                     <tr bgcolor="#9acd32">
                         <th>Timestamp</th>
+                        <th>Submission</th>
+                        <th>Student</th>
+                        <th>Exercise</th>
                         <th>Type</th>
                         <th>Message</th>
                     </tr>
                     <xsl:for-each select="//submissionValidation">
-                        <tr>
+                        <xsl:variable name="trClass">
+                          <xsl:choose>
+                                <xsl:when test="type = 'Error'">
+                                    <xsl:value-of select="'error'" />
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:value-of select="'ok'" />
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xsl:variable>
+                        <tr class="{$trClass}" >
                             <td><xsl:value-of select="timestamp"/></td>
+                            <td><xsl:value-of select="submissionId"/></td>
+                            <td><xsl:value-of select="studentId"/></td>
+                            <td><xsl:value-of select="exercise"/></td>
                             <td><xsl:value-of select="type"/></td>
                             <td><xsl:value-of select="message"/></td>
                         </tr>

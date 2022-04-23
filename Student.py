@@ -10,6 +10,7 @@ class Student:
         self.firstName = ""
         self.lastName = ""
         self.email = ""
+        self.remarks = ""
 
     def __repr__(self):
         return f"Id: {self.id} Name: {self.firstName} {self.lastName} Mail: {self.email}"

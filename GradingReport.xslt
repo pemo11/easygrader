@@ -31,7 +31,7 @@
                             <td><xsl:value-of select="gradePoints"/></td>
                             <xsl:choose>
                                 <xsl:when test="gradeSuccess = 'False'">
-                                    <td bgcolor='red'><xsl:value-of select="gradeSuccess"/></td>
+                                    <td style="background-color:orange"><xsl:value-of select="gradeSuccess"/></td>
                                 </xsl:when>
                                 <xsl:otherwise>
                                     <td bgcolor='lightgrey'><xsl:value-of select="gradeSuccess"/></td>

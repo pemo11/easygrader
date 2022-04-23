@@ -160,6 +160,12 @@ class XmlHelper:
         root = et.Element("report")
         for submissionEntry in submissionValidationList:
             subValidation = et.SubElement(root, "submissionValidation")
+            submissionId = et.SubElement(subValidation, "submissionId")
+            submissionId.text = str(submissionEntry.submissionId)
+            studentId = et.SubElement(subValidation, "studentId")
+            studentId.text = str(submissionEntry.studentId)
+            exercise = et.SubElement(subValidation, "exercise")
+            exercise.text = submissionEntry.exercise
             validationType = et.SubElement(subValidation, "type")
             validationType.text = submissionEntry.type
             validationMessage = et.SubElement(subValidation, "message")

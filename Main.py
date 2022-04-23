@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 22/04/22
+# Letztes Update: 23/04/22
 # Version 0.5
 # =============================================================================
 from datetime import datetime
@@ -105,7 +105,9 @@ def showMenu():
     menuList.append("Abgaben validieren (optional)")
     menuList.append(Fore.LIGHTYELLOW_EX + "Bewertungsdurchlauf starten" + Style.RESET_ALL)
     menuList.append("Bewertungsdurchläufe anzeigen")
-    menuList.append("Bewertungen eines Studenten anzeigen")
+    menuList.append("Studentenroster anzeigen")
+    menuList.append("Alle Abgaben anzeigen")
+    menuList.append("Logdatei anzeigen")
     print("=" * 80)
     prompt = "Eingabe ("
     for i, menuItem in enumerate(menuList):
@@ -121,7 +123,7 @@ def showMenu():
 # =============================================================================
 
 '''
-checks if the ini settings are valid
+Menue A - checks if the ini settings are valid
 '''
 def MenueA_preCheck() -> None:
     dicCheck = {}
@@ -152,9 +154,12 @@ def MenueA_preCheck() -> None:
         else:
             print(f"{checkName}={Fore.LIGHTGREEN_EX}{checkValue[0]}{Style.RESET_ALL}")
     print("*" * 80)
+    okChecks = len([c for c in dicCheck if dicCheck[c][1]==False])
+    print(f"*** {okChecks} von {len(dicCheck)} Settings sind OK ***")
+    print("*" * 80)
 
 '''
-Extracts all submission files from a single zip file in the submissionPath directory
+Menue B - Extracts all submission files from a single zip file in the submissionPath directory
 '''
 def MenueB_extractSubmissions() -> None:
     global submissionDic
@@ -221,9 +226,16 @@ def MenueB_extractSubmissions() -> None:
     infoMessage = f"{submissionProcessedCount} submissions stored in the database."
     Loghelper.logInfo(infoMessage)
 
+    # update the roster with the exercises
+    RosterHelper.updateStudentRoster(dbPath, submissionDic)
+
+    print("*" * 80)
+    print(f"*** {submissionProcessedCount} Abgaben wurden verarbeitet ***")
+    print("*" * 80)
+
 
 '''
-validates all submissions in the database
+Menue C - validates all submissions in the database
 '''
 def MenueC_validateSubmissions() -> None:
     # Any submissions in the dic yet?
@@ -248,22 +260,28 @@ def MenueC_validateSubmissions() -> None:
                     infoMessage = f"Missing files in submission {submission.id}: {','.join(missingFiles)}"
                     Loghelper.logError(infoMessage)
                     validation = SubmissionValidation(exercise, "Error", infoMessage)
-                    validationList.append(validation)
                 else:
                     infoMessage = f"All files complete"
                     validation = SubmissionValidation(exercise, "OK", infoMessage)
-                    validationList.append(validation)
 
-        # create a xml report
-        xmlPath = xmlHelper.generateSubmissionValidationReport(validationList)
+                validation.submissionId = submission.id
+                validation.studentId = submission.studentId
+                validationList.append(validation)
 
-        # create a html report
-        htmlPath = xmlHelper.convertSubmissionValidationReport2Html(xmlPath)
-        # show html file in browser
-        os.startfile(htmlPath)
+    # create a xml report
+    xmlPath = xmlHelper.generateSubmissionValidationReport(validationList)
+
+    # create a html report
+    htmlPath = xmlHelper.convertSubmissionValidationReport2Html(xmlPath)
+    # show html file in browser
+    os.startfile(htmlPath)
+
+    print("*" * 80)
+    print(f"*** Alle Abgaben wurden validiert ***")
+    print("*" * 80)
 
 '''
-starts a grading run for the submissions in the database
+Menue D - starts a grading run for the submissions in the database
 '''
 def MenueD_startGradingrun() -> None:
     # Initiate grading plan
@@ -392,7 +410,7 @@ def MenueD_startGradingrun() -> None:
             print(f"{len(submissions)} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
 
 '''
-outputs all grading runs in the database
+Menue E - outputs all grading runs in the database
 '''
 def MenueE_showGradingruns() -> None:
     # returns tuples
@@ -405,17 +423,45 @@ def MenueE_showGradingruns() -> None:
     print()
 
 '''
-outputs all gradings by student name from the database 
+Menue F - outputs the current student roster from the database 
 '''
-def MenueF_showGradingsByStudent() -> None:
-    studentName = input("Name des Studenten?")
-    rows = DBHelper.getGradingsByStudent(dbPath, studentName)
-    if rows != None and len(rows) > 0:
-        for row in rows:
-            print(row[0])
-    else:
-        print(f"*** Keine Gradings für {studentName} in der Datenbank ***")
+def MenueF_showStudentRoster() -> None:
+    rosters = DBHelper.getRoster(dbPath)
+    for roster in rosters:
+        print(roster)
 
+'''
+Menue G - outputs the submissions of all students from the database 
+'''
+def MenueG_showStudentSubmissions() -> None:
+    submissionDic = DBHelper.getSubmissions(dbPath)
+    # transform to a dict with student as key
+    studentDic = {}
+    if submissionDic == None:
+        print(f"*** Keine Submissions in der Datenbank ***")
+    else:
+        for exercise in submissionDic:
+            for student in submissionDic[exercise]:
+                if student == None:
+                    continue
+                studentName = f"{student.firstName}_{student.lastName}"
+                if studentDic.get(studentName) == None:
+                    studentDic[studentName] = []
+                for submission in submissionDic[exercise][student]:
+                    studentDic[studentName].append(submission)
+        for studentName in studentDic:
+            print(f"*** Abgaben für Student {studentName}")
+            for submission in studentDic[studentName]:
+                print(f">>> {submission.exercise}")
+
+'''
+Menue H - show current log file
+'''
+def MenueH_showLogfile() -> None:
+    if os.path.exists(Loghelper.logPath):
+        subprocess.Popen(["notepad", Loghelper.logPath])
+    else:
+        print(f"!!! {Loghelper.logPath} existiert nicht !!!")
 
 # =============================================================================
 # Starting point
@@ -457,8 +503,12 @@ def start() -> None:
             MenueD_startGradingrun()
         elif choice == "E":                 # Show all grading runs
             MenueE_showGradingruns()
-        elif choice == "F":                 # Show gradings of a single student
-            MenueF_showGradingsByStudent()
+        elif choice == "F":                 # Shows the current student roster
+            MenueF_showStudentRoster()
+        elif choice == "G":                 # Show gradings of a single student
+            MenueG_showStudentSubmissions()
+        elif choice == "H":
+            MenueH_showLogfile()
         else:
             print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
 

@@ -7,6 +7,7 @@ import DBHelper
 import Loghelper
 import os
 
+from Roster import Roster
 from Submission import Submission
 from Student import Student
 
@@ -16,18 +17,18 @@ Creates the database file and the tables without any data
 def initDb(dbPath):
     try:
         dbCon = sqlite3.connect(dbPath)
-        infoMessage = f"Datenbank {dbPath} wurde angelegt (SQlite-Version: {sqlite3.version}) ***"
+        infoMessage = f"initDb: created database {dbPath} (SQlite-Version: {sqlite3.version}) ***"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
         infoMessage = f"initDb: error connecting to database {ex}"
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
-        infoMessage = "Closed connection to database"
+        infoMessage = "initDb: closed connection to database"
         Loghelper.logInfo(infoMessage)
 
     # Tabelle GradRun anlegen
-    sqlKommando = """
+    sqlCommand = """
     CREATE TABLE IF NOT EXISTS GradeRun (
      Id integer PRIMARY KEY AUTOINCREMENT,
      Timestamp datetime NOT NULL,
@@ -42,19 +43,19 @@ def initDb(dbPath):
 
     try:
         dbCon = sqlite3.connect(dbPath)
-        dbCon.execute(sqlKommando)
+        dbCon.execute(sqlCommand)
         infoMessage = f"Created table GradeRun"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
-        infoMessage = f"initDb: Error connecting to database {ex}"
+        infoMessage = f"initDb: error connecting to database {ex}"
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
-        infoMessage = "Closed connection to database"
+        infoMessage = "initDb: closed connection to database"
         Loghelper.logInfo(infoMessage)
 
     # Tabelle Submission anlegen
-    sqlKommando = """
+    sqlCommand = """
     CREATE TABLE IF NOT EXISTS Submission (
      Id integer PRIMARY KEY AUTOINCREMENT,
      Timestamp datetime NOT NULL,
@@ -69,19 +70,19 @@ def initDb(dbPath):
     """
     try:
         dbCon = sqlite3.connect(dbPath)
-        dbCon.execute(sqlKommando)
-        infoMessage = f"Created table Submission"
+        dbCon.execute(sqlCommand)
+        infoMessage = f"initDb: created table Submission"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
-        infoMessage = f"Error creating Table Submission ({ex})"
+        infoMessage = f"initDb: error creating Table Submission ({ex})"
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
-        infoMessage = "Closed connection to database"
+        infoMessage = "initDb: closed connection to database"
         Loghelper.logInfo(infoMessage)
 
     # Tabelle SubmissionResult anlegen
-    sqlKommando = """
+    sqlCommand = """
     CREATE TABLE IF NOT EXISTS SubmissionResult (
      Id integer PRIMARY KEY AUTOINCREMENT,
      GradeRun integer NOT NULL,
@@ -97,19 +98,19 @@ def initDb(dbPath):
     """
     try:
         dbCon = sqlite3.connect(dbPath)
-        dbCon.execute(sqlKommando)
-        infoMessage = f"Created table SubmissionResult"
+        dbCon.execute(sqlCommand)
+        infoMessage = f"initDb: created table SubmissionResult"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
-        infoMessage = f"Error creating table SubmissionResult ({ex})"
+        infoMessage = f"initDb: error creating table SubmissionResult ({ex})"
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
-        infoMessage = "Closed connection to database"
+        infoMessage = "initDb: closed connection to database"
         Loghelper.logInfo(infoMessage)
 
     # Tabelle Student anlegen
-    sqlKommando = """
+    sqlCommand = """
     CREATE TABLE IF NOT EXISTS Student (
      Id integer PRIMARY KEY,
      Firstname text,
@@ -120,19 +121,19 @@ def initDb(dbPath):
     """
     try:
         dbCon = sqlite3.connect(dbPath)
-        dbCon.execute(sqlKommando)
-        infoMessage = f"Created table Student"
+        dbCon.execute(sqlCommand)
+        infoMessage = f"initDb: created table Student"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
-        infoMessage = f"Error creating Table Student ({ex})"
+        infoMessage = f"initDb: error creating Table Student ({ex})"
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
-        infoMessage = "Closed connection to database"
+        infoMessage = "initDb: closed connection to database"
         Loghelper.logInfo(infoMessage)
 
     # Tabelle Roster anlegen
-    sqlKommando = """
+    sqlCommand = """
     CREATE TABLE IF NOT EXISTS Roster (
      StudentId integer PRIMARY KEY,
      Semester text,
@@ -143,15 +144,15 @@ def initDb(dbPath):
     """
     try:
         dbCon = sqlite3.connect(dbPath)
-        dbCon.execute(sqlKommando)
-        infoMessage = f"Created table Roster"
+        dbCon.execute(sqlCommand)
+        infoMessage = f"initDb: created table Roster"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
-        infoMessage = f"Error creating table Roster ({ex})"
+        infoMessage = f"initDb: error creating table Roster ({ex})"
         Loghelper.logError(infoMessage)
     finally:
         dbCon.close()
-        infoMessage = "Closed connection to database"
+        infoMessage = "initDb: closed connection to database"
         Loghelper.logInfo(infoMessage)
 
 '''
@@ -165,19 +166,19 @@ def storeGradeRun(dbPath, timestamp, semester, module, operator, submissionCount
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Insert Into GradeRun (Timestamp,Semester,Module, Operator,SubmissionCount,"
-    sqlKommando += f"OKCount,ErrorCount) Values('{timestamp}','{semester}','{module}','{operator}',"
-    sqlKommando += f"{submissionCount},{okCount},{errorCount})"
+    sqlCommand = "Insert Into GradeRun (Timestamp,Semester,Module, Operator,SubmissionCount,"
+    sqlCommand += f"OKCount,ErrorCount) Values('{timestamp}','{semester}','{module}','{operator}',"
+    sqlCommand += f"{submissionCount},{okCount},{errorCount})"
     try:
         dbCur = dbCon.cursor()
-        dbCur.execute(sqlKommando)
+        dbCur.execute(sqlCommand)
         dbCon.commit()
-        infoMessage = f"Inserted row into table GradeRun (id={dbCur.lastrowid})"
+        infoMessage = f"storeGradeRun: Inserted row into table GradeRun (id={dbCur.lastrowid})"
         Loghelper.logInfo(infoMessage)
         # return the id of the new record
         return dbCur.lastrowid
     except Error as ex:
-        infoMessage = f"Error inserting row into Table GradeRun ({ex})"
+        infoMessage = f"storeGradeRun: error inserting row into Table GradeRun ({ex})"
         Loghelper.logError(infoMessage)
 
     dbCon.close()
@@ -189,16 +190,16 @@ def storeSubmission(dbPath, timestamp, semester, module, exercise, studentId, fi
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
-        infoMessage = f"storeSubmission: Error connecting to database ({ex})"
+        infoMessage = f"storeSubmission: error connecting to database ({ex})"
         Loghelper.logError(infoMessage)
         return -1
 
-    sqlKommando = "Insert Into Submission (Timestamp,Semester,Module,Exercise,StudentId,Files,Complete) "
-    sqlKommando += f"Values('{timestamp}','{semester}','{module}','{exercise}',"
-    sqlKommando += f"'{studentId}','{files}','{complete}')"
+    sqlCommand = "Insert Into Submission (Timestamp,Semester,Module,Exercise,StudentId,Files,Complete) "
+    sqlCommand += f"Values('{timestamp}','{semester}','{module}','{exercise}',"
+    sqlCommand += f"'{studentId}','{files}','{complete}')"
     try:
         dbCur = dbCon.cursor()
-        dbCur.execute(sqlKommando)
+        dbCur.execute(sqlCommand)
         dbCon.commit()
         infoMessage = f"storeSubmission: row inserted into Submission table (id={dbCur.lastrowid})"
         Loghelper.logInfo(infoMessage)
@@ -218,15 +219,15 @@ def clearAllSubmission(dbPath):
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
-        infoMessage = f"clearAllSubmission: Error connecting to database ({ex})"
+        infoMessage = f"clearAllSubmission: error connecting to database ({ex})"
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Delete From Submission"
+    sqlCommand = "Delete From Submission"
     try:
-        dbCon.execute(sqlKommando)
+        dbCon.execute(sqlCommand)
         dbCon.commit()
-        infoMessage = f"clearAllSubmission: All rows in Table Submission deleted"
+        infoMessage = f"clearAllSubmission: all rows in Table Submission deleted"
         Loghelper.logInfo(infoMessage)
     except Error as ex:
         infoMessage = f"clearAllSubmissions: error deleting all rows in Table Submission ({ex})"
@@ -247,10 +248,10 @@ def getSubmissions(dbPath) -> dict:
         return dict
 
     # group by als Alternative?
-    sqlKommando = "Select * From Submission"
+    sqlCommand = "Select * From Submission"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando)
+        cur.execute(sqlCommand)
         rows = cur.fetchall()
         for row in rows:
             id = row[0]
@@ -291,10 +292,10 @@ def getSubmissionByStudentId(dbPath, studentId) -> [Submission]:
         Loghelper.logError(infoMessage)
         return submissions
 
-    sqlKommando = "Select * From Submission Where StudentId = ?"
+    sqlCommand = "Select * From Submission Where StudentId = ?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando, (studentId,))
+        cur.execute(sqlCommand, (studentId,))
         rows = cur.fetchall()
         for row in rows:
             submission = Submission(row[0])
@@ -316,12 +317,12 @@ def storeSubmissionResult(dbPath, gradeRunId, student, exercise, semester, modul
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Insert Into SubmissionResult (GradeRun,Student,Exercise,Semester,Module,Filename,ResultPoints,ResultRemarks) "
-    sqlKommando += f"Values({gradeRunId}, '{student}','{exercise}','{semester}',"
-    sqlKommando += f"'{module}','{filename}','{resultPoints}','{resultRemarks}')"
+    sqlCommand = "Insert Into SubmissionResult (GradeRun,Student,Exercise,Semester,Module,Filename,ResultPoints,ResultRemarks) "
+    sqlCommand += f"Values({gradeRunId}, '{student}','{exercise}','{semester}',"
+    sqlCommand += f"'{module}','{filename}','{resultPoints}','{resultRemarks}')"
     try:
         dbCur = dbCon.cursor()
-        dbCur.execute(sqlKommando)
+        dbCur.execute(sqlCommand)
         dbCon.commit()
         infoMessage = f"storeSubmissionResult: row added to SubmissionResult table"
         Loghelper.logInfo(infoMessage)
@@ -342,10 +343,10 @@ def getAllGradeRun(dbPath):
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Select * From GradeRun"
+    sqlCommand = "Select * From GradeRun"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando)
+        cur.execute(sqlCommand)
         rows = cur.fetchall()
         return rows
     except Error as ex:
@@ -363,10 +364,10 @@ def getGradeRun(dbPath, runId):
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Select * From GradeRun Where Id = ?"
+    sqlCommand = "Select * From GradeRun Where Id = ?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando, (runId,))
+        cur.execute(sqlCommand, (runId,))
         row = cur.fetchone()
         if row == None:
             return 0
@@ -387,10 +388,10 @@ def getAllSubmissionResult(dbPath):
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Select * From SubmissionResult"
+    sqlCommand = "Select * From SubmissionResult"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando)
+        cur.execute(sqlCommand)
         rows = cur.fetchall()
         return rows
     except Error as ex:
@@ -408,10 +409,10 @@ def getSubmissionResultByStudent(dbPath, student):
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Select * From SubmissionResult Where Student = ?"
+    sqlCommand = "Select * From SubmissionResult Where Student = ?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando, (student,))
+        cur.execute(sqlCommand, (student,))
         rows = cur.fetchall()
         return rows
     except Error as ex:
@@ -437,10 +438,10 @@ def getStudentId(dbPath, studentName):
     elif len(studentName.split(" ")) > 1:
         studentName = studentName.split(" ")[1]
 
-    sqlKommando = "Select Id From Student Where Lastname = ?"
+    sqlCommand = "Select Id From Student Where Lastname = ?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando, (studentName,))
+        cur.execute(sqlCommand, (studentName,))
         row = cur.fetchone()
         if row != None:
             return row[0]
@@ -471,10 +472,10 @@ def getStudentIdList(dbPath, studentName) -> []:
     elif len(studentName.split(" ")) > 1:
         studentName = studentName.split(" ")[1]
 
-    sqlKommando = "Select Id From Student Where Lastname = ?"
+    sqlCommand = "Select Id From Student Where Lastname = ?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando, (studentName,))
+        cur.execute(sqlCommand, (studentName,))
         rows = cur.fetchall()
         studentIdList = [row[0] for row in rows]
         return studentIdList
@@ -482,7 +483,6 @@ def getStudentIdList(dbPath, studentName) -> []:
         infoMessage = f"getStudentIdList: error querying Student table ({ex})"
         Loghelper.logError(infoMessage)
         return None
-
 
 '''
 get student name by id
@@ -495,10 +495,10 @@ def getStudentById(dbPath, studentId) -> Student:
         Loghelper.logError(infoMessage)
         return
 
-    sqlKommando = "Select FirstName,LastName,EMail From Student Where Id = ?"
+    sqlCommand = "Select FirstName,LastName,EMail From Student Where Id = ?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando, (studentId,))
+        cur.execute(sqlCommand, (studentId,))
         row = cur.fetchone()
         if row != None:
             student = Student(studentId)
@@ -525,10 +525,10 @@ def storeStudent(dbPath, studentId, studentName, studentEMail) -> int:
         return -1
 
     # check if student id already exists
-    sqlKommando = f"Select Id From Student Where Id=?"
+    sqlCommand = f"Select Id From Student Where Id=?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando, (studentId,))
+        cur.execute(sqlCommand, (studentId,))
         row = cur.fetchone()
         # any data?
         if row != None:
@@ -549,10 +549,10 @@ def storeStudent(dbPath, studentId, studentName, studentEMail) -> int:
         else:
             firstName = ""
             lastName = studentName
-        sqlKommando = f"Insert Into Student (Id, FirstName, LastName, EMail, Remarks) "
-        sqlKommando += f"Values ('{studentId}','{firstName}','{lastName}','{studentEMail}', '{remarks}')"
+        sqlCommand = f"Insert Into Student (Id, FirstName, LastName, EMail, Remarks) "
+        sqlCommand += f"Values ('{studentId}','{firstName}','{lastName}','{studentEMail}', '{remarks}')"
         dbCur = dbCon.cursor()
-        dbCur.execute(sqlKommando)
+        dbCur.execute(sqlCommand)
         dbCon.commit()
         infoMessage = f"storeStudent: row inserted in Student table (id={dbCur.lastrowid})"
         Loghelper.logInfo(infoMessage)
@@ -562,7 +562,6 @@ def storeStudent(dbPath, studentId, studentName, studentEMail) -> int:
         infoMessage = f"storeStudent: error inserting row into Student table ({ex})"
         Loghelper.logError(infoMessage)
         return -1
-
 
 '''
 stores a student roster 
@@ -576,10 +575,10 @@ def storeRoster(dbPath, semester, module, studentId, exercises) -> int:
 
     # check if studentId already exists
 
-    sqlKommando = f"Select StudentId From Roster Where StudentId=?"
+    sqlCommand = f"Select StudentId From Roster Where StudentId=?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlKommando, (studentId,))
+        cur.execute(sqlCommand, (studentId,))
         row = cur.fetchone()
         # any data?
         if row != None:
@@ -588,7 +587,7 @@ def storeRoster(dbPath, semester, module, studentId, exercises) -> int:
             Loghelper.logInfo(infoMessage)
             return studentId
     except Error as ex:
-        infoMessage = f"storeRoster: error querying student table ({ex})"
+        infoMessage = f"storeRoster: error querying Roster table ({ex})"
         Loghelper.logError(infoMessage)
         return -1
 
@@ -598,9 +597,9 @@ def storeRoster(dbPath, semester, module, studentId, exercises) -> int:
         studentId = int(studentId)
         # field completed contains false for every exercise
         completed = ",".join(["0" for _ in exercises.split(",")])
-        sqlKommando = f"Insert Into Roster Values ({studentId},'{semester}','{module}','{exercises}','{completed}')"
+        sqlCommand = f"Insert Into Roster Values ({studentId},'{semester}','{module}','{exercises}','{completed}')"
         dbCur = dbCon.cursor()
-        dbCur.execute(sqlKommando)
+        dbCur.execute(sqlCommand)
         dbCon.commit()
         infoMessage = f"storeRoster: row added to table Roster with id={dbCur.lastrowid}"
         Loghelper.logInfo(infoMessage)
@@ -611,3 +610,94 @@ def storeRoster(dbPath, semester, module, studentId, exercises) -> int:
         Loghelper.logError(infoMessage)
 
     dbCon.close()
+
+'''
+get the student roster 
+'''
+def getRoster(dbPath) -> []:
+    try:
+        dbCon = sqlite3.connect(dbPath)
+    except Error as ex:
+        infoMessage = f"getRoster: error connecting to database ({ex})"
+        Loghelper.logError(infoMessage)
+
+    sqlCommand = f"Select * From Roster"
+
+    rosters = []
+    try:
+        dbCon.row_factory = sqlite3.Row
+        cur = dbCon.cursor()
+        cur.execute(sqlCommand)
+        rows = cur.fetchall()
+        for row in rows:
+            rowDict = dict([(k,row[k]) for k in row.keys()])
+            rosters.append(Roster(**rowDict))
+        return rosters
+    except Error as ex:
+        infoMessage = f"storeRoster: error querying Roster table ({ex})"
+        Loghelper.logError(infoMessage)
+
+'''
+update the student roster with the submitted exercise
+'''
+def updateRoster(dbPath, studentId, exercise) -> bool:
+    try:
+        dbCon = sqlite3.connect(dbPath)
+    except Error as ex:
+        infoMessage = f"updateRoster: error connecting to database ({ex})"
+        Loghelper.logError(infoMessage)
+        return False
+
+    # get the current value of exercises and completed
+    try:
+        sqlCommand = "Select Exercises, Completed From Roster Where StudentId=?"
+        cur = dbCon.cursor()
+        cur.execute(sqlCommand, (studentId,))
+        row = cur.fetchone()
+        # any data?
+        if row == None:
+            infoMessage = f"udpateRoster: no roster entry for studentId={studentId}"
+            Loghelper.logError(infoMessage)
+            return
+        exercisesStudent = row[0]
+        completed = row[1]
+    except Error as ex:
+        infoMessage = f"udpateRoster: error querying Roster table ({ex})"
+        Loghelper.logError(infoMessage)
+        return False
+
+    # update the exercises for the student
+    exercisesStudList = exercisesStudent.split(",")
+    completedList = completed.split(",")
+
+    # get the index of the exercise in the list
+    exerciseIndex = exercisesStudList.index(exercise) if exercise in exercisesStudList else None
+
+    if exerciseIndex == None:
+        infoMessage = f"udpateRoster: exercise {exercise} not found in exercises for student {studentId}"
+        Loghelper.logError(infoMessage)
+        return False
+    else:
+
+        # set the index in the completed list to 1
+        completedList[exerciseIndex] = "1"
+
+        # get the new value for completed
+        completed = ",".join(completedList)
+
+        # update the completed exercises
+        sqlCommand = f"Update Roster Set completed='{completed}' Where StudentId={studentId}"
+        try:
+            dbCur = dbCon.cursor()
+            dbCur.execute(sqlCommand)
+            dbCon.commit()
+            infoMessage = f"updateRoster: updated table Roster"
+            Loghelper.logInfo(infoMessage)
+        except Error as ex:
+            infoMessage = f"updateRoster: error updating table Roster ({ex})"
+            Loghelper.logError(infoMessage)
+            return False
+
+    dbCon.close()
+    return True
+

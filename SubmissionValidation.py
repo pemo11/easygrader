@@ -12,6 +12,9 @@ class SubmissionValidation:
         self.timestamp = datetime.now()
         self.type = type
         self.message = message
+        self.studentId = 0
+        self.submissionId = 0
+
 
     def __repr__(self):
         return f"Exercise: {self.exercise} Type: {self.type} Message: {self.message}"

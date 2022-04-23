@@ -77,7 +77,20 @@ def validateRoster(rosterPath) -> bool:
 '''
 Updates the roster with the submissions
 '''
-def updateStudentRoster():
-    pass
-
+def updateStudentRoster(dbPath, submissionDic) -> None:
+    exerciseCount = 0
+    for exercise in submissionDic:
+        for studentName in submissionDic[exercise]:
+            for submission in submissionDic[exercise][studentName]:
+                studentId = submission.studentId
+                if studentId == None:
+                    infoMessage = f"updateStudentRoster: no studentId for {studentName}"
+                    Loghelper.logError(infoMessage)
+                else:
+                    exercise = submission.exercise
+                    # update the exercise in the student roster
+                    if DBHelper.updateRoster(dbPath, studentId, exercise):
+                        exerciseCount += 1
+    infoMessage = f"updateStudentRoster: roster update completed for {exerciseCount} exercises"
+    Loghelper.logInfo(infoMessage)
 

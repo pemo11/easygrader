@@ -24,15 +24,16 @@ body {
 #entries tr:nth-child(even){background-color: #f2f2f2;}
 #entries tr:hover {background-color: #ddd;}
 
-#entries td.ok {
-    background-color: #ACE6D7;
+#entries tr.ok {
+    background-color: white;
 }
 
-#entries td.alert1 {
+#entries tr.ok:hover {background-color: #ddd;}
+
+#entries tr.error {
     background-color: orange;
 }
 
-#entries td.alert2 {
-    background-color: red;
-}
+#entries tr.error:hover {background-color: #ddd;}
+
 
