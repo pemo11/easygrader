@@ -97,6 +97,7 @@ def extractSubmissions(dbPath, zipPfad, destPath) -> dict:
         submission = Submission(submissionId, studentId)
         submission.exercise = exercise
         submission.files = fileNames
+        submission.path = zipPath
         submissionId += 1
         folderDic[exercise][studentName].append(submission)
 

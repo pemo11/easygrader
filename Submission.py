@@ -14,6 +14,7 @@ class Submission:
         self.module = ""
         self.exercise = ""
         self.files = ""
+        self.path = ""
         self.errorMessage = ""
 
     def __repr__(self):

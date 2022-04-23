@@ -30,7 +30,7 @@ class XmlHelper:
     def getActionList(self, exercise):
         # 20/04/22 - level ist jetzt Teil des Exercise-Namens, z.B. EA1A
         # xPathExpr = f".//sig:task[@name='{exercise}' and @level='{level}']/actions/action"
-        xPathExpr = f".//sig:task[@name='{exercise}]'/actions/action"
+        xPathExpr = f".//sig:task[@name='{exercise}']/actions/action"
         actionElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         actionList = []
         for action in actionElements:
@@ -108,9 +108,9 @@ class XmlHelper:
 
         # Write the report
         tree = et.ElementTree(xlRoot)
-        tree.write(self.actionReportPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        tree.write(self.actionReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
 
-        return self.actionReportPath
+        return self.actionReportpath
 
     '''
     Converts a grading xml report into html

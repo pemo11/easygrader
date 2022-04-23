@@ -64,6 +64,7 @@ def initDb(dbPath):
      Exercise text NOT NULL,
      StudentId integer NOT NULL,
      Files text,
+     Path text,
      Complete boolean NOT NULL,
      Remarks text
     );
@@ -186,7 +187,7 @@ def storeGradeRun(dbPath, timestamp, semester, module, operator, submissionCount
 '''
 Stores a single submission of a student
 '''
-def storeSubmission(dbPath, timestamp, semester, module, exercise, studentId, files, complete) -> int:
+def storeSubmission(dbPath, timestamp, semester, module, exercise, studentId, files, path, complete) -> int:
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
@@ -194,9 +195,9 @@ def storeSubmission(dbPath, timestamp, semester, module, exercise, studentId, fi
         Loghelper.logError(infoMessage)
         return -1
 
-    sqlCommand = "Insert Into Submission (Timestamp,Semester,Module,Exercise,StudentId,Files,Complete) "
+    sqlCommand = "Insert Into Submission (Timestamp,Semester,Module,Exercise,StudentId,Files,Path,Complete) "
     sqlCommand += f"Values('{timestamp}','{semester}','{module}','{exercise}',"
-    sqlCommand += f"'{studentId}','{files}','{complete}')"
+    sqlCommand += f"'{studentId}','{files}','{path}','{complete}')"
     try:
         dbCur = dbCon.cursor()
         dbCur.execute(sqlCommand)
@@ -260,6 +261,7 @@ def getSubmissions(dbPath) -> dict:
             exercise = row[4]
             studentId = row[5]
             files = row[6]
+            filesPath = row[7]
             # returns Student object or None
             student = DBHelper.getStudentById(dbPath, studentId)
             if dict.get(exercise) == None:
@@ -271,7 +273,10 @@ def getSubmissions(dbPath) -> dict:
             submission.exercise = exercise
             submission.module = module
             submission.semester = semester
+            # all the file names part of the submission
             submission.files = files
+            # store the path too
+            submission.path = filesPath
             dict[exercise][student].append(submission)
 
     except Error as ex:

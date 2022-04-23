@@ -3,7 +3,10 @@
 import os
 import re
 
-def getAuthorName(javaPath):
+'''
+get the author name from the java file
+'''
+def getAuthorName(javaPath) -> str:
     commentFlag = False
     authorPattern = "@author\s+([\w\d\s]+)"
     author = ""
@@ -26,7 +29,7 @@ def getAuthorName(javaPath):
 '''
 Extracts the studentId from a java file
 '''
-def getStudentId(javaPath):
+def getStudentId(javaPath) -> int:
     commentFlag = False
     studentId = ""
     authorPattern = "@author\s+(.+)"

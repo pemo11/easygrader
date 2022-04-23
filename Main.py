@@ -24,8 +24,9 @@ from GradeResult import GradeResult
 from SubmissionName import SubmissionName
 from SubmissionValidation import SubmissionValidation
 import RosterHelper
-from XmlHelper import XmlHelper
+import JavaHelper
 import DBHelper
+from XmlHelper import XmlHelper
 
 from Submission import Submission
 import csv
@@ -159,7 +160,7 @@ def MenueA_preCheck() -> None:
     print("*" * 80)
 
 '''
-Menue B - Extracts all submission files from a single zip file in the submissionPath directory
+Menue B - extracts all submission files from a single zip file in the submissionPath directory
 '''
 def MenueB_extractSubmissions() -> None:
     global submissionDic
@@ -172,7 +173,7 @@ def MenueB_extractSubmissions() -> None:
     zipFiles = [fi for fi in os.listdir(submissionPath) if fi.endswith("zip")]
     # only one zip file allowed
     if len(zipFiles) != 1:
-        infoMessage = f"MenueB_extractSubmissions - exactly one zip file expected in {submissionPath}"
+        infoMessage = f"extractSubmissions: exactly one zip file expected in {submissionPath}"
         Loghelper.logError(infoMessage)
         return False
     # get the full path of the zip file
@@ -180,7 +181,7 @@ def MenueB_extractSubmissions() -> None:
 
     if not os.path.exists(submissionDestPath):
         os.mkdir(submissionDestPath)
-        infoMessage = f"MenueB_extractSubmissions: directory {submissionDestPath} created"
+        infoMessage = f"extractSubmissions: directory {submissionDestPath} created"
         Loghelper.logInfo(infoMessage)
 
     # Copy zip file to temp directory
@@ -205,7 +206,7 @@ def MenueB_extractSubmissions() -> None:
 
     # flatten the dic to get the total count of all submissions
     submissionCount = len([item for sublist in [submissionDic[k] for k in submissionDic] for item in sublist])
-    infoMessage = f"{submissionCount} submissions for {len(submissionDic)} exercise extracted from the Moodle zip file"
+    infoMessage = f"extractSubmissions: {submissionCount} submissions for {len(submissionDic)} exercise extracted from the Moodle zip file"
     Loghelper.logInfo(infoMessage)
 
     # delete all previous submissions
@@ -219,8 +220,9 @@ def MenueB_extractSubmissions() -> None:
             submission = submissionDic[exercise][studentName][0]
             studentId = submission.studentId
             files = submission.files
+            filesPath = submission.path
             timestamp = datetime.now()
-            DBHelper.storeSubmission(dbPath, timestamp, gradeSemester, gradeModule, exercise, studentId, files, False)
+            DBHelper.storeSubmission(dbPath, timestamp, gradeSemester, gradeModule, exercise, studentId, files, filesPath, False)
             submissionProcessedCount += 1
 
     infoMessage = f"{submissionProcessedCount} submissions stored in the database."
@@ -247,7 +249,7 @@ def MenueC_validateSubmissions() -> None:
         # check if all student from the roster have valid submissions
         exerciseSubmissions = submissionDic[exercise]
         for studentName in exerciseSubmissions:
-            infoMessage = f"MenueC_validateSubmissions: validating submission for student {studentName}"
+            infoMessage = f"validateSubmissions: validating submission for student {studentName}"
             Loghelper.logInfo(infoMessage)
             for submission in submissionDic[exercise][studentName]:
                 exercise = submission.exercise
@@ -284,37 +286,43 @@ def MenueC_validateSubmissions() -> None:
 Menue D - starts a grading run for the submissions in the database
 '''
 def MenueD_startGradingrun() -> None:
+    # Any submissions in the dic yet?
+    if submissionDic == None:
+        print("*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***")
+        return
     # Initiate grading plan
     xmlHelper = XmlHelper(gradingPlanPath)
     # XSD validation - but no consequences yet
     xsdPath = os.path.join(os.path.dirname(__file__), "gradingplan.xsd")
     if os.path.exists(xsdPath):
         result = xmlHelper.validateXml(gradingPlanPath, xsdPath)
-        infoMessage = f"XSD-Validierung: {result}"
+        infoMessage = f"startGradingrun: XSD-Validierung: {result}"
         Loghelper.logInfo(infoMessage)
 
     # List for all grading actions for the grading Action report
     gradeActionList = []
     # List for all grading results for the grading Result report
     gradeResultList = []
+    submisssionsGraded = 0
 
     # for clocking the grading run duration
-    startTime = datetime.datetime.now()
-    print(f"*** Starte Bewertung der Abgaben in {submissionPath} ***")
+    startTime = datetime.now()
+    print(f"*** Starte GradingRun für die Aufgaben {','.join(submissionDic.keys())}  ***")
     # go through all submissions
     for exercise in submissionDic:
         # get all the details from the submission object
-        for studentName in submissionDic[exercise]:
-            for submission in submissionDic[exercise][studentName]:
+        for student in submissionDic[exercise]:
+            for submission in submissionDic[exercise][student]:
                 # go through all submitted files in the archive directory
                 # get all file names from the gradingplan xml
                 exerciseFiles = xmlHelper.getFileList(exercise)
                 # get all file names from the submission
                 files = submission.files
+                filesPath = submission.path
                 # check if files are missing in submitted files
                 missingFiles = [fi for fi in exerciseFiles if fi not in files]
                 if len(missingFiles) > 0:
-                    infoMessage = f"!!! Missing files in Submission {submission.filePath}: {','.join(missingFiles)} !!!"
+                    infoMessage = f"startGradingrun: missing files in submission {submission.id}: {','.join(missingFiles)}"
                     Loghelper.logError(infoMessage)
                     return -1
                 for javaFile in files:
@@ -324,26 +332,26 @@ def MenueD_startGradingrun() -> None:
                     for action in actionList:
                         # skip not active actions
                         if not eval(action.active):
-                            infoMessage = f"Leaving out Action {action.command} for {javaFile}"
+                            infoMessage = f"startGradingRun: leaving out action {action.command} for {javaFile}"
                             Loghelper.logInfo(infoMessage)
                             continue
                         # Execute the action
-                        infoMessage = f"Executing Action {action.command} for {javaFile}/StudentId: {studentName}"
+                        infoMessage = f"startGradingRun: executing action {action.command} for {javaFile}/StudentId: {submission.studentId}"
                         Loghelper.logInfo(infoMessage)
                         # the action depends on the action type
                         if action.type == "java-compile":
                             # a new item for the action report
                             gradeAction = GradeAction("Java compile", "compile")
-                            gradeAction.student = submission.student
+                            gradeAction.student = submission.student.lastName
                             gradeAction.fileName = javaFile
                             gradeActionList.append(gradeAction)
                             # a new item for the grade result report
                             gradeResult = GradeResult("Java compile")
-                            gradeResult.student = studentName
+                            gradeResult.student = submission.student.lastName
                             # Wird dieses Attribut benötigt?
-                            gradeResult.submission = f"Submission for {studentName}"
+                            gradeResult.submission = f"Submission for student { submission.student.lastName}"
                             gradeResult.description = f"Compiling {javaFile}"
-                            javaFilePath = os.path.join(archivePath, javaFile)
+                            javaFilePath = os.path.join(filesPath, javaFile)
                             compileResult = JavaHelper.compileJava(javaFilePath)
                             gradePoints = 1 if compileResult[0] == 0 else 0
                             gradeResult.points = gradePoints
@@ -360,42 +368,48 @@ def MenueD_startGradingrun() -> None:
                             infoMessage = f"Leaving out Test {test.name} for {javaFile}"
                             Loghelper.logInfo(infoMessage)
                             continue
-                        infoMessage = f"Executing test {test.name} for file {javaFile}"
+                        infoMessage = f"startGradingRun: executing test {test.name} for file {javaFile}"
                         Loghelper.logInfo(infoMessage)
 
-                    gradeAction = GradeAction(test.type, "test")
-                    gradeAction.student = submission.student
-                    gradeAction.javaFile = javaFile
-                    gradeActionList.append(gradeAction)
+                        gradeAction = GradeAction(test.type, "test")
+                        gradeAction.student = submission.student
+                        gradeAction.javaFile = javaFile
+                        gradeActionList.append(gradeAction)
 
-                    gradeResult = GradeResult(f"{test.type}-Test")
-                    gradeResult.submission = f"{submission}"
-                    gradeResult.description = f"Executing test {test.name}"
-                    if test.type == "JUnit":
-                        pass
-                    elif test.type == "Text-Compare":
-                        pass
-                    else:
-                        infoMessage = f"{test.type} ist ein unbekannter Testtyp"
-                        Loghelper.logInfo(infoMessage)
-                    # TODO: Natürlich nur provisorisch
-                    gradeResult.result = "OK"
-                    gradeResult.success = True
-                    gradeResultList.append(gradeResult)
+                        gradeResult = GradeResult(f"{test.type}-Test")
+                        gradeResult.submission = f"{submission}"
+                        gradeResult.description = f"startGradingRun: executing test {test.name}"
+                        if test.type == "JUnit":
+                            pass
+                        elif test.type == "Text-Compare":
+                            pass
+                        else:
+                            infoMessage = f"{test.type} ist ein unbekannter Testtyp"
+                            Loghelper.logInfo(infoMessage)
+                        # TODO: Natürlich nur provisorisch
+                        gradeResult.result = "OK"
+                        gradeResult.success = True
+                        gradeResultList.append(gradeResult)
+
+                        submisssionsGraded += 1
 
             # Store grade run in the database
-            timestamp = datetime.datetime.now().strftime("%d.%m.%y %H:%M")
+            timestamp = datetime.now().strftime("%d.%m.%y %H:%M")
             okCount = len([gr for gr in gradeResultList if gr.success])
             errorCount = len([gr for gr in gradeResultList if not gr.success])
-            gradeRunId = DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradeModule, gradingOperator, len(submissions), okCount, errorCount)
+            gradeRunId = DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradeModule, gradingOperator, submisssionsGraded, okCount, errorCount)
+            infoMessage = f"startGradingrun: stored gradeRun id={gradeRunId}"
+            Loghelper.logInfo(infoMessage)
 
-            # Store all submissions in the database
+            # Store all submisionsresults in the database
+            '''
             for submission in submissions:
                 # ResultPoints und Remarks müssen noch eingefügt werden
                 DBHelper.storeSubmissionResult(dbPath, gradeRunId, submission.student, submission.exercise,
                                                submission.semester, submission.module,
                                                submission.fileName, 0, "Keine")
 
+            '''
             # Write XML-Reports
             actionReportPath = xmlHelper.generateActionReport(gradeActionList)
             # display report file
@@ -405,9 +419,9 @@ def MenueD_startGradingrun() -> None:
             # display report file
             subprocess.call(["notepad.exe", gradeReportPath])
 
-            htmlPath = xmlHelper.convertGradingReport2Html(gradeReportPath, gradeSemester, gradeModule, gradeExercise)
+            htmlPath = xmlHelper.convertGradingReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
             os.startfile(htmlPath)
-            print(f"{len(submissions)} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
+            print(f"{submisssionsGraded} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
 
 '''
 Menue E - outputs all grading runs in the database
