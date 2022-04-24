@@ -364,11 +364,12 @@ def storeSubmissionResult(dbPath, gradeRunId, submissionId, exercise, semester, 
 '''
 Gets all grade runs
 '''
-def getAllGradeRun(dbPath):
+def getAllGradeRuns(dbPath):
     try:
         dbCon = sqlite3.connect(dbPath)
+        dbCon.row_factory = sqlite3.Row
     except Error as ex:
-        infoMessage = f"getAllGradeRun: error connecting to database ({ex})"
+        infoMessage = f"getAllGradeRuns: error connecting to database ({ex})"
         Loghelper.logError(infoMessage)
         return
 
@@ -379,7 +380,7 @@ def getAllGradeRun(dbPath):
         rows = cur.fetchall()
         return rows
     except Error as ex:
-        infoMessage = f"getAllGradeRun: error querying GradeRun table ({ex})"
+        infoMessage = f"getAllGradeRuns: error querying GradeRun table ({ex})"
         Loghelper.logError(infoMessage)
 
 '''

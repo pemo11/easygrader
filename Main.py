@@ -441,11 +441,11 @@ Menue E - outputs all grading runs in the database
 '''
 def MenueE_showGradingRuns() -> None:
     # returns tuples
-    gradeRuns = DBHelper.getGradeRuns(dbPath)
+    gradeRuns = DBHelper.getAllGradeRuns(dbPath)
     print("*" * 80)
     for gradeRun in gradeRuns:
-        print(f"Id:{gradeRun[0]} Timestamp:{gradeRun[1]} Semester:{gradeRun[2]} Submission-Count:{gradeRun[3]}"
-              f" OK-Count:{gradeRun[4]} ErrorCount:{gradeRun[5]}")
+        print(f'Id:{gradeRun["Id"]} Timestamp:{gradeRun["Timestamp"]} Semester:{gradeRun["Semester"]} Submission-Count:{gradeRun["SubmissionCount"]} '
+              f'OK-Count:{gradeRun["OKCount"]} ErrorCount:{gradeRun["ErrorCount"]}')
     print("*" * 80)
     print()
 
