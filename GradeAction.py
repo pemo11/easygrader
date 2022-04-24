@@ -8,8 +8,8 @@ class GradeAction:
         self.type = type
         self.action = action
         self.timestamp = datetime.now()
-        self.student = ""
-        self.javaFile = ""
+        self.submission = None
+        self.file = ""
 
     def __repr__(self):
-        return f"Type={self.type} Action={self.action} Student={self.student} with {self.javaFile}"
+        return f"Type={self.type} Action={self.action} Student={self.submission.studentId} File={self.file}"

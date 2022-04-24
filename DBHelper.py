@@ -86,15 +86,13 @@ def initDb(dbPath):
     sqlCommand = """
     CREATE TABLE IF NOT EXISTS SubmissionResult (
      Id integer PRIMARY KEY AUTOINCREMENT,
-     GradeRun integer NOT NULL,
-     StudentId integer NOT NULL,
+     GradeRunId integer NOT NULL,
+     SubmissionId integer NOT NULL,
      Exercise text NOT NULL,
      Semester text NOT NULL,
      Module text NOT NULL,
-     Filename text,
-     ResultPoints integer,
-     ResultComment text,
-     ResultRemarks text
+     GradePoints integer,
+     GradeErrors integer
     );
     """
     try:
@@ -312,9 +310,35 @@ def getSubmissionByStudentId(dbPath, studentId) -> [Submission]:
     return submissions
 
 '''
+Get the maximum grading id
+'''
+def getNextGradeRunId(dbPath) -> int:
+    try:
+        dbCon = sqlite3.connect(dbPath)
+    except Error as ex:
+        infoMessage = f"getNextGradeRunId: error connecting to database ({ex})"
+        Loghelper.logError(infoMessage)
+        return -1
+    sqlCommand = "Select Max(Id) From GradeRun"
+    try:
+        cur = dbCon.cursor()
+        cur.execute(sqlCommand)
+        row = cur.fetchone()
+        gradeId = 1 if row[0] == None else row[0] + 1
+        return gradeId
+        infoMessage = f"getNextGradeRunId: new gradeId={gradeId}"
+        Loghelper.logInfo(infoMessage)
+    except Error as ex:
+        infoMessage = f"getNextGradeRunId: error executing query ({ex})"
+        Loghelper.logError(infoMessage)
+
+    dbCon.close()
+
+
+'''
 Stores the grading for a single submission during a grade run
 '''
-def storeSubmissionResult(dbPath, gradeRunId, student, exercise, semester, module, filename, resultPoints, resultRemarks):
+def storeSubmissionResult(dbPath, gradeRunId, submissionId, exercise, semester, module, gradePoints, gradeErrors):
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
@@ -322,9 +346,9 @@ def storeSubmissionResult(dbPath, gradeRunId, student, exercise, semester, modul
         Loghelper.logError(infoMessage)
         return
 
-    sqlCommand = "Insert Into SubmissionResult (GradeRun,Student,Exercise,Semester,Module,Filename,ResultPoints,ResultRemarks) "
-    sqlCommand += f"Values({gradeRunId}, '{student}','{exercise}','{semester}',"
-    sqlCommand += f"'{module}','{filename}','{resultPoints}','{resultRemarks}')"
+    sqlCommand = "Insert Into SubmissionResult (GradeRunId,SubmissionId,Exercise,Semester,Module,GradePoints,GradeErrors) "
+    sqlCommand += f"Values({gradeRunId},'{submissionId}','{exercise}','{semester}','{module}',"
+    sqlCommand += f"{gradePoints},{gradeErrors})"
     try:
         dbCur = dbCon.cursor()
         dbCur.execute(sqlCommand)

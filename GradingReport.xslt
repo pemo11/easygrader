@@ -9,26 +9,30 @@
     <xsl:param name="gradingTime"/>
     <xsl:template match="/">
         <html>
-            <body>
+             <head>
+                <meta charset="UTF-8" />
+                <link href="GradingReport.css" type="text/css" rel="stylesheet" />
+            </head>
+           <body>
                 <h3>Grading-Report <xsl:value-of select="$gradingTime"/> - <xsl:value-of select="$module"/>/<xsl:value-of select="$exercise"/> (<xsl:value-of select="$semester"/>)</h3>
-                <table border="1">
+                <table id="entries">
                     <tr bgcolor="#9acd32">
-                        <th>Type</th>
                         <th>Timestamp</th>
+                        <th>Type</th>
                         <th>Student</th>
                         <th>Description</th>
                         <th>Message</th>
                         <th>Points</th>
                         <th>Success</th>
                     </tr>
-                    <xsl:for-each select="//gradeAction">
+                    <xsl:for-each select="//gradeResult">
                         <tr>
-                            <td><xsl:value-of select="type"/></td>
                             <td><xsl:value-of select="timestamp"/></td>
+                            <td><xsl:value-of select="type"/></td>
                             <td><xsl:value-of select="student"/></td>
                             <td><xsl:value-of select="description"/></td>
                             <td><xsl:value-of select="message"/></td>
-                            <td><xsl:value-of select="gradePoints"/></td>
+                            <td><xsl:value-of select="points"/></td>
                             <xsl:choose>
                                 <xsl:when test="gradeSuccess = 'False'">
                                     <td style="background-color:orange"><xsl:value-of select="gradeSuccess"/></td>

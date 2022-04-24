@@ -7,16 +7,15 @@ Defines the result of a grading action for the grade report
 class GradeResult:
 
     def __init__(self, type):
-        self.timestamp = datetime.now().strftime("%d.%m.%y %H:%M")
+        self.timestamp = datetime.now()
         self.type = type
-        self.description = "None"
+        self.description = ""
         self.points = 0
         # compiles better name?
         self.success = False
-        self.submission = "None"
-        self.student = "None"
+        self.submission = None
         self.remarks = "No Paseran"
-        self.errorMessage = "None"
+        self.errorMessage = ""
 
     def __repr__(self):
-        return f"Type: {self.type} Description: {self.description} Student: {self.student} Points: {self.points }Sucess: {self.success}"
+        return f"Type: {self.type} Description: {self.description} Student: {self.submission.studentId} Points: {self.points } Sucess: {self.success}"
