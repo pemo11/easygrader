@@ -36,9 +36,9 @@ But again, SimpelGrader is not an autograder.
 
 So, what is it good for?
 
-At the moment SimpelGrader is for teachers or assistants of teachers of Java programming classes whose task is it to grade programming assigments that had been uploaded in a Moodle course a zip files.
+At the moment SimpelGrader is for teachers or assistants of teachers of Java programming classes whose task is it to grade programming assigments that had been uploaded in a Moodle course as zip files.
 
-SimpleGrader will process the single zip downloaded from Moodle, extract its content, checks for completeness, stores everything in a small database and process each submission by running predefined actions like Java compile, a Checkstyle test or a JUnit test.
+SimpleGrader will process the single zip downloaded from Moodle, extract its content into directories, checks for completeness, stores everything in a small database and process each submission by running predefined actions like Java compile, a Checkstyle test or a JUnit test.
 
 The result of each action/test will be stored in the database and displayed as an HTML report in the browser.
 
@@ -52,6 +52,23 @@ But since the boring and error prone tasks are already done, there should be mor
 - May be Check for plagiarism
 - Write a formative feedback
 
+SimpelGrader is easy to install. I developed the application on Windows but it should run with no problemo on Linux and MacOS.
+
+Python 3.8 is a requirement because I wanted to use a nice improvements for while loops.
+
+SimpelGrader cannot run out of the box because two things have to be prepared first:
+
+1. the grading xml file
+2. the settings in simpelgrader.ini
+3. Some Python packages (like lxml) have to be installed first (there is a requirements.txt of course)
+
+Preparing the xml file can be time consuming because it means to define for each exercise a name, the name of the needed files, and additional actions and tests if compile and checkstyle is not enough.
+
+The sample grade xml file is a template for a customized grading plan.
+
+Step 2 is about writing the path of some directories and the name of the semester and the module in the ini file.
+
+If everything is setup, SimpelGrader runs as any Python console application. A grade run will take a couple of minutes and ends always with showing a couple of report files.
 
 *** more to follow soon ***
 
