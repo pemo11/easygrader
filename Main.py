@@ -34,7 +34,7 @@ import csv
 # =============================================================================
 # Globale Variablen
 # =============================================================================
-appVersion = "0.50"
+appVersion = "0.80"
 appName = "SimpelGrader"
 taskBasePath = ""
 submissionPath = ""
@@ -80,12 +80,12 @@ def initVariables():
     deleteSubmissionTree = config["start"]["deleteSubmissionTree"]
     if deleteSubmissionTree.upper().startswith("Y") and os.path.exists(submissionDestPath):
         shutil.rmtree(submissionDestPath)
-        infoMessage = f"Deleted directory {submissionDestPath} with its content"
+        infoMessage = f"initVariables: deleted directory {submissionDestPath} with its content"
         Loghelper.logInfo(infoMessage)
     if not os.path.exists(submissionDestPath):
         # create directory with all the subdirectories
         os.makedirs(submissionDestPath)
-        infoMessage = f"Created directory {submissionDestPath}"
+        infoMessage = f"initVariables: created directory {submissionDestPath}"
         Loghelper.logInfo(infoMessage)
 
 
@@ -264,7 +264,7 @@ def MenueC_validateSubmissions() -> None:
                 missingFiles = [fi for fi in exerciseFiles if fi not in files]
                 if len(missingFiles) > 0:
                     infoMessage = f"Missing files in submission {submission.id}: {','.join(missingFiles)}"
-                    Loghelper.logError(infoMessage)
+                    Loghelper.logError(f"validateSubmissions: {infoMessage}")
                     validation = SubmissionValidation(exercise, "Error", infoMessage)
                 else:
                     infoMessage = f"All files complete"

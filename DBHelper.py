@@ -451,56 +451,56 @@ def getSubmissionResultByStudent(dbPath, student):
         return None
 
 '''
-get a single student id by name
+get a single student id by name - either first_last or first last
 '''
-def getStudentId(dbPath, studentName):
+def getStudentId(dbPath, studentName) -> int:
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
         infoMessage = f"getStudentId: error connecting to database ({ex})"
         Loghelper.logError(infoMessage)
-        return
+        return -1
 
-    # currently consider only the lastname for the query
-    if len(studentName.split("_")) > 1:
-        studentName = studentName.split("_")[1]
-    # if a blank is used instead of _
-    elif len(studentName.split(" ")) > 1:
-        studentName = studentName.split(" ")[1]
+    # switch blank with _ if just in case
+    studentName = studentName.replace(" ", "_")
+    # name still valid?
+    if len(studentName.split("_")) > 2:
+        return -1
 
-    sqlCommand = "Select Id From Student Where Lastname = ?"
+    firstName,lastName = studentName.split("_") if len(studentName.split("_")) == 2 else ("",studentName)
+
+    if firstName == "":
+        sqlCommand = "Select Id From Student Where Lastname = ?"
+    else:
+        sqlCommand = "Select Id From Student Where Firstname=? and Lastname = ?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlCommand, (studentName,))
+        if firstName == "":
+            cur.execute(sqlCommand, (studentName,))
+        else:
+            cur.execute(sqlCommand, (firstName,lastName))
         row = cur.fetchone()
         if row != None:
             return row[0]
         else:
             infoMessage = f"getStudentId: no student id for {studentName}"
             Loghelper.logError(infoMessage)
-            return None
+            return -1
     except Error as ex:
         infoMessage = f"getStudentId: error querying Student table ({ex})"
         Loghelper.logError(infoMessage)
-        return None
+        return -1
 
 '''
-get a list of student ids by a single name
+get a list of student ids by the last name only
 '''
-def getStudentIdList(dbPath, studentName) -> []:
+def searchStudentId(dbPath, studentName) -> []:
     try:
         dbCon = sqlite3.connect(dbPath)
     except Error as ex:
-        infoMessage = f"getStudentIdList: error connecting to database ({ex})"
+        infoMessage = f"searchStudentId: error connecting to database ({ex})"
         Loghelper.logError(infoMessage)
         return None
-
-    # currently consider only the lastname for the query
-    if len(studentName.split("_")) > 1:
-        studentName = studentName.split("_")[1]
-    # if a blank is used instead of _
-    elif len(studentName.split(" ")) > 1:
-        studentName = studentName.split(" ")[1]
 
     sqlCommand = "Select Id From Student Where Lastname = ?"
     try:
@@ -510,7 +510,7 @@ def getStudentIdList(dbPath, studentName) -> []:
         studentIdList = [row[0] for row in rows]
         return studentIdList
     except Error as ex:
-        infoMessage = f"getStudentIdList: error querying Student table ({ex})"
+        infoMessage = f"searchStudentId: error querying Student table ({ex})"
         Loghelper.logError(infoMessage)
         return None
 
