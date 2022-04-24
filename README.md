@@ -11,20 +11,20 @@ My thoughts were exactly the same;) - I definitely did not want to add another a
 
 But I saw couple of short comings:
 
-. Many applications are complex
-. Some graders offer too many functions
-. Not every autograder api is very well documented
-. Some autograders are old (which is not automatically bad of course)
-. Not very autograder is an Open Source project on GitHub, GitLab etc
-. Not every institution uses Moodle
-. And: When autograding a lot of assignments everything may start with a huge zip file
+- Many applications are complex
+- Some graders offer too many functions
+- Not every autograder api is very well documented
+- Some autograders are old (which is not automatically bad of course)
+- Not very autograder is an Open Source project on GitHub, GitLab etc
+- Not every institution uses Moodle
+- And: When autograding a lot of assignments everything may start with a huge zip file
 
 With SimpelGrader I'll try to address a few of these shortcommings:
 
-. Processing a single zip file that contains all the assignments
-. A small project that should be easy to understand
-. Hopefully the whole source code is documented
-. I will try to improve the application in the near future
+- Processing a single zip file that contains all the assignments
+- A small project that should be easy to understand
+- Hopefully the whole source code is documented
+- I will try to improve the application in the near future
 
 But most important: SimpelGrader is not a complete autograder. It only runs prefined actions associated with each submission file through a xml file.
 
@@ -48,9 +48,9 @@ The assistant/teacher still has to look at the source code, may be rerun tests, 
 
 But since the boring and error prone tasks are already done, there should be more time and energy left for the important parts:
 
-. To really look at the solution
-. May be Check for plagiarism
-. Write a formative feedback
+- To really look at the solution
+- May be Check for plagiarism
+- Write a formative feedback
 
 
 *** more to follow soon ***
