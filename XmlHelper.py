@@ -7,7 +7,7 @@ import Loghelper
 from TaskAction import TaskAction
 from TaskTest import TaskTest
 
-nsmap =  {"sig": "urn:simpelGrader"}
+nsmap =  {"sig": "urn:simpelgrader"}
 
 class XmlHelper:
 
@@ -29,7 +29,7 @@ class XmlHelper:
     tests if an exercise exists in the grading plan
     '''
     def exerciseExists(self, exercise) -> bool:
-        xPathExpr = f".//sig:task[@name='{exercise}']"
+        xPathExpr = f".//sig:task[@exercise='{exercise}']"
         exercise = self.root.xpath(xPathExpr, namespaces=nsmap)
         return len(exercise) > 0
 
@@ -39,7 +39,7 @@ class XmlHelper:
     def getActionList(self, exercise):
         # 20/04/22 - level ist jetzt Teil des Exercise-Namens, z.B. EA1A
         # xPathExpr = f".//sig:task[@name='{exercise}' and @level='{level}']/actions/action"
-        xPathExpr = f".//sig:task[@name='{exercise}']/actions/action"
+        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:actions/sig:action"
         actionElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         actionList = []
         for action in actionElements:
@@ -51,16 +51,15 @@ class XmlHelper:
     Get all tests associated with this task/exercise
     '''
     def getTestList(self, exercise):
-        xPathExpr = f".//sig:task[@name='{exercise}']/tests/test"
+        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:tests/sig:test"
         testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         testList = []
         for test in testElements:
-            testName = test.find("test-name").text
-            tt = TaskTest(test.attrib["id"], testName, test.attrib["active"], test.find("test-type").text)
-            tt.testDescription = test.find("test-description").text
-            if test.find("test-type") == "JUNIT":
-                tt.testMethod = test.find("test-method").text
-            tt.testScore = test.find("test-score")
+            tt = TaskTest(test.attrib["id"], test.attrib["active"], test.find("sig:test-type", namespaces=nsmap).text)
+            tt.testDescription = test.find("sig:test-description", namespaces=nsmap).text
+            if test.find("sig:test-type", namespaces=nsmap) == "JUNIT":
+                tt.testMethod = test.find("sig:test-method", namespaces=nsmap).text
+            tt.testScore = test.find("sig:test-score", namespaces=nsmap)
             testList.append(tt)
         return testList
 
@@ -68,7 +67,7 @@ class XmlHelper:
     Get all files associated with this task/exercise
     '''
     def getFileList(self, exercise):
-        xPathExpr = f".//sig:task[@name='{exercise}']/files/file"
+        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:files/sig:file"
         fileElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         fileList = [fi.text for fi in fileElements] # May be a filter if fi.endswith(".java") is needed
         return fileList
@@ -153,13 +152,16 @@ class XmlHelper:
         return htmlPath
 
     '''
-    Validates a gradingplan file against the xsd schema
+    Validates the current gradingplan file against the xsd schema
     '''
-    def validateXml(self, xmlPath: str, xsdPath: str) -> bool:
+    def validateXml(self) -> bool:
         try:
+            xsdPath = path.join(path.dirname(__file__), "gradingplan.xsd")
+            if not path.exists(xsdPath):
+                return False
             xmlSchemaDoc = et.parse(xsdPath)
             xmlSchema = et.XMLSchema(xmlSchemaDoc)
-            xmlDoc = et.parse(xmlPath)
+            xmlDoc = et.parse(self.xmlPath)
             result = xmlSchema.validate(xmlDoc)
         except Exception as ex:
             Loghelper.logError(f"validateXml: Fehler bei der Xml-Validierung ({ex})")

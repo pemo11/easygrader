@@ -29,8 +29,9 @@ def compileJava(filePath) -> (int, str):
     javaCOutput = procContext.stdout.read()
     outputText = "OK"
     if len(javaCOutput) > 0:
-        javaCOutput = javaCOutput.decode()
-        # Pattern for error message
+        # cp1252 is import for Umlaute (utf8 does not work?)
+        javaCOutput = javaCOutput.decode("cp1252")
+        # Pattern to extract the error message only
         outputPattern = "java:\d+:\s+(.*)\r"
         if len(re.findall(outputPattern,javaCOutput)) > 0:
             outputText = re.findall(outputPattern,javaCOutput)[0]

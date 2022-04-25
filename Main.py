@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 24/04/22
+# Letztes Update: 25/04/22
 # Version 0.8
 # =============================================================================
 from datetime import datetime
@@ -15,6 +15,7 @@ import colorama
 from colorama import Fore, Back, Style
 import zipfile
 
+import CheckstyleHelper
 import JavaFileHelper
 import ZipHelper
 import Loghelper
@@ -88,7 +89,6 @@ def initVariables():
         infoMessage = f"initVariables: created directory {submissionDestPath}"
         Loghelper.logInfo(infoMessage)
 
-
 # =============================================================================
 # Helper functions
 # =============================================================================
@@ -137,6 +137,7 @@ def MenueA_preCheck() -> None:
     if not os.path.exists(gradingPlanPath):
         print(f"!!! {gradingPlanPath} existiert nicht")
         errorFlag = True
+    xmlHelper = XmlHelper(gradingPlanPath)
     dicCheck["gradingPlan"] = (gradingPlanPath, errorFlag)
     errorFlag = False
     if not os.path.exists(submissionPath):
@@ -153,12 +154,17 @@ def MenueA_preCheck() -> None:
         print(f"!!! {dbPath} existiert nicht")
         errorFlag = True
     dicCheck["dbPath"] = (dbPath, errorFlag)
+    # validate grading xml file
+    result = xmlHelper.validateXml()
+    dicCheck["gradingPlanValidation"] = ("Keine Ausgabe", result)
+
     print("*" * 80)
     for checkName,checkValue in dicCheck.items():
         if checkValue[1]:
             print(f"{checkName}={Fore.LIGHTRED_EX}{checkValue[0]}{Style.RESET_ALL}")
         else:
             print(f"{checkName}={Fore.LIGHTGREEN_EX}{checkValue[0]}{Style.RESET_ALL}")
+
     print("*" * 80)
     okChecks = len([c for c in dicCheck if dicCheck[c][1]==False])
     print(f"*** {okChecks} von {len(dicCheck)} Settings sind OK ***")
@@ -173,6 +179,8 @@ def MenueB_extractSubmissions() -> None:
     if not RosterHelper.validateRoster(studentRosterPath):
         # roster file is not valid exit
         return
+
+    print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden extrahiert - bitte etwas Geduld ***" + Style.RESET_ALL)
 
     # the the single zip file that contains all the submissions
     zipFiles = [fi for fi in os.listdir(submissionPath) if fi.endswith("zip")]
@@ -249,6 +257,9 @@ def MenueC_validateSubmissions() -> None:
         print("*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***")
         return
     validationList = []
+
+    print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden validiert - bitte etwas Geduld ***" + Style.RESET_ALL)
+
     for exercise in submissionDic:
         # check if all student from the roster have valid submissions
         exerciseSubmissions = submissionDic[exercise]
@@ -296,12 +307,10 @@ def MenueD_startGradingRun() -> None:
         return
     # Initiate grading plan
     xmlHelper = XmlHelper(gradingPlanPath)
-    # XSD validation - but no consequences yet
-    xsdPath = os.path.join(os.path.dirname(__file__), "gradingplan.xsd")
-    if os.path.exists(xsdPath):
-        result = xmlHelper.validateXml(gradingPlanPath, xsdPath)
-        infoMessage = f"startGradingRun: XSD-Validierung: {result}"
-        Loghelper.logInfo(infoMessage)
+    # XSD validation of the grading plan xml - but no consequences yet
+    result = xmlHelper.validateXml()
+    infoMessage = f"startGradingRun: XSD-Validierung: {result}"
+    Loghelper.logInfo(infoMessage)
 
     # List for all grading actions for the grading Action report
     gradeActionList = []
@@ -311,15 +320,15 @@ def MenueD_startGradingRun() -> None:
 
     # for clocking the grading run duration
     startTime = datetime.now()
-    print(f"*** Starte GradingRun für die Aufgaben {','.join(submissionDic.keys())}  ***")
+    print(Fore.LIGHTGREEN_EX +  f"*** Starte GradingRun für die Aufgaben {','.join(submissionDic.keys())}  ***" + Style.RESET_ALL)
     # go through all submissions
     for exercise in submissionDic:
         # get all the details from the submission object
         for studentName in submissionDic[exercise]:
             for submission in submissionDic[exercise][studentName]:
-                infoMessage = f"startGradingRun: grading submission {submission.id} for student {studentName}"
+                infoMessage = f"startGradingRun: grading submission {submission.id}/{submission.exercise} for student {studentName}"
                 Loghelper.logInfo(infoMessage)
-                print(f"*** Starte Bewertung für Abgabe {submission.id} und Student {studentName} ***")
+                print(f"*** Starte Bewertung für Abgabe {submission.id}/{submission.exercise} und Student {studentName} ({submission.studentId}) ***")
                 # go through all submitted files in the archive directory
                 # get all file names from the gradingplan xml
                 # check if exercise exists in the gradingplan
@@ -377,12 +386,13 @@ def MenueD_startGradingRun() -> None:
                     testList = xmlHelper.getTestList(exercise)
                     for test in testList:
                         if not eval(test.active):
-                            infoMessage = f"startGradingRun: leaving out Test {test.name} for {javaFile}"
+                            infoMessage = f"startGradingRun: leaving out Test {test.id} for {javaFile}"
                             Loghelper.logInfo(infoMessage)
                             continue
-                        infoMessage = f"startGradingRun: executing test {test.name} for file {javaFile}"
+                        infoMessage = f"startGradingRun: executing test {test.id} for file {javaFile}"
                         Loghelper.logInfo(infoMessage)
 
+                        points = 0
                         gradeAction = GradeAction(test.type, "test")
                         gradeAction.submission = submission
                         gradeAction.file = javaFile
@@ -390,7 +400,9 @@ def MenueD_startGradingRun() -> None:
 
                         gradeResult = GradeResult(f"{test.type}-Test")
                         gradeResult.submission = submission
-                        if test.type == "JUnit":
+                        if test.type == "checkstyle":
+                            points += CheckstyleHelper.runCheckstyle(javaFile)
+                        elif test.type == "JUnit":
                             pass
                         elif test.type == "Text-Compare":
                             pass
@@ -538,6 +550,23 @@ def start() -> None:
             MenueH_showLogfile()
         else:
             print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
+
+    # copy the database file for a backup
+    config = configparser.ConfigParser()
+    config.read("Simpelgrader.ini")
+    databaseBackup = config["start"]["databaseBackup"]
+    if databaseBackup.upper().startswith("Y") and os.path.exists(dbPath):
+        n = 0
+        abbruch = False
+        while not abbruch:
+            n += 1
+            dbName = dbPath.split(".")[0]
+            dbCopyPath = f"{dbName}_{n:03d}.db"
+            abbruch = not os.path.exists(dbCopyPath) or n == 999
+        shutil.copy(dbPath, dbCopyPath)
+        infoMessage = f"start: copied {dbPath} to {dbCopyPath}"
+        Loghelper.logInfo(infoMessage)
+        print(Fore.LIGHTYELLOW_EX +  f"*** copied {dbPath} to {dbCopyPath} ***" + Style.RESET_ALL)
 
 # The "real" starting point for the case that someone thinks this is a module;)
 if __name__ == "__main__":
