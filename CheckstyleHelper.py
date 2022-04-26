@@ -8,12 +8,14 @@ import configparser
 import tempfile
 import Loghelper
 
+# get the import programm pathes from the ini file
 config = configparser.ConfigParser()
 config.read("Simpelgrader.ini")
 javaCPath = config["path"]["checkstylePath"]
 rulePath = config["path"]["checkstyleRulePath"]
 checkstylePath = config["path"]["checkstylePath"]
 
+# get the temp directory for the application
 tempPath = os.path.join(tempfile.gettempdir(), "simpelgrader")
 
 '''

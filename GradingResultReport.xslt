@@ -11,7 +11,7 @@
         <html>
              <head>
                 <meta charset="UTF-8" />
-                <link href="GradingReport.css" type="text/css" rel="stylesheet" />
+                <link href="GradingResultReport.css" type="text/css" rel="stylesheet" />
             </head>
            <body>
                 <h3>Grading-Report <xsl:value-of select="$gradingTime"/> - <xsl:value-of select="$module"/>/<xsl:value-of select="$exercise"/> (<xsl:value-of select="$semester"/>)</h3>

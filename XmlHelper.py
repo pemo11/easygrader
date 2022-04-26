@@ -108,15 +108,17 @@ class XmlHelper:
         xlRoot = et.Element("report")
         for gradeAction in actionList:
             xlGradeAction = et.SubElement(xlRoot, "gradeAction")
-            actionType = et.SubElement(xlGradeAction, "type")
-            actionType.text = gradeAction.type
-            timeStamp = et.SubElement(xlGradeAction, "timestamp")
-            timeStamp.text = datetime.strftime(gradeAction.timestamp, "%d.%m.%Y %H:%M")
-            action = et.SubElement(xlGradeAction, "action")
-            action.text = gradeAction.action
-            # student id or student name?
-            studentId = et.SubElement(xlGradeAction, "student")
-            studentId.text = str(gradeAction.submission.studentId)
+            xlActionType = et.SubElement(xlGradeAction, "type")
+            xlActionType.text = gradeAction.type
+            xlTimeStamp = et.SubElement(xlGradeAction, "timestamp")
+            xlTimeStamp.text = datetime.strftime(gradeAction.timestamp, "%d.%m.%Y %H:%M")
+            xlAction = et.SubElement(xlGradeAction, "action")
+            xlAction.text = gradeAction.action
+            xlFile =  et.SubElement(xlGradeAction, "file")
+            xlFile.text = gradeAction.file
+            # student id or better student name?
+            xlStudentId = et.SubElement(xlGradeAction, "student")
+            xlStudentId.text = str(gradeAction.submission.studentId)
 
         # Write the report
         tree = et.ElementTree(xlRoot)
@@ -125,13 +127,13 @@ class XmlHelper:
         return self.gradeActionReportpath
 
     '''
-    Converts a grading xml report into html
+    Converts a grading result xml report into html
     '''
-    def convertGradingReport2Html(self, xmlPath, semester, module, exercise):
+    def convertGradingResultReport2Html(self, xmlPath, semester, module, exercise):
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
-            xsltPath = "GradingReport.xslt"
+            xsltPath = "GradingResultReport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
@@ -144,10 +146,10 @@ class XmlHelper:
             htmlLines = htmlText.decode().split("\n")
             with open(htmlPath, "w", encoding="utf-8") as fh:
                 fh.writelines(htmlLines)
-            infoMessage = f"convertGradingReport2Html: generated {htmlPath}"
+            infoMessage = f"convertGradingResultReport2Html: generated {htmlPath}"
             Loghelper.logInfo(infoMessage)
         except Exception as ex:
-            infoMessage = f"convertGradingReport2Html: error ({ex})"
+            infoMessage = f"convertGradingResultReport2Html: error ({ex})"
             Loghelper.logError(infoMessage)
         return htmlPath
 

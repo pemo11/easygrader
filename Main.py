@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 25/04/22
+# Letztes Update: 26/04/22
 # Version 0.8
 # =============================================================================
 from datetime import datetime
@@ -16,6 +16,7 @@ from colorama import Fore, Back, Style
 import zipfile
 
 import CheckstyleHelper
+import JUnitHelper
 import JavaFileHelper
 import ZipHelper
 import Loghelper
@@ -371,8 +372,12 @@ def MenueD_startGradingRun() -> None:
                             gradeResult = GradeResult(action.type)
                             gradeResult.description = f"Compiling {javaFile}"
                             javaFilePath = os.path.join(filesPath, javaFile)
-                            # compile the java file - the result is either 1 or 0
-                            compileResult = JavaHelper.compileJava(javaFilePath)
+                            # JUnit test file names follow the pattern xxxTest.java
+                            if not javaFile.split(".")[0].lower().endswith("test"):
+                                # compile the java file - the result is either 1 or 0
+                                compileResult = JavaHelper.compileJava(javaFilePath)
+                            else:
+                                compileResult = JUnitHelper.compileJavaTest(javaFilePath)
                             gradePoints = 1 if compileResult[0] == 0 else 0
                             gradeResult.points = gradePoints
                             gradeResult.errorMessage = compileResult[1]
@@ -385,14 +390,17 @@ def MenueD_startGradingRun() -> None:
                     # Get all the tests for the exercise
                     testList = xmlHelper.getTestList(exercise)
                     for test in testList:
+                        # is the test active? it has to be True and not true in the xml
                         if not eval(test.active):
                             infoMessage = f"startGradingRun: leaving out Test {test.id} for {javaFile}"
                             Loghelper.logInfo(infoMessage)
                             continue
+
                         infoMessage = f"startGradingRun: executing test {test.id} for file {javaFile}"
                         Loghelper.logInfo(infoMessage)
 
                         points = 0
+                        # a new GradeAction object just for the report
                         gradeAction = GradeAction(test.type, "test")
                         gradeAction.submission = submission
                         gradeAction.file = javaFile
@@ -400,35 +408,46 @@ def MenueD_startGradingRun() -> None:
 
                         gradeResult = GradeResult(f"{test.type}-Test")
                         gradeResult.submission = submission
+                        # what test to run?
                         if test.type == "checkstyle":
                             points += CheckstyleHelper.runCheckstyle(javaFile)
                         elif test.type == "JUnit":
-                            pass
+                            points += JUnitHelper.runJUnitTest(javaFile)
                         elif test.type == "Text-Compare":
                             pass
                         elif test.type == "TestDriver":
                             pass
                         else:
-                            infoMessage = f"startGradingRun: {test.type} ist ein unbekannter Testtyp"
+                            infoMessage = f"startGradingRun: {test.type} is an unknown test type"
                             Loghelper.logInfo(infoMessage)
                         # TODO: Natürlich nur provisorisch
-                        gradeResult.points = 1
-                        gradeResult.success = True
+                        gradeResult.points = points
+                        gradeResult.success = True if points > 0 else False
                         gradeResultList.append(gradeResult)
 
+                # count the graded submissions
                 submisssionsGraded += 1
-                # store the submission in the database
+
+                # prepare to store the current submission in the database
+
+                # get the sum of all points for the current submission
                 totalGradePoints = sum([g.points for g in gradeResultList if g.submission.id == submission.id])
+                # get the number of errors for the current submission
                 gradeErrors = sum([1 for g in gradeResultList if g.success == False])
+                # get the next id from the gradeRun table
                 gradeRunId = DBHelper.getNextGradeRunId(dbPath)
+                # store the current submission in the database
                 DBHelper.storeSubmissionResult(dbPath, gradeRunId, submission.id, exercise, gradeSemester,
                                                gradeModule, totalGradePoints, gradeErrors)
 
 
-    # Store grade run in the database
+    # Prepare to store current graderun in the database
     timestamp = datetime.now().strftime("%d.%m.%y %H:%M")
+    # get the total of all oks
     okCount = len([gr for gr in gradeResultList if gr.success])
+    # get the total of all errors
     errorCount = len([gr for gr in gradeResultList if not gr.success])
+    # store the graderun in the database
     gradeRunId = DBHelper.storeGradeRun(dbPath, timestamp, gradeSemester, gradeModule, gradingOperator, submisssionsGraded, okCount, errorCount)
     infoMessage = f"startGradingRun: stored gradeRun id={gradeRunId}"
     Loghelper.logInfo(infoMessage)
@@ -444,7 +463,7 @@ def MenueD_startGradingRun() -> None:
     subprocess.call(["notepad.exe", gradeReportPath])
 
     # convert the grading results reports to html
-    htmlPath = xmlHelper.convertGradingReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
+    htmlPath = xmlHelper.convertGradingResultReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
     os.startfile(htmlPath)
     print(f"{submisssionsGraded} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
 

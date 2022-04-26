@@ -37,7 +37,6 @@ def compileJava(filePath) -> (int, str):
             outputText = re.findall(outputPattern,javaCOutput)[0]
         else:
             outputText = "Error"
-
     return (procContext.returncode, outputText)
 
 '''
