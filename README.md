@@ -63,9 +63,9 @@ SimpelGrader cannot run out of the box because two things have to be prepared fi
 2. the settings in simpelgrader.ini
 3. Some Python packages (like lxml) have to be installed first (there is a requirements.txt of course)
 
-Preparing the xml file can be time consuming because it means to define for each exercise a name, the name of the needed files, and additional actions and tests if compile and checkstyle is not enough.
+Preparing the xml file can be a little time consuming because it means to define for each exercise a name, the name of the needed files, and additional actions and tests if compile and checkstyle is not enough.
 
-The sample grade xml file is a template for a customized grading plan.
+The sample grade xml file gradingplan1.xml in the sampledata directory is a template for a customized grading plan.
 
 Step 2 is about writing the path of some directories and the name of the semester and the module in the ini file.
 
@@ -73,17 +73,21 @@ If everything is setup, SimpelGrader runs as any Python console application. A g
 
 ## getting started
 
-First clone the repository
+First clone the repository into an subdirectory of the current directory 
+
+`git clone https://github.com/pemo11/simpelgrader`
 
 Create a virtual enviroment (not necessary but recommended)
 
-python -m venv .env
+`python -m venv .env`
 
 Activate the virtual environment
 
+`.env/scripts/activate`
+
 install the (few= requirements)
 
-pip -r requirements.txt
+`pip -r requirements.txt`
 
 In PyCharm its necessary to choose either the Python interpreter from the newly created environment or choose any other Python 3.8 or above interpreter.
 
@@ -103,7 +107,7 @@ Currently they are nine different pathes that have to be set.
 
 ![Simpelgrader Simpelgrader.ini](images/simpelgrader_02.png "Simpelgrader Simpelgrader.ini")
 
-Path| Path of...                                      |Sample value
+Setting| Path of...                                      |Sample value
 ---|-------------------------------------------------|---
 javaCompilerPath| the java compiler program file                  |E:\\Java\\jdk-11.0.14+9\\bin\\javac
 javaLauncherPath | the java launcher program file                  |E:\\Java\\jdk-11.0.14+9\\bin\\java
@@ -119,24 +123,55 @@ the next table contain the other settings which are all optional
 
 section|setting|meaning
 ---|---|---
-run|gradeSemester|Name of the semester
-run|gradeModule|Name of the module
+run|gradeSemester|Name of the semester (just for the report)
+run|gradeModule|Name of the module (just for the report)
 run|gradingOperator|Name of the user (just of the report)
 start|deleteSubmissionTree|Yes = delete all already extracted zip files first
-start|deleteLogFile|Yes = start with a new log file
-start|databaseBackup|make a copy of the dp file before quitting the program
+start|deleteLogFile|Yes = start with a new log file each time
+start|databaseBackup|make a copy of the db file before quitting the program
 
 ### editing the grading plan
 
-the grading plan is a simple xml file that contains a task element for each exercise.
+the grading plan is a simple xml file that contains a task element for each exercise:
 
-each task element (exercise) contains a list of files, actions and tests.
+```
+<sig:tasks xmlns:sig="urn:simpelgrader">
+  <sig:task id="1000" exercise="EA1" title="Aufgabe EA1">
+    <sig:description>description for task 1000</sig:description>
+    <sig:files>
+      <sig:file>App.java</sig:file>
+      <sig:file>AppTest.java</sig:file>
+    </sig:files>
+    <sig:actions>
+      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
+    </sig:actions>
+    <sig:tests>
+      <sig:test id="T01" active="True">
+        <sig:test-type>checkstyle</sig:test-type>
+        <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
+        <sig:test-driver></sig:test-driver>
+        <sig:test-score>1</sig:test-score>
+      </sig:test>
+    </sig:tests>
+  </sig:task>
+  ...
 
-There is a sample xml file in the sample directory. The only that needs to change are the name of exercises because this names have to be part of the file name for every submission.
+</tasks>
+```
 
-Example: the name of an exercise is EA1. This means that each submitted zip file has to follow the simple naming scheme:
+There is a naming convention for the java files:
 
-EA1_FirstName_LastName.zip
+**If the name ends with "Test" (like AppTest.java) the file will be threated as a JUnit file**
+
+Each task element (exercise) contains a list of files, actions and tests.
+
+Each action or test can be active or not. If a action or test is not active it will be omitted during a grading run.
+
+There is a sample xml file in the sample directory. The only thing that needs to change are the name of exercises because this names have to be part of the file name for every submission.
+
+**Example**: the name of an exercise is EA1. This means that each submitted zip file has to follow the simple naming scheme:
+
+*EA1_FirstName_LastName.zip*
 
 Withouth a task-element with exercise="EA1" Simpelgrader would not process this submission.
 
@@ -144,7 +179,9 @@ List of actions
 - compile
 
 List of tests
-
 - checkstyle
-- JUnit
-- text-compare
+- junit
+- textcompare
+- testdriver
+
+The type names in the xml file are **not** case sensitive.

@@ -418,13 +418,13 @@ def MenueD_startGradingRun() -> None:
                         gradeResult = GradeResult(f"{test.type}-Test")
                         gradeResult.submission = submission
                         # what test to run?
-                        if test.type == "checkstyle":
+                        if test.type.lower() == "checkstyle":
                             points += CheckstyleHelper.runCheckstyle(javaFile)
-                        elif test.type == "JUnit":
+                        elif test.type.lower() == "junit":
                             points += JUnitHelper.runJUnitTest(javaFile)
-                        elif test.type == "Text-Compare":
+                        elif test.type.lower() == "textcompare":
                             pass
-                        elif test.type == "TestDriver":
+                        elif test.type.lower() == "testdriver":
                             pass
                         else:
                             infoMessage = f"startGradingRun: {test.type} is an unknown test type"
