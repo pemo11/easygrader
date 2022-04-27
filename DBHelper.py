@@ -252,6 +252,7 @@ def getSubmissions(dbPath) -> dict:
     dict = {}
     try:
         dbCon = sqlite3.connect(dbPath)
+        dbCon.row_factory = sqlite3.Row
     except Error as ex:
         infoMessage = f"getSubmissions: error connecting to database ({ex})"
         Loghelper.logError(infoMessage)
@@ -264,13 +265,14 @@ def getSubmissions(dbPath) -> dict:
         cur.execute(sqlCommand)
         rows = cur.fetchall()
         for row in rows:
-            id = row[0]
-            semester = row[1]
-            module = row[2]
-            exercise = row[4]
-            studentId = row[5]
-            files = row[6]
-            filesPath = row[7]
+            id = row["id"]
+            semester = row["Semester"]
+            module = row["Module"]
+            exercise = row["exercise"]
+            studentId = row["StudentId"]
+            files = row["files"]
+            dirPath = row["path"]
+            complete = row["complete"]
             # returns Student object or None
             student = DBHelper.getStudentById(dbPath, studentId)
             if dict.get(exercise) == None:
@@ -282,10 +284,11 @@ def getSubmissions(dbPath) -> dict:
             submission.exercise = exercise
             submission.module = module
             submission.semester = semester
+            submission.complete = complete
             # all the file names part of the submission
             submission.files = files
-            # store the path too
-            submission.path = filesPath
+            # store the directory path of the files too
+            submission.path = dirPath
             dict[exercise][student].append(submission)
 
     except Error as ex:
@@ -328,6 +331,36 @@ def getSubmissionByStudentId(dbPath, studentId) -> [Submission]:
     return submissions
 
 '''
+Updates a single submission
+'''
+def updateSubmission(dbPath, submission) -> bool:
+    try:
+        dbCon = sqlite3.connect(dbPath)
+    except Error as ex:
+        infoMessage = f"updateSubmission: error connecting to database ({ex})"
+        Loghelper.logError(infoMessage)
+        return False
+
+    id = submission.id
+    complete = submission.complete
+    sqlCommand = f"Update Submission Set Complete={complete} "
+    sqlCommand += f"Where Id={id}"
+    try:
+        dbCur = dbCon.cursor()
+        dbCur.execute(sqlCommand)
+        dbCon.commit()
+        infoMessage = f"updateSubmission: Submission table with id={id} updated"
+        Loghelper.logInfo(infoMessage)
+        return True
+    except Error as ex:
+        infoMessage = f"updateSubmission: error updating a row in the Submission table ({ex})"
+        Loghelper.logError(infoMessage)
+        return False
+    finally:
+        if dbCon != None:
+            dbCon.close()
+
+'''
 Get the maximum grading id
 '''
 def getNextGradeRunId(dbPath) -> int:
@@ -352,7 +385,6 @@ def getNextGradeRunId(dbPath) -> int:
     finally:
         if dbCon != None:
             dbCon.close()
-
 
 '''
 Stores the grading for a single submission during a grade run

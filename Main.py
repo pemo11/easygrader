@@ -23,6 +23,7 @@ import Loghelper
 
 from GradeAction import GradeAction
 from GradeResult import GradeResult
+from FeedbackItem import FeedbackItem
 from SubmissionName import SubmissionName
 from SubmissionValidation import SubmissionValidation
 import RosterHelper
@@ -235,9 +236,12 @@ def MenueB_extractSubmissions() -> None:
             submission = submissionDic[exercise][studentName][0]
             studentId = submission.studentId
             files = submission.files
-            filesPath = submission.path
+            dirPath = submission.path
+            # complete is always false at this time because
+            # the completenes of the files have not been checked yet
+            complete = submission.complete
             timestamp = datetime.now()
-            DBHelper.storeSubmission(dbPath, timestamp, gradeSemester, gradeModule, exercise, studentId, files, filesPath, False)
+            DBHelper.storeSubmission(dbPath, timestamp, gradeSemester, gradeModule, exercise, studentId, files, dirPath, complete)
             submissionProcessedCount += 1
 
     infoMessage = f"{submissionProcessedCount} submissions stored in the database."
@@ -259,6 +263,7 @@ def MenueC_validateSubmissions() -> None:
     if submissionDic == None:
         # Try again, submissions already extracted?
         submissionDic = ZipHelper.buildSubmissionDic(dbPath, submissionDestPath)
+        # Any submissions?
         if len(submissionDic) == 0:
             print(Fore.LIGHTRED_EX + "*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***" + Style.RESET_ALL)
             return
@@ -266,16 +271,21 @@ def MenueC_validateSubmissions() -> None:
 
     print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden validiert - bitte etwas Geduld ***" + Style.RESET_ALL)
 
+    # go through all the submitted directories with their java files
+    xmlHelper = XmlHelper(gradingPlanPath)
+    # go through each exercise
     for exercise in submissionDic:
         # check if all student from the roster have valid submissions
         exerciseSubmissions = submissionDic[exercise]
+        # go through each submissions for this exercise by student name
         for studentName in exerciseSubmissions:
             infoMessage = f"validateSubmissions: validating submission for student {studentName}"
             Loghelper.logInfo(infoMessage)
+            # go through the (single) submissions of that particular student
             for submission in submissionDic[exercise][studentName]:
                 exercise = submission.exercise
                 files = submission.files.split(",")
-                xmlHelper = XmlHelper(gradingPlanPath)
+                # get the files from the grading plan
                 exerciseFiles = xmlHelper.getFileList(exercise)
                 # check if all submissions are complete
                 missingFiles = [fi for fi in exerciseFiles if fi not in files]
@@ -291,6 +301,10 @@ def MenueC_validateSubmissions() -> None:
                     # update submission info
                     submission.complete = True
 
+                # update submission in the database
+                DBHelper.updateSubmission(dbPath, submission)
+
+                # update validation details
                 validation.submissionId = submission.id
                 validation.studentId = submission.studentId
                 validationList.append(validation)
@@ -326,6 +340,8 @@ def MenueD_startGradingRun() -> None:
     gradeActionList = []
     # List for all grading results for the grading Result report
     gradeResultList = []
+    # List for the feedback items
+    feedbackItemList = []
     submisssionsGraded = 0
 
     # for clocking the grading run duration
@@ -381,7 +397,7 @@ def MenueD_startGradingRun() -> None:
                             gradeResult = GradeResult(action.type)
                             gradeResult.description = f"Compiling {javaFile}"
                             javaFilePath = os.path.join(filesPath, javaFile)
-                            # JUnit test file names follow the pattern xxxTest.java
+                            # JUnit test file names follow the pattern <name>Test.java
                             if not javaFile.split(".")[0].lower().endswith("test"):
                                 # compile the java file - the result is either 1 or 0
                                 compileResult = JavaHelper.compileJava(javaFilePath)
@@ -395,6 +411,13 @@ def MenueD_startGradingRun() -> None:
                             gradeResult.success = actionSuccess
                             gradeResult.submission = submission
                             gradeResultList.append(gradeResult)
+                            # Create a feedback object for the action
+                            feedbackItem = FeedbackItem(submission)
+                            feedbackItem.report = compileResult[1]
+                            feedbackItemList.append(feedbackItem)
+                        else:
+                            infoMessage = f"startGradingRun: {action.type} is an unknown action type"
+                            Loghelper.logInfo(infoMessage)
 
                     # Get all the tests for the exercise
                     testList = xmlHelper.getTestList(exercise)
@@ -419,6 +442,7 @@ def MenueD_startGradingRun() -> None:
                         gradeResult.submission = submission
                         # what test to run?
                         if test.type.lower() == "checkstyle":
+                            # TODO: get the Checkstyle messages?
                             points += CheckstyleHelper.runCheckstyle(javaFile)
                         elif test.type.lower() == "junit":
                             points += JUnitHelper.runJUnitTest(javaFile)
@@ -433,6 +457,11 @@ def MenueD_startGradingRun() -> None:
                         gradeResult.points = points
                         gradeResult.success = True if points > 0 else False
                         gradeResultList.append(gradeResult)
+
+                        # Create a feedback object for the action
+                        feedbackItem = FeedbackItem(submission)
+                        feedbackItem.report = compileResult[1]
+                        feedbackItemList.append(feedbackItem)
 
                 # count the graded submissions
                 submisssionsGraded += 1
@@ -475,6 +504,8 @@ def MenueD_startGradingRun() -> None:
     htmlPath = xmlHelper.convertGradingResultReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
     os.startfile(htmlPath)
     print(f"{submisssionsGraded} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
+
+    # TODO: create a feedback report
 
 '''
 Menue E - outputs all grading runs in the database
