@@ -15,6 +15,8 @@ from Student import Student
 Creates the database file and the tables without any data
 '''
 def initDb(dbPath):
+    dbCon = None
+
     try:
         dbCon = sqlite3.connect(dbPath)
         infoMessage = f"initDb: created database {dbPath} (SQlite-Version: {sqlite3.version}) ***"
@@ -23,9 +25,10 @@ def initDb(dbPath):
         infoMessage = f"initDb: error connecting to database {ex}"
         Loghelper.logError(infoMessage)
     finally:
-        dbCon.close()
-        infoMessage = "initDb: closed connection to database"
-        Loghelper.logInfo(infoMessage)
+        if dbCon != None:
+            dbCon.close()
+            infoMessage = "initDb: closed connection to database"
+            Loghelper.logInfo(infoMessage)
 
     # Tabelle GradRun anlegen
     sqlCommand = """
@@ -50,9 +53,10 @@ def initDb(dbPath):
         infoMessage = f"initDb: error connecting to database {ex}"
         Loghelper.logError(infoMessage)
     finally:
-        dbCon.close()
-        infoMessage = "initDb: closed connection to database"
-        Loghelper.logInfo(infoMessage)
+        if dbCon != None:
+            dbCon.close()
+            infoMessage = "initDb: closed connection to database"
+            Loghelper.logInfo(infoMessage)
 
     # Tabelle Submission anlegen
     sqlCommand = """
@@ -78,9 +82,10 @@ def initDb(dbPath):
         infoMessage = f"initDb: error creating Table Submission ({ex})"
         Loghelper.logError(infoMessage)
     finally:
-        dbCon.close()
-        infoMessage = "initDb: closed connection to database"
-        Loghelper.logInfo(infoMessage)
+        if dbCon != None:
+            dbCon.close()
+            infoMessage = "initDb: closed connection to database"
+            Loghelper.logInfo(infoMessage)
 
     # Tabelle SubmissionResult anlegen
     sqlCommand = """
@@ -104,9 +109,10 @@ def initDb(dbPath):
         infoMessage = f"initDb: error creating table SubmissionResult ({ex})"
         Loghelper.logError(infoMessage)
     finally:
-        dbCon.close()
-        infoMessage = "initDb: closed connection to database"
-        Loghelper.logInfo(infoMessage)
+        if dbCon != None:
+            dbCon.close()
+            infoMessage = "initDb: closed connection to database"
+            Loghelper.logInfo(infoMessage)
 
     # Tabelle Student anlegen
     sqlCommand = """
@@ -127,9 +133,10 @@ def initDb(dbPath):
         infoMessage = f"initDb: error creating Table Student ({ex})"
         Loghelper.logError(infoMessage)
     finally:
-        dbCon.close()
-        infoMessage = "initDb: closed connection to database"
-        Loghelper.logInfo(infoMessage)
+        if dbCon != None:
+            dbCon.close()
+            infoMessage = "initDb: closed connection to database"
+            Loghelper.logInfo(infoMessage)
 
     # Tabelle Roster anlegen
     sqlCommand = """
@@ -150,9 +157,10 @@ def initDb(dbPath):
         infoMessage = f"initDb: error creating table Roster ({ex})"
         Loghelper.logError(infoMessage)
     finally:
-        dbCon.close()
-        infoMessage = "initDb: closed connection to database"
-        Loghelper.logInfo(infoMessage)
+        if dbCon != None:
+            dbCon.close()
+            infoMessage = "initDb: closed connection to database"
+            Loghelper.logInfo(infoMessage)
 
 '''
 Stores a grade run 
@@ -179,8 +187,9 @@ def storeGradeRun(dbPath, timestamp, semester, module, operator, submissionCount
     except Error as ex:
         infoMessage = f"storeGradeRun: error inserting row into Table GradeRun ({ex})"
         Loghelper.logError(infoMessage)
-
-    dbCon.close()
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 Stores a single submission of a student
@@ -208,8 +217,9 @@ def storeSubmission(dbPath, timestamp, semester, module, exercise, studentId, fi
         infoMessage = f"storeSubmission: error inserting in Submission table ({ex})"
         Loghelper.logError(infoMessage)
         return -1
-
-    dbCon.close()
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 Clears all the submission
@@ -231,8 +241,9 @@ def clearAllSubmission(dbPath):
     except Error as ex:
         infoMessage = f"clearAllSubmissions: error deleting all rows in Table Submission ({ex})"
         Loghelper.logError(infoMessage)
-
-    dbCon.close()
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 Gets all submisssions
@@ -280,6 +291,9 @@ def getSubmissions(dbPath) -> dict:
     except Error as ex:
         infoMessage = f"getSubmissions: error querying Submission table ({ex})"
         Loghelper.logError(infoMessage)
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
     return dict
 
@@ -307,6 +321,10 @@ def getSubmissionByStudentId(dbPath, studentId) -> [Submission]:
     except Error as ex:
         infoMessage = f"getSubmissionByStudentId: error querying Submission table ({ex})"
         Loghelper.logError(infoMessage)
+    finally:
+        if dbCon != None:
+            dbCon.close()
+
     return submissions
 
 '''
@@ -331,8 +349,9 @@ def getNextGradeRunId(dbPath) -> int:
     except Error as ex:
         infoMessage = f"getNextGradeRunId: error executing query ({ex})"
         Loghelper.logError(infoMessage)
-
-    dbCon.close()
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 
 '''
@@ -358,8 +377,9 @@ def storeSubmissionResult(dbPath, gradeRunId, submissionId, exercise, semester, 
     except Error as ex:
         infoMessage = f"storeSubmissionResult: error inserting a row to SubmissionResult table ({ex})"
         Loghelper.logError(infoMessage)
-
-    dbCon.close()
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 Gets all grade runs
@@ -382,6 +402,9 @@ def getAllGradeRuns(dbPath):
     except Error as ex:
         infoMessage = f"getAllGradeRuns: error querying GradeRun table ({ex})"
         Loghelper.logError(infoMessage)
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 Gets a grade run by id
@@ -406,6 +429,9 @@ def getGradeRun(dbPath, runId):
     except Error as ex:
         infoMessage = f"getGradeRun: error querying GradeRun table ({ex})"
         Loghelper.logError(infoMessage)
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 Get all submission results
@@ -427,6 +453,9 @@ def getAllSubmissionResult(dbPath):
     except Error as ex:
         infoMessage = f"getAllSubmissionResult: error querying SubmissionResult table ({ex})"
         Loghelper.logError(infoMessage)
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 Get all the submission results for a single student
@@ -449,6 +478,9 @@ def getSubmissionResultByStudent(dbPath, student):
         infoMessage = f"getSubmissionResultByStudent: error querying submissionResult table ({ex})"
         Loghelper.logError(infoMessage)
         return None
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 get a single student id by name - either first_last or first last
@@ -490,6 +522,9 @@ def getStudentId(dbPath, studentName) -> int:
         infoMessage = f"getStudentId: error querying Student table ({ex})"
         Loghelper.logError(infoMessage)
         return -1
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 get a list of student ids by the last name only
@@ -513,6 +548,9 @@ def searchStudentId(dbPath, studentName) -> []:
         infoMessage = f"searchStudentId: error querying Student table ({ex})"
         Loghelper.logError(infoMessage)
         return None
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 get student name by id
@@ -542,6 +580,9 @@ def getStudentById(dbPath, studentId) -> Student:
         infoMessage = f"getStudentById: error querying student table ({ex})"
         Loghelper.logError(infoMessage)
         return None
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 stores a student
@@ -592,6 +633,9 @@ def storeStudent(dbPath, studentId, studentName, studentEMail) -> int:
         infoMessage = f"storeStudent: error inserting row into Student table ({ex})"
         Loghelper.logError(infoMessage)
         return -1
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 stores a student roster 
@@ -638,8 +682,9 @@ def storeRoster(dbPath, semester, module, studentId, exercises) -> int:
     except Error as ex:
         infoMessage = f"storeRoster: error inserting row into Roster table ({ex})"
         Loghelper.logError(infoMessage)
-
-    dbCon.close()
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 get the student roster 
@@ -666,6 +711,9 @@ def getRoster(dbPath) -> []:
     except Error as ex:
         infoMessage = f"storeRoster: error querying Roster table ({ex})"
         Loghelper.logError(infoMessage)
+    finally:
+        if dbCon != None:
+            dbCon.close()
 
 '''
 update the student roster with the submitted exercise
@@ -727,7 +775,9 @@ def updateRoster(dbPath, studentId, exercise) -> bool:
             infoMessage = f"updateRoster: error updating table Roster ({ex})"
             Loghelper.logError(infoMessage)
             return False
+        finally:
+            if dbCon != None:
+                dbCon.close()
 
-    dbCon.close()
     return True
 

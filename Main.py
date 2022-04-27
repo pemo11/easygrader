@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
-# Erstellt: 01/03/22
-# Letztes Update: 27/04/22
+# creation date: 03/01/22
+# last update: 04/27/22
 # Version 0.8
 # =============================================================================
 from datetime import datetime
@@ -34,7 +34,7 @@ from Submission import Submission
 import csv
 
 # =============================================================================
-# Globale Variablen
+# Some global variables
 # =============================================================================
 appVersion = "0.80"
 appName = "SimpelGrader"
@@ -138,8 +138,12 @@ def MenueA_preCheck() -> None:
     if not os.path.exists(gradingPlanPath):
         print(f"!!! {gradingPlanPath} existiert nicht")
         errorFlag = True
-    xmlHelper = XmlHelper(gradingPlanPath)
     dicCheck["gradingPlan"] = (gradingPlanPath, errorFlag)
+    # validate grading xml file
+    if os.path.exists(gradingPlanPath):
+        xmlHelper = XmlHelper(gradingPlanPath)
+        result = xmlHelper.validateXml()
+        dicCheck["gradingPlanValidation"] = ("Keine Ausgabe", result)
     errorFlag = False
     if not os.path.exists(submissionPath):
         print(f"!!! {submissionPath} existiert nicht")
@@ -155,9 +159,6 @@ def MenueA_preCheck() -> None:
         print(f"!!! {dbPath} existiert nicht")
         errorFlag = True
     dicCheck["dbPath"] = (dbPath, errorFlag)
-    # validate grading xml file
-    result = xmlHelper.validateXml()
-    dicCheck["gradingPlanValidation"] = ("Keine Ausgabe", result)
 
     print("*" * 80)
     for checkName,checkValue in dicCheck.items():

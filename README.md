@@ -3,6 +3,7 @@
 # simpelgrader
 A simple Python application for grading Java assignments by running defined actions and tests for each submission
 
+## about the programm
 I started the development as part of my bachelor thesis about auto grading programming assignments because I felt there is a need for such a tool.
 
 Wait, another autograder? Aren't there already a couple dozens (or maybe several hundreds) available for more than at least a decade? Why another one? And why as an old fashioned Python console application? And no GPT3 (Open AI)?
@@ -70,5 +71,80 @@ Step 2 is about writing the path of some directories and the name of the semeste
 
 If everything is setup, SimpelGrader runs as any Python console application. A grade run will take a couple of minutes and ends always with showing a couple of report files.
 
-*** more to follow soon ***
+## getting started
 
+First clone the repository
+
+Create a virtual enviroment (not necessary but recommended)
+
+python -m venv .env
+
+Activate the virtual environment
+
+install the (few= requirements)
+
+pip -r requirements.txt
+
+In PyCharm its necessary to choose either the Python interpreter from the newly created environment or choose any other Python 3.8 or above interpreter.
+
+Altough it is not possible to start SimpelGrader without preparing the pathes in Simpelgrader.ini it is possible to start the application without any errors.
+
+After the start the application menue is shown.
+
+![Simpelgrader start menue](images/simpelgrader_01.png "Simpelgrader start menue")
+
+The only possible options without editing Simpelgrader.ini are A for the precheck and H for showing the current log file.
+
+### editing Simpelgrader.ini
+
+Editing Simpelgrader.ini means providing the pathes for the several directories that Simpelgrader uses.
+
+Currently they are nine different pathes that have to be set.
+
+![Simpelgrader Simpelgrader.ini](images/simpelgrader_02.png "Simpelgrader Simpelgrader.ini")
+
+Path| Path of...                                      |Sample value
+---|-------------------------------------------------|---
+javaCompilerPath| the java compiler program file                  |E:\\Java\\jdk-11.0.14+9\\bin\\javac
+javaLauncherPath | the java launcher program file                  |E:\\Java\\jdk-11.0.14+9\\bin\\java
+jUnitPath| the two JUnit 4.x jar files                     |C:\\JUnit
+gradingPlanPath| the xml file with the grading plan              |E:\\Grader-Helper\\CreateSimpelGraderSubmission\\gradingplan1.xml
+submissionPath| the zip file that contains the submissions      |E:\\Grader-Helper\\CreateSimpelGraderSubmission\\Submissions
+checkstylePath| the directory with the checkstyle jar file      |E:\\Checkstyle\\checkstyle-8.23-all.jar
+checkstyleRulePath| the path of the checkstyle rule file            |E:\\Praktomat-Testpool\\GP1\\checkstyle-OMI3d.xml
+studentRosterPath| the path of the csv file with the student names |E:\\Grader-Helper\\CreateSimpelGraderSubmission\\Student_Roster.csv
+dbPath| the path of the sqlite db database file         |E:\\Projekte\\simpelgrader\\simpelgraderv1.db
+
+the next table contain the other settings which are all optional
+
+section|setting|meaning
+---|---|---
+run|gradeSemester|Name of the semester
+run|gradeModule|Name of the module
+run|gradingOperator|Name of the user (just of the report)
+start|deleteSubmissionTree|Yes = delete all already extracted zip files first
+start|deleteLogFile|Yes = start with a new log file
+start|databaseBackup|make a copy of the dp file before quitting the program
+
+### editing the grading plan
+
+the grading plan is a simple xml file that contains a task element for each exercise.
+
+each task element (exercise) contains a list of files, actions and tests.
+
+There is a sample xml file in the sample directory. The only that needs to change are the name of exercises because this names have to be part of the file name for every submission.
+
+Example: the name of an exercise is EA1. This means that each submitted zip file has to follow the simple naming scheme:
+
+EA1_FirstName_LastName.zip
+
+Withouth a task-element with exercise="EA1" Simpelgrader would not process this submission.
+
+List of actions
+- compile
+
+List of tests
+
+- checkstyle
+- JUnit
+- text-compare
