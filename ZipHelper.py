@@ -74,16 +74,47 @@ def unzipAll(zipPfad, destFolder, fileCount) -> int:
     return fileCount
 
 '''
+build dictionary from the extracted archive
+'''
+def buildSubmissionDic(dbPath, destPath) -> dict:
+    folderDic = {}
+    # go through all subdirs
+    submissionId = 1
+    for zipDir in os.listdir(destPath):
+        exercise = zipDir.split("_")[0]
+        studentName = "_".join(zipDir.split("_")[1:])
+        if folderDic.get(exercise) == None:
+            folderDic[exercise] = {}
+        if folderDic[exercise].get(studentName) == None:
+            folderDic[exercise][studentName] = []
+        zipPath = os.path.join(destPath, zipDir)
+        fileNames = ",".join(os.listdir(zipPath))
+        studentId = DBHelper.getStudentId(dbPath, studentName)
+        submission = Submission(submissionId, studentId)
+        submission.exercise = exercise
+        submission.files = fileNames
+        submission.path = zipPath
+        submissionId += 1
+        folderDic[exercise][studentName].append(submission)
+    return folderDic
+
+'''
 extracts all submissions inside a single zip file and returns a dict
 dict -> exercise key -> dict -> unique student name key -> list of submisssions
 '''
-def extractSubmissions(dbPath, zipPfad, destPath) -> dict:
-    fileCount = unzipAll(zipPfad, destPath, 0)
+def extractSubmissions(dbPath, zipPath, destPath) -> dict:
+    fileCount = unzipAll(zipPath, destPath, 0)
     infoMessage = f"extractSubmissions: {fileCount} files extracted"
     Loghelper.logInfo(infoMessage)
-    folderDic = {}
     submissionId = 1
-    # go through all subdirs
+
+    folderDic = buildSubmissionDic(dbPath, destPath)
+
+    return folderDic
+
+    # go through all subdirs and build a dict
+    '''
+    folderDic = {}
     for zipDir in os.listdir(destPath):
         exercise = zipDir.split("_")[0]
         studentName = "_".join(zipDir.split("_")[1:])
@@ -102,3 +133,4 @@ def extractSubmissions(dbPath, zipPfad, destPath) -> dict:
         folderDic[exercise][studentName].append(submission)
 
     return folderDic
+    '''

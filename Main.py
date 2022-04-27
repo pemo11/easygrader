@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # Erstellt: 01/03/22
-# Letztes Update: 26/04/22
+# Letztes Update: 27/04/22
 # Version 0.8
 # =============================================================================
 from datetime import datetime
@@ -38,7 +38,7 @@ import csv
 # =============================================================================
 appVersion = "0.80"
 appName = "SimpelGrader"
-taskBasePath = ""
+# this path contains the path of the directory with the submitted zip file
 submissionPath = ""
 # this path contains the expanded files
 submissionDestPath = ""
@@ -253,10 +253,14 @@ def MenueB_extractSubmissions() -> None:
 Menue C - validates all submissions in the database
 '''
 def MenueC_validateSubmissions() -> None:
+    global submissionDic
     # Any submissions in the dic yet?
     if submissionDic == None:
-        print("*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***")
-        return
+        # Try again, submissions already extracted?
+        submissionDic = ZipHelper.buildSubmissionDic(dbPath, submissionDestPath)
+        if len(submissionDic) == 0:
+            print(Fore.LIGHTRED_EX + "*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***" + Style.RESET_ALL)
+            return
     validationList = []
 
     print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden validiert - bitte etwas Geduld ***" + Style.RESET_ALL)
@@ -278,9 +282,13 @@ def MenueC_validateSubmissions() -> None:
                     infoMessage = f"Missing files in submission {submission.id}: {','.join(missingFiles)}"
                     Loghelper.logError(f"validateSubmissions: {infoMessage}")
                     validation = SubmissionValidation(exercise, "Error", infoMessage)
+                    # update submission info
+                    submission.complete = False
                 else:
                     infoMessage = f"All files complete"
                     validation = SubmissionValidation(exercise, "OK", infoMessage)
+                    # update submission info
+                    submission.complete = True
 
                 validation.submissionId = submission.id
                 validation.studentId = submission.studentId
@@ -304,7 +312,7 @@ Menue D - starts a grading run for the submissions in the database
 def MenueD_startGradingRun() -> None:
     # Any submissions in the dic yet?
     if submissionDic == None:
-        print("*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***")
+        print(Fore.LIGHTRED_EX + "*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***" + Style.RESET_ALL)
         return
     # Initiate grading plan
     xmlHelper = XmlHelper(gradingPlanPath)
@@ -336,7 +344,7 @@ def MenueD_startGradingRun() -> None:
                 if not xmlHelper.exerciseExists(exercise):
                     infoMessage = f"startGradingRun: no grading plan for exercise {exercise}"
                     Loghelper.logError(infoMessage)
-                    print(f"*** Kein Eintrag für Aufgabe {exercise} - Aufgabe wird nicht bewertet ***")
+                    print(Fore.LIGHTYELLOW_EX +  f"*** Kein Eintrag für Aufgabe {exercise} - Aufgabe wird nicht bewertet ***" + Style.RESET_ALL)
                     continue
                 # get the expected files from the grading plan
                 exerciseFiles = xmlHelper.getFileList(exercise)
@@ -475,8 +483,8 @@ def MenueE_showGradingRuns() -> None:
     gradeRuns = DBHelper.getAllGradeRuns(dbPath)
     print("*" * 80)
     for gradeRun in gradeRuns:
-        print(f'Id:{gradeRun["Id"]} Timestamp:{gradeRun["Timestamp"]} Semester:{gradeRun["Semester"]} Submission-Count:{gradeRun["SubmissionCount"]} '
-              f'OK-Count:{gradeRun["OKCount"]} ErrorCount:{gradeRun["ErrorCount"]}')
+        print(Fore.LIGHTGREEN_EX +  f'Id:{gradeRun["Id"]} Timestamp:{gradeRun["Timestamp"]} Semester:{gradeRun["Semester"]} Submission-Count:{gradeRun["SubmissionCount"]} '
+              f'OK-Count:{gradeRun["OKCount"]} ErrorCount:{gradeRun["ErrorCount"]}' + Style.RESET_ALL)
     print("*" * 80)
     print()
 
@@ -486,7 +494,7 @@ Menue F - outputs the current student roster from the database
 def MenueF_showStudentRoster() -> None:
     rosters = DBHelper.getRoster(dbPath)
     for roster in rosters:
-        print(roster)
+        print(Fore.LIGHTCYAN_EX +  f"{roster}" + Style.RESET_ALL)
 
 '''
 Menue G - outputs the submissions of all students from the database 
@@ -496,7 +504,7 @@ def MenueG_showStudentSubmissions() -> None:
     # transform to a dict with student as key
     studentDic = {}
     if submissionDic == None:
-        print(f"*** Keine Submissions in der Datenbank ***")
+        print(Fore.LIGHTRED_EX +  f"*** Keine Submissions in der Datenbank ***" + Style.RESET_ALL)
     else:
         for exercise in submissionDic:
             for student in submissionDic[exercise]:
@@ -510,7 +518,11 @@ def MenueG_showStudentSubmissions() -> None:
         for studentName in studentDic:
             print(f"*** Abgaben für Student {studentName}")
             for submission in studentDic[studentName]:
-                print(f">>> {submission.exercise}")
+                if submission.complete:
+                    print(Fore.LIGHTGREEN_EX + f">>> {submission.exercise}" + Style.RESET_ALL)
+                else:
+                    print(Fore.LIGHTYELLOW_EX + f">>> {submission.exercise}" + Style.RESET_ALL)
+
 
 '''
 Menue H - show current log file
