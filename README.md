@@ -1,6 +1,6 @@
 04/24/22
 
-# simpelgrader
+# simpelgrader (version 0.8)
 A simple Python application for grading Java assignments by running defined actions and tests for each submission
 
 ## about the programm
@@ -20,56 +20,59 @@ But I saw couple of short comings:
 - Not every institution uses Moodle
 - And: When autograding a lot of assignments everything may start with a huge zip file
 
-With SimpelGrader I'll try to address a few of these shortcommings:
+With *SimpelGrader* I'll try to address a few of these shortcommings:
 
 - Processing a single zip file that contains all the assignments
 - A small project that should be easy to understand
 - Hopefully the whole source code is documented
 - I will try to improve the application in the near future
 
-But most important: SimpelGrader is not a complete autograder. It only runs prefined actions associated with each submission file through a xml file.
+But most important: *SimpelGrader* is **not** a complete autograder. It only runs prefined actions associated with each submission file through a xml file.
 
 At the moment there is no real feedback mechanismen and no means to adapt the weighting of points for each action or test.
 
-And SimpelGrader only works with simple Java assignments where the task always is to write a console application that does certain things and outputs something.
+And *SimpelGrader* only works with simple Java assignments where the task always is to write a console application that does certain things and outputs something.
 
-But again, SimpelGrader is not an autograder.
+But again, *SimpelGrader* is **not** an autograder.
 
 So, what is it good for?
 
 At the moment SimpelGrader is for teachers or assistants of teachers of Java programming classes whose task is it to grade programming assigments that had been uploaded in a Moodle course as zip files.
 
-SimpleGrader will process the single zip downloaded from Moodle, extract its content into directories, checks for completeness, stores everything in a small database and process each submission by running predefined actions like Java compile, a Checkstyle test or a JUnit test.
+*SimpelGrader* will process the single zip downloaded from *Moodle*, extract its content into directories, checks for completeness, stores everything in a small database and process each submission by running predefined actions like Java compile, a Checkstyle test or a JUnit test.
 
 The result of each action/test will be stored in the database and displayed as an HTML report in the browser.
 
-The idea is that SimpelGrader will hopefully save a lot of time because each zip file does not need to be extracted and each Java file does not have to load into Eclipse just to check if it compiles and to run Checkstyle.
+*SimpelGrader* has of course no depencency on *Moodle*. The only connection to *Moodle* is the fact that all submitted zip files have to be part of another zip file (*Submission_1_EA1_First_Last.zip*)
+for example.
+
+The idea is that *SimpelGrader* will hopefully save a lot of time because each zip file does not need to be extracted and each Java file does not have to load into Eclipse just to check if it compiles and to run Checkstyle.
 
 The assistant/teacher still has to look at the source code, may be rerun tests, run additional tests and have to do the grading and write a feedback for the student.
 
 But since the boring and error prone tasks are already done, there should be more time and energy left for the important parts:
 
 - To really look at the solution
-- May be Check for plagiarism
+- May be check for plagiarism
 - Write a formative feedback
 
-SimpelGrader is easy to install. I developed the application on Windows but it should run with no problemo on Linux and MacOS.
+*SimpelGrader* is easy to install. I developed the application on Windows but it should run with no problemo on Linux and MacOS.
 
 Python 3.8 is a requirement because I wanted to use a nice improvements for while loops.
 
-SimpelGrader cannot run out of the box because two things have to be prepared first:
+*SimpelGrader* cannot run out of the box because two things have to be prepared first:
 
 1. the grading xml file
-2. the settings in simpelgrader.ini
-3. Some Python packages (like lxml) have to be installed first (there is a requirements.txt of course)
+2. the settings in *simpelgrader.ini*
+3. Some Python packages (like lxml) have to be installed first (there is a *requirements.txt* of course)
 
 Preparing the xml file can be a little time consuming because it means to define for each exercise a name, the name of the needed files, and additional actions and tests if compile and checkstyle is not enough.
 
-The sample grade xml file gradingplan1.xml in the sampledata directory is a template for a customized grading plan.
+The sample grade xml file *gradingplan1.xml* in the *sampledata* directory is a template for a customized grading plan.
 
 Step 2 is about writing the path of some directories and the name of the semester and the module in the ini file.
 
-If everything is setup, SimpelGrader runs as any Python console application. A grade run will take a couple of minutes and ends always with showing a couple of report files.
+If everything is setup, *SimpelGrader* runs as any Python console application. A grade run will take a couple of minutes and ends always with showing a couple of report files.
 
 ## getting started
 
@@ -77,7 +80,7 @@ First clone the repository into an subdirectory of the current directory
 
 `git clone https://github.com/pemo11/simpelgrader`
 
-Create a virtual enviroment (not necessary but recommended)
+Create a Python virtual enviroment (not necessary but recommended)
 
 `python -m venv .env`
 
@@ -85,25 +88,25 @@ Activate the virtual environment
 
 `.env/scripts/activate`
 
-install the (few= requirements)
+Install the (few) requirements.
 
 `pip -r requirements.txt`
 
 In PyCharm its necessary to choose either the Python interpreter from the newly created environment or choose any other Python 3.8 or above interpreter.
 
-Altough it is not possible to start SimpelGrader without preparing the pathes in Simpelgrader.ini it is possible to start the application without any errors.
+Altough it is not possible to start *SimpelGrader* without preparing the pathes in *Simpelgrader.ini*, it is possible to start the application without any errors.
 
 After the start the application menue is shown.
 
 ![Simpelgrader start menue](images/simpelgrader_01.png "Simpelgrader start menue")
 
-The only possible options without editing Simpelgrader.ini are A for the precheck and H for showing the current log file.
+The only possible options without editing *Simpelgrader.ini* are **A** for the precheck and **H** for showing the current log file.
 
 ### editing Simpelgrader.ini
 
-Editing Simpelgrader.ini means providing the pathes for the several directories that Simpelgrader uses.
+Editing *Simpelgrader.ini* means providing the pathes for the several directories that *Simpelgrader* uses.
 
-Currently they are nine different pathes that have to be set.
+Currently they are 9 different pathes that have to be set. Table 1 shows each setting with an explanation and an example.
 
 ![Simpelgrader Simpelgrader.ini](images/simpelgrader_02.png "Simpelgrader Simpelgrader.ini")
 
@@ -118,8 +121,9 @@ checkstylePath| the directory with the checkstyle jar file      |E:\\Checkstyle\
 checkstyleRulePath| the path of the checkstyle rule file            |E:\\Praktomat-Testpool\\GP1\\checkstyle-OMI3d.xml
 studentRosterPath| the path of the csv file with the student names |E:\\Grader-Helper\\CreateSimpelGraderSubmission\\Student_Roster.csv
 dbPath| the path of the sqlite db database file         |E:\\Projekte\\simpelgrader\\simpelgraderv1.db
+*Table 1: Path settings in Simpelgrader.ini*
 
-the next table contain the other settings which are all optional
+Table 2 contain the other settings whose values are all optional.
 
 section|setting|meaning
 ---|---|---
@@ -129,10 +133,11 @@ run|gradingOperator|Name of the user (just of the report)
 start|deleteSubmissionTree|Yes = delete all already extracted zip files first
 start|deleteLogFile|Yes = start with a new log file each time
 start|databaseBackup|make a copy of the db file before quitting the program
+*Table 2: General settings in Simpelgrader.ini*
 
 ### editing the grading plan
 
-the grading plan is a simple xml file that contains a task element for each exercise:
+The grading plan is a simple xml file that contains a *task* element for each exercise:
 
 ```
 <sig:tasks xmlns:sig="urn:simpelgrader">
@@ -173,7 +178,7 @@ There is a sample xml file in the sample directory. The only thing that needs to
 
 *EA1_FirstName_LastName.zip*
 
-Withouth a task-element with exercise="EA1" Simpelgrader would not process this submission.
+Withouth a task-element with exercise="EA1" *Simpelgrader* would not process this submission.
 
 List of actions
 - compile
@@ -185,3 +190,50 @@ List of tests
 - testdriver
 
 The type names in the xml file are **not** case sensitive.
+
+## working with simpelgrader
+
+When everything (*gradingplan.xml* and *simpelgrader.ini*) are setup up, working with *Simpelgrader* is really simple.
+
+###Step 1: Check the Settings (Menue A)
+
+This step is optional. It validates if every path in *Simpelgrader.ini* really exists.
+
+###Step 2: Read the archive (Menue B)
+
+This step is mandatory. The submission zip file will be expanded to the temp directory:
+
+```
+simpelgrader
+--semestername
+----modulename
+```
+
+Each submission will be copied into its own sub directory with the name schema *Exercisename_StudentName*.
+
+
+###Step 3: Validates the submission (Menue C)
+
+This step is optional again. It validates each submission subdirectory by comparing the files in that directory with the files from the grading xml for that exercise.
+
+The result is a html report that will be automatically shown in the browser.
+
+###Step 4: Start a grading run (Menue D)
+
+This step is mandatory. All the files in each submission directory will be "graded" which only means that each active action and each test for that exercise will be applied to each file.
+
+The result is another html report that will be automatically shown in the browser.
+
+###Step 5: Display all grading runs (Menue E)
+
+
+###Step 5: Display the student roster (Menue F)
+
+
+###Step 6: Display all submissions (Menue G)
+
+
+###Step 7: Display the current log file (Menue H)
+
+
+
