@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<sig:tasks xmlns:sig="urn:simpelgrader">
+  <sig:task id="1000" exercise="EA1" title="Aufgabe EA1">
+    <sig:description>description for task 1000</sig:description>
+    <sig:files>
+      <sig:file>App.java</sig:file>
+      <sig:file>AppTest.java</sig:file>
+    </sig:files>
+    <sig:actions>
+      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
+    </sig:actions>
+    <sig:tests>
+      <sig:test id="T01" active="True">
+        <sig:test-type>checkstyle</sig:test-type>
+        <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
+        <sig:test-driver></sig:test-driver>
+        <sig:test-score>1</sig:test-score>
+      </sig:test>
+    </sig:tests>
+  </sig:task>
+  <sig:task id="1001" exercise="EA2" title="Aufgabe EA2">
+    <sig:description>description for task 1001</sig:description>
+    <sig:files>
+      <sig:file>App.java</sig:file>
+      <sig:file>AppTest.java</sig:file>
+    </sig:files>
+    <sig:actions>
+      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
+    </sig:actions>
+    <sig:tests>
+      <sig:test id="T01" active="True">
+        <sig:test-type>checkstyle</sig:test-type>
+        <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
+        <sig:test-driver></sig:test-driver>
+        <sig:test-score>1</sig:test-score>
+      </sig:test>
+    </sig:tests>
+  </sig:task>
+  <sig:task id="1002" exercise="EA3" title="Aufgabe EA3">
+    <sig:description>description for task 1002</sig:description>
+    <sig:files>
+      <sig:file>Triangle.java</sig:file>
+      <sig:file>TriangleTest.java</sig:file>
+    </sig:files>
+    <sig:actions>
+      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
+    </sig:actions>
+    <sig:tests>
+      <sig:test id="T01" active="True">
+        <sig:test-type>checkstyle</sig:test-type>
+        <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
+        <sig:test-driver></sig:test-driver>
+        <sig:test-score>1</sig:test-score>
+      </sig:test>
+    </sig:tests>
+  </sig:task>
+  <sig:task id="1003" exercise="EA4" title="Aufgabe EA4">
+    <sig:description>description for task 1003</sig:description>
+    <sig:files>
+      <sig:file>App.java</sig:file>
+      <sig:file>AppTest.java</sig:file>
+    </sig:files>
+    <sig:actions>
+      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
+    </sig:actions>
+    <sig:tests>
+      <sig:test id="T01" active="True">
+        <sig:test-type>checkstyle</sig:test-type>
+        <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
+        <sig:test-driver></sig:test-driver>
+        <sig:test-score>1</sig:test-score>
+      </sig:test>
+    </sig:tests>
+  </sig:task>
+  <sig:task id="1004" exercise="EA5" title="Aufgabe EA5">
+    <sig:description>description for task 1004</sig:description>
+    <sig:files>
+      <sig:file>App.java</sig:file>
+      <sig:file>AppTest.java</sig:file>
+    </sig:files>
+    <sig:actions>
+      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
+    </sig:actions>
+    <sig:tests>
+      <sig:test id="T01" active="True">
+        <sig:test-type>checkstyle</sig:test-type>
+        <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
+        <sig:test-driver></sig:test-driver>
+        <sig:test-score>1</sig:test-score>
+      </sig:test>
+    </sig:tests>
+  </sig:task>
+  <sig:task id="1005" exercise="EA6" title="Aufgabe EA6">
+    <sig:description>description for task 1005</sig:description>
+    <sig:files>
+      <sig:file>App.java</sig:file>
+      <sig:file>AppTest.java</sig:file>
+    </sig:files>
+    <sig:actions>
+      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
+    </sig:actions>
+    <sig:tests>
+      <sig:test id="T01" active="True">
+        <sig:test-type>checkstyle</sig:test-type>
+        <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
+        <sig:test-driver></sig:test-driver>
+        <sig:test-score>1</sig:test-score>
+      </sig:test>
+    </sig:tests>
+  </sig:task>
+</sig:tasks>
