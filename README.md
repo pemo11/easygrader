@@ -195,7 +195,7 @@ The type names in the xml file are **not** case sensitive.
 
 When everything (*gradingplan.xml* and *simpelgrader.ini*) are setup up, working with *Simpelgrader* is really simple.
 
-###Step 1: Create the single submission zip
+### Step 1: Create the single submission zip
 
 This step is usually not necessary because the zip file will be downloaded from the Moodle course.
 
@@ -213,11 +213,11 @@ In the third step this zip file is again zipped with all the other submission zi
 
 This single zip file is the file in the submission directory.
 
-###Step 2: Check the Settings (Menue A)
+### Step 2: Check the Settings (Menue A)
 
 This step is optional. It validates if every path in *Simpelgrader.ini* really exists.
 
-###Step 3: Read the archive (Menue B)
+### Step 3: Read the archive (Menue B)
 
 This step is mandatory. The submission zip file will be expanded to the temp directory:
 
@@ -230,32 +230,49 @@ simpelgrader
 Each submission will be copied into its own sub directory with the name schema *Exercisename_StudentName*.
 
 
-###Step 4: Validates the submission (Menue C)
+### Step 4: Validates the submission (Menue C)
 
 This step is optional again. It validates each submission subdirectory by comparing the files in that directory with the files from the grading xml for that exercise.
 
 The result is a html report that will be automatically shown in the browser.
 
-###Step 5: Start a grading run (Menue D)
+### Step 5: Start a grading run (Menue D)
 
 This step is mandatory. All the files in each submission directory will be "graded" which only means that each active action and each test for that exercise will be applied to each file.
 
 The result is another html report that will be automatically shown in the browser.
 
-###Step 6: Display all grading runs (Menue E)
+### Step 6: Display all grading runs (Menue E)
 
 A list of all grading runs. 
 
-###Step 7: Display the student roster (Menue F)
+### Step 7: Display the student roster (Menue F)
 
 A list of all student that are on the roster list.
 
-###Step 8: Display all submissions (Menue G)
+### Step 8: Display all submissions (Menue G)
 
 A list of all submissions.
 
-###Step 9: Display the current log file (Menue H)
+### Step 9: Display the current log file (Menue H)
 
 Another way to display the latestet log file. A line that starts with *** means information, ### means an "error" during validation and !!! means a program error and is something to thing about or better, make an issue in the repo out of it.
 
 if they are any questions left please send me an email. My current address is peter.monadjemi@stud.hs-emden-leer.de
+
+## A few details about the "inner workings" of SimpelGrader
+
+*SimpelGrader* is, as the name implies, a simple programm. But it is not a small programm because there is a lot of house keep to do like
+
+* extracting a zip file recursesively
+* CRUD operations with the sqlite database
+* A lot of XML operations like generating XML and querying XML with XPath queries)
+* XSLT transformation for generating HTML reports
+* Running external processes and getting the output
+* Running JUnit tests from Python
+* storing hierarchical information in a dictionary
+
+So besides being an hopefully helpful tool, SimpelGrader is also about learning comming Python techniques.
+
+All would not have been possible of course with excellent packages like *lXml* and many others and Python itself.
+

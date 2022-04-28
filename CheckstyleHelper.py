@@ -26,11 +26,16 @@ def runCheckstyle(javaPath) -> int:
     Loghelper.logInfo(infoMessage)
     javarDir = os.path.dirname(javaPath)
     javaArgs = f"-cp {checkstylePath} com.puppycrawl.tools.checkstyle.Main "
-    javaArgs += f"-c {rulePath} {javaPath}"
+    javaArgs += f"-c {rulePath} -f xml {javaPath}"
     procContext = subprocess.Popen(javaArgs, shell=True, env = {"PATH": javaPath}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     procContext.wait()
+    exitCode = procContext.returncode
     infoMessage = f"runCheckstyle: Checkstyle exit-code={procContext.returncode}"
     Loghelper.logInfo(infoMessage)
-    # javaCOutput = procContext.stdout.read()
-    return procContext.returncode
+    checkstyleOutput = procContext.stdout.read()
+    if len(checkstyleOutput) > 0:
+        checkstyleOutput = checkstyleOutput.decode("cp1252")
+
+    # the return text is xml with a checkstyle root and many error elements
+    return (exitCode, checkstyleOutput)
 
