@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # creation date: 03/01/22
-# last update: 04/27/22
+# last update: 04/28/22
 # Version 0.8
 # =============================================================================
 from datetime import datetime
@@ -136,6 +136,9 @@ Menue A - checks if the ini settings are valid
 def MenueA_preCheck() -> None:
     dicCheck = {}
     errorFlag = False
+    config = configparser.ConfigParser()
+    config.read("Simpelgrader.ini")
+    # check if the gradingfile path exists
     if not os.path.exists(gradingPlanPath):
         print(f"!!! {gradingPlanPath} existiert nicht")
         errorFlag = True
@@ -146,20 +149,43 @@ def MenueA_preCheck() -> None:
         result = xmlHelper.validateXml()
         dicCheck["gradingPlanValidation"] = ("Keine Ausgabe", result)
     errorFlag = False
+    # check if the submission dir path exists
     if not os.path.exists(submissionPath):
         print(f"!!! {submissionPath} existiert nicht")
         errorFlag = True
     dicCheck["submissionPath"] = (submissionPath, errorFlag)
     errorFlag = False
+    # check if the student roster file exists
     if not os.path.exists(studentRosterPath):
         print(f"!!! {studentRosterPath} existiert nicht")
         errorFlag = True
     dicCheck["studentRoster"] = (studentRosterPath, errorFlag)
+    # check if the db file exists
     errorFlag = False
     if not os.path.exists(dbPath):
         print(f"!!! {dbPath} existiert nicht")
         errorFlag = True
     dicCheck["dbPath"] = (dbPath, errorFlag)
+    # check if the javac file exists
+    errorFlag = False
+    javaCPath = config["path"]["javaCompilerPath"]
+    # if Windows, add exe extension for the test
+    if os.name == "nt":
+        javaCPath += ".exe"
+    if not os.path.exists(javaCPath):
+        print(f"!!! {javaCPath} existiert nicht")
+        errorFlag = True
+    dicCheck["javaCPath"] = (javaCPath, errorFlag)
+    # check if the java file exists
+    errorFlag = False
+    javaPath = config["path"]["javaLauncherPath"]
+    # if Windows, add exe extension for the test
+    if os.name == "nt":
+        javaPath += ".exe"
+    if not os.path.exists(javaPath):
+        print(f"!!! {javaPath} existiert nicht")
+        errorFlag = True
+    dicCheck["javaPath"] = (javaPath, errorFlag)
 
     print("*" * 80)
     for checkName,checkValue in dicCheck.items():
@@ -412,7 +438,9 @@ def MenueD_startGradingRun() -> None:
                             gradeResult.submission = submission
                             gradeResultList.append(gradeResult)
                             # Create a feedback object for the action
-                            feedbackItem = FeedbackItem(submission)
+                            # TODO: better mechanismen for generating the id (if necessary at all)
+                            feedbackItemid = len(feedbackItemList) + 1
+                            feedbackItem = FeedbackItem(feedbackItemid, submission)
                             feedbackItem.report = compileResult[1]
                             feedbackItemList.append(feedbackItem)
                         else:
@@ -453,14 +481,16 @@ def MenueD_startGradingRun() -> None:
                         else:
                             infoMessage = f"startGradingRun: {test.type} is an unknown test type"
                             Loghelper.logInfo(infoMessage)
-                        # TODO: Natürlich nur provisorisch
+                        # TODO: Only provisional of course - better definition for successs needed
                         gradeResult.points = points
                         gradeResult.success = True if points > 0 else False
                         gradeResultList.append(gradeResult)
 
                         # Create a feedback object for the action
-                        feedbackItem = FeedbackItem(submission)
-                        feedbackItem.report = compileResult[1]
+                        # TODO: better mechanismen for generating the id (if necessary at all)
+                        feedbackItemid = len(feedbackItemList) + 1
+                        feedbackItem = FeedbackItem(feedbackItemid, submission)
+                        feedbackItem.report = "*** Testresult comming soon ***"
                         feedbackItemList.append(feedbackItem)
 
                 # count the graded submissions
