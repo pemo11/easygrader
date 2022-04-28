@@ -108,7 +108,7 @@ Shows application main menue
 '''
 def showMenu():
     menuList = []
-    menuList.append("Precheck der Ini-Einstellungen (optional")
+    menuList.append("Precheck der Ini-Einstellungen (optional)")
     menuList.append("Alle Abgaben aus Zip-Archiv einlesen")
     menuList.append("Abgaben validieren (optional)")
     menuList.append(Fore.LIGHTYELLOW_EX + "Bewertungsdurchlauf starten" + Style.RESET_ALL)

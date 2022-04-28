@@ -8,6 +8,7 @@ class FeedbackItem:
         self.id = id
         self.submission = submission
         self.Report = ""
+        self.Severity = "normal"
 
     def __repr__(self):
-        return f"Id: {self.id} for Submission {self.submission.id}: {self.Report}"
+        return f"Id: {self.id} for Submission {self.submission.id}: {self.Report}/{self.severity}"

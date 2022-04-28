@@ -2,7 +2,7 @@
 from os import path
 from datetime import datetime
 from lxml import etree as et
-
+import os
 import Loghelper
 from TaskAction import TaskAction
 from TaskTest import TaskTest
@@ -16,14 +16,20 @@ class XmlHelper:
     '''
     def __init__(self, xmlFile):
         self.xmlPath = path.join(path.dirname(__file__), xmlFile)
+        self.root = et.parse(self.xmlPath)
         today = datetime.now().strftime("%d-%m-%Y")
         resultReportname = f"GradingResultReport_{today}.xml"
-        self.gradeResultReportpath = path.join(path.dirname(__file__), resultReportname)
+        reportBasePath = path.join(path.dirname(__file__), "reports")
+        # create reports subdir
+        if not os.path.exists(reportBasePath):
+            os.mkdir(reportBasePath)
+        self.gradeResultReportpath = path.join(reportBasePath, resultReportname)
         actionReportName = f"GradingActionReport_{today}.xml"
-        self.gradeActionReportpath = path.join(path.dirname(__file__), actionReportName)
+        self.gradeActionReportpath = path.join(reportBasePath, actionReportName)
         submissionValidationReportname = f"SubmissionValidationReport_{today}.xml"
-        self.submissionValidationReportpath = path.join(path.dirname(__file__), submissionValidationReportname)
-        self.root = et.parse(self.xmlPath)
+        self.submissionValidationReportpath = path.join(reportBasePath, submissionValidationReportname)
+        feedbackReportName = f"GradingFeedbackReport_{today}.xml"
+        self.feedbackReportpath = path.join(reportBasePath, feedbackReportName)
 
     '''
     tests if an exercise exists in the grading plan
@@ -127,6 +133,31 @@ class XmlHelper:
         return self.gradeActionReportpath
 
     '''
+    Generates an XML report from the list of feedback items
+    '''
+    def generateFeedbackReport(self, feedbackItemList):
+        xlRoot = et.Element("report")
+        for feedbackItem in feedbackItemList:
+            xlFeedbackItem = et.SubElement(xlRoot, "feedbackItem")
+            xlId = et.SubElement(xlFeedbackItem, "id")
+            xlId.text = feedbackItem.submission.id
+            xlStudent = et.SubElement(xlFeedbackItem, "student")
+            xlStudent.text = feedbackItem.submission.studentId
+            xlExercise = et.SubElement(xlFeedbackItem, "exercise")
+            xlExercise.text = feedbackItem.submission.exercise
+            xlTimeStamp = et.SubElement(xlExercise, "timestamp")
+            xlTimeStamp.text = datetime.strftime(feedbackItem.submission.timestamp, "%d.%m.%Y %H:%M")
+            xlReport = et.SubElement(xlFeedbackItem, "report")
+            xlReport.text = feedbackItem.report
+
+        # Write the report
+        tree = et.ElementTree(xlRoot)
+        tree.write(self.feedbackReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+        return self.feedbackReportpath
+
+
+    '''
     Converts a grading result xml report into html
     '''
     def convertGradingResultReport2Html(self, xmlPath, semester, module, exercise):
@@ -150,6 +181,33 @@ class XmlHelper:
             Loghelper.logInfo(infoMessage)
         except Exception as ex:
             infoMessage = f"convertGradingResultReport2Html: error ({ex})"
+            Loghelper.logError(infoMessage)
+        return htmlPath
+
+    '''
+    Converts a feedback xml report into html
+    '''
+    def convertFeedbackReport2Html(self, xmlPath, semester, module, exercise):
+        htmlPath = ""
+        try:
+            htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
+            xsltPath = "FeedbackReport.xslt"
+            xmlDom = et.parse(xmlPath)
+            xsltDom = et.parse(xsltPath)
+            transform = et.XSLT(xsltDom)
+            newDom = transform(xmlDom, feedbackTime=et.XSLT.strparam(datetime.now().strftime("%d.%m.%Y %H:%M")),
+                               semester=et.XSLT.strparam(semester),
+                               module=et.XSLT.strparam(module),
+                               exercise=et.XSLT.strparam(exercise))
+            htmlText = et.tostring(newDom, pretty_print=True)
+            # One more time tostring() returns bytes[] not str
+            htmlLines = htmlText.decode().split("\n")
+            with open(htmlPath, "w", encoding="utf-8") as fh:
+                fh.writelines(htmlLines)
+            infoMessage = f"convertFeedbackReport2Html: generated {htmlPath}"
+            Loghelper.logInfo(infoMessage)
+        except Exception as ex:
+            infoMessage = f"convertFeedbackReport2Html: error ({ex})"
             Loghelper.logError(infoMessage)
         return htmlPath
 
