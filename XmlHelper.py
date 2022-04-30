@@ -1,4 +1,7 @@
+# =============================================================================
 # file: XmlHelper.py
+# =============================================================================
+import shutil
 from os import path
 from datetime import datetime
 from lxml import etree as et
@@ -9,27 +12,35 @@ from TaskTest import TaskTest
 
 nsmap =  {"sig": "urn:simpelgrader"}
 
+'''
+Contains several functions for reading and writing xml files
+'''
 class XmlHelper:
 
     '''
     Initialize the object
     '''
     def __init__(self, xmlFile):
-        self.xmlPath = path.join(path.dirname(__file__), xmlFile)
+        currentDir = path.join(path.dirname(__file__))
+        self.xmlPath = path.join(currentDir, xmlFile)
         self.root = et.parse(self.xmlPath)
         today = datetime.now().strftime("%d-%m-%Y")
         resultReportname = f"GradingResultReport_{today}.xml"
-        reportBasePath = path.join(path.dirname(__file__), "reports")
+        self.simpelgraderDir = os.path.join(os.path.expanduser("~"), "documents/simpelgrader")
         # create reports subdir
-        if not os.path.exists(reportBasePath):
-            os.mkdir(reportBasePath)
-        self.gradeResultReportpath = path.join(reportBasePath, resultReportname)
+        if not os.path.exists(self.simpelgraderDir):
+            os.mkdir(self.simpelgraderDir)
+        # copy all css files to the report directory
+        for fi in [f for f in os.listdir(currentDir) if f.endswith("css")]:
+            cssPath = os.path.join(currentDir, fi)
+            shutil.copy(cssPath, self.simpelgraderDir)
+        self.gradeResultReportpath = path.join(self.simpelgraderDir, resultReportname)
         actionReportName = f"GradingActionReport_{today}.xml"
-        self.gradeActionReportpath = path.join(reportBasePath, actionReportName)
+        self.gradeActionReportpath = path.join(self.simpelgraderDir, actionReportName)
         submissionValidationReportname = f"SubmissionValidationReport_{today}.xml"
-        self.submissionValidationReportpath = path.join(reportBasePath, submissionValidationReportname)
+        self.submissionValidationReportpath = path.join(self.simpelgraderDir, submissionValidationReportname)
         feedbackReportName = f"GradingFeedbackReport_{today}.xml"
-        self.feedbackReportpath = path.join(reportBasePath, feedbackReportName)
+        self.feedbackReportpath = path.join(self.simpelgraderDir, feedbackReportName)
 
     '''
     tests if an exercise exists in the grading plan
@@ -140,22 +151,23 @@ class XmlHelper:
         for feedbackItem in feedbackItemList:
             xlFeedbackItem = et.SubElement(xlRoot, "feedbackItem")
             xlId = et.SubElement(xlFeedbackItem, "id")
-            xlId.text = feedbackItem.submission.id
+            xlId.text = str(feedbackItem.submission.id)
             xlStudent = et.SubElement(xlFeedbackItem, "student")
-            xlStudent.text = feedbackItem.submission.studentId
+            xlStudent.text = str(feedbackItem.submission.studentId)
             xlExercise = et.SubElement(xlFeedbackItem, "exercise")
             xlExercise.text = feedbackItem.submission.exercise
-            xlTimeStamp = et.SubElement(xlExercise, "timestamp")
+            xlTimeStamp = et.SubElement(xlFeedbackItem, "timestamp")
             xlTimeStamp.text = datetime.strftime(feedbackItem.submission.timestamp, "%d.%m.%Y %H:%M")
             xlReport = et.SubElement(xlFeedbackItem, "report")
             xlReport.text = feedbackItem.report
+            xlSeverity = et.SubElement(xlFeedbackItem, "severity")
+            xlSeverity.text = feedbackItem.severity
 
         # Write the report
         tree = et.ElementTree(xlRoot)
         tree.write(self.feedbackReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
 
         return self.feedbackReportpath
-
 
     '''
     Converts a grading result xml report into html

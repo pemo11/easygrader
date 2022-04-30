@@ -1,13 +1,16 @@
+# =============================================================================
 # file: JUnitHelper
 # contains functions for compiling and running JUnit Tests
-
+# =============================================================================
 import os
 import re
-from subprocess import Popen, PIPE, STDOUT,TimeoutExpired
+from subprocess import Popen, PIPE, STDOUT, TimeoutExpired
 import configparser
+from lxml import etree as et
 
 import Loghelper
 
+# read the paths from the in file
 config = configparser.ConfigParser()
 config.read("Simpelgrader.ini")
 javaCPath = config["path"]["javaCompilerPath"]
@@ -15,7 +18,7 @@ javaPath = config["path"]["javaLauncherPath"]
 jUnitPath = config["path"]["jUnitPath"]
 
 '''
-runs the JUnit-Tests inside the classname
+Runs the JUnit-Tests inside the classname
 '''
 def runJUnitTest(filePath, className) -> bool:
     dirPath = os.path.dirname(filePath)
@@ -28,9 +31,10 @@ def runJUnitTest(filePath, className) -> bool:
     return procContext.returncode == 0
 
 '''
-runs a single JUnit Test inside the classname
+Runs a single JUnit Test inside the classname
 '''
 def runJUnitTest(filePath, className, methodName) -> bool:
+    # not needed at the moment and needs a custom java class anyway
     return True
 
 '''
@@ -58,3 +62,67 @@ def compileJavaTest(filePath) -> (int, str):
         else:
             outputText = "Error"
     return (procContext.returncode, outputText)
+
+'''
+Converts JUnit output to xml
+'''
+def createJUnitXml(jUnitOutput) -> str:
+    # several regex patterns for the JUnit output
+    pattern1 = r"JUnit\s+version\s+([0-9.]+)"
+    pattern2 = r"Time:\s+([0-9,]+)"
+    pattern3 = r"OK\s+\((\d+)\s+test"
+    pattern4 = r"There\s+(\bwas\b|\bwere\b)\s+(\d+)\s+(\bfailure\b|\bfailures\b)"
+    pattern5 = r"(\d+)\)\s+(\w+)\((\w+)\)"
+    errorMode = False
+    testMode = False
+    testId = 0
+
+    # create the root element
+    xlRoot = et.Element("junitTest")
+
+    # walk the lines
+    for line in jUnitOutput.split("\n"):
+        # create only one test element
+        if testMode == False:
+            testMode = True
+            testId += 1
+            xlTest = et.SubElement(xlRoot, "test")
+            xlTest.attrib["id"] = f"{testId:03d}"
+            xlResult = et.SubElement(xlTest, "result")
+        # match the first line
+        if re.match(pattern1, line):
+            version = re.match(pattern1, line)[1]
+            xlRoot.attrib["version"] = version
+        # match the second line
+        if re.match(pattern2, line):
+            rTime = re.match(pattern2, line)[1]
+            print(f"Running time: {rTime}")
+        # match the summary line if all tests are OK
+        if re.match(pattern3, line):
+            testCount = re.match(pattern3, line)[1]
+            xlResult.text = "OK"
+            xlResult.attrib["testCount"] = testCount
+        # match the summary line if they are errors
+        if re.match(pattern4, line):
+            errorCount = re.search(pattern4, line)[2]
+            print(f"Errors: {errorCount}")
+            xlResult.text = "error"
+            xlErrors = et.SubElement(xlTest, "errors")
+            errorMode = True
+        # match the line with the error details
+        if errorMode and re.match(pattern5, line):
+            elements = re.search(pattern5, line)
+            nr = elements[1]
+            testMethod = elements[2]
+            testClass = elements[3]
+            xlError = et.SubElement(xlErrors, "error")
+            # set the id attribute
+            xlError.attrib["id"] = nr
+            xlMethod = et.SubElement(xlError, "method")
+            xlMethod.text = testMethod
+            xlClass = et.SubElement(xlError, "class")
+            xlClass.text = testClass
+
+    # return a nice xml string - decode() to make it a str, cp1252 is for the Umlaute
+    return et.tostring(xlRoot, pretty_print=True).decode("cp1252")
+

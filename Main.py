@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatisiertes Bewerten von Java-Programmieraufgaben
 # creation date: 03/01/22
-# last update: 04/28/22
+# last update: 04/30/22
 # Version 0.8
 # =============================================================================
 from datetime import datetime
@@ -216,7 +216,7 @@ def MenueB_extractSubmissions() -> None:
     # only one zip file allowed
     if len(zipFiles) != 1:
         infoMessage = f"extractSubmissions: exactly one zip file expected in {submissionPath}"
-        Loghelper.logError(infoMessage)
+        Loghelper.logWarning(infoMessage)
         return False
     # get the full path of the zip file
     zipPath = os.path.join(submissionPath, zipFiles[0])
@@ -317,7 +317,7 @@ def MenueC_validateSubmissions() -> None:
                 missingFiles = [fi for fi in exerciseFiles if fi not in files]
                 if len(missingFiles) > 0:
                     infoMessage = f"Missing files in submission {submission.id}: {','.join(missingFiles)}"
-                    Loghelper.logError(f"validateSubmissions: {infoMessage}")
+                    Loghelper.logWarning(f"validateSubmissions: {infoMessage}")
                     validation = SubmissionValidation(exercise, "Error", infoMessage)
                     # update submission info
                     submission.complete = False
@@ -386,7 +386,7 @@ def MenueD_startGradingRun() -> None:
                 # check if exercise exists in the gradingplan
                 if not xmlHelper.exerciseExists(exercise):
                     infoMessage = f"startGradingRun: no grading plan for exercise {exercise}"
-                    Loghelper.logError(infoMessage)
+                    Loghelper.logWarning(infoMessage)
                     print(Fore.LIGHTYELLOW_EX +  f"*** Kein Eintrag für Aufgabe {exercise} - Aufgabe wird nicht bewertet ***" + Style.RESET_ALL)
                     continue
                 # get the expected files from the grading plan
@@ -398,7 +398,7 @@ def MenueD_startGradingRun() -> None:
                 missingFiles = [fi for fi in exerciseFiles if fi not in files]
                 if len(missingFiles) > 0:
                     infoMessage = f"startGradingRun: missing files in submission {submission.id}: {','.join(missingFiles)}"
-                    Loghelper.logError(infoMessage)
+                    Loghelper.logWarning(infoMessage)
                 for javaFile in files:
                     # Get all actions for the task from the xml file
                     actionList = xmlHelper.getActionList(exercise)
@@ -471,7 +471,8 @@ def MenueD_startGradingRun() -> None:
                         # what test to run?
                         if test.type.lower() == "checkstyle":
                             # TODO: get the Checkstyle messages?
-                            points += CheckstyleHelper.runCheckstyle(javaFile)
+                            # return value is a tuple (returncode, message)
+                            points += CheckstyleHelper.runCheckstyle(javaFile)[0]
                         elif test.type.lower() == "junit":
                             points += JUnitHelper.runJUnitTest(javaFile)
                         elif test.type.lower() == "textcompare":
@@ -523,19 +524,22 @@ def MenueD_startGradingRun() -> None:
     # write the xml report for the grading actions
     actionReportPath = xmlHelper.generateGradingActionReport(gradeActionList)
     # display report file
-    subprocess.call(["notepad.exe", actionReportPath])
+    # subprocess.call(["notepad.exe", actionReportPath])
 
     # write the xml report for the grading results
     gradeReportPath = xmlHelper.generateGradingResultReport(gradeResultList)
     # display report file
-    subprocess.call(["notepad.exe", gradeReportPath])
+    # subprocess.call(["notepad.exe", gradeReportPath])
 
-    # convert the grading results reports to html
+    # convert the grading results report to html
     htmlPath = xmlHelper.convertGradingResultReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
     os.startfile(htmlPath)
     print(f"{submisssionsGraded} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
 
-    # TODO: create a feedback report
+    # convert the feedback report to html
+    feedbackReportPath = xmlHelper.generateFeedbackReport(feedbackItemList)
+    htmlPath = xmlHelper.convertFeedbackReport2Html(feedbackReportPath, gradeSemester, gradeModule, exercise)
+    os.startfile(htmlPath)
 
 '''
 Menue E - outputs all grading runs in the database

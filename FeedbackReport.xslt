@@ -14,7 +14,7 @@
                 <link href="GradingResultReport.css" type="text/css" rel="stylesheet" />
             </head>
            <body>
-                <h3>Grading-Report <xsl:value-of select="$feedbackTime"/> - <xsl:value-of select="$module"/>/<xsl:value-of select="$exercise"/> (<xsl:value-of select="$semester"/>)</h3>
+                <h3>Feedback-Report <xsl:value-of select="$feedbackTime"/> - <xsl:value-of select="$module"/>/<xsl:value-of select="$exercise"/> (<xsl:value-of select="$semester"/>)</h3>
                 <table id="entries">
                     <tr bgcolor="#9acd32">
                         <th>Timestamp</th>
