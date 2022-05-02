@@ -13,27 +13,37 @@ import Loghelper
 # read the paths from the in file
 config = configparser.ConfigParser()
 config.read("Simpelgrader.ini")
-javaCPath = config["path"]["javaCompilerPath"]
 javaPath = config["path"]["javaLauncherPath"]
+javaCPath = config["path"]["javaCompilerPath"]
 jUnitPath = config["path"]["jUnitPath"]
 
 '''
 Runs the JUnit-Tests inside the classname
+class file should already exists
 '''
-def runJUnitTest(filePath, className) -> bool:
+def runJUnitTest(filePath) -> ():
+    if not os.path.exists(filePath + ".class"):
+        infoMessage = f"runJUnitTest: {filePath} not found"
+        Loghelper.logWarning(infoMessage)
+        return (-1, infoMessage)
     dirPath = os.path.dirname(filePath)
-    classDir = os.path.dirname(filePath)
-    javaArgs = f"-cp {jUnitPath}\*;{classDir} org.junit.runner.JUnitCore {className}"
+    className = os.path.basename(filePath)
+    javaArgs = f"{javaPath} -cp {jUnitPath}\*;.;{dirPath} org.junit.runner.JUnitCore {className}"
     procContext = Popen(javaArgs, shell=True, env={"PATH": dirPath}, stdout=PIPE, stderr=STDOUT)
     procContext.wait()
-    infoMessage = f"runJUnitTest: java exit code={procContext.returncode}"
+    retCode = procContext.returncode
+    infoMessage = f"runJUnitTest: java exit code={retCode}"
     Loghelper.logInfo(infoMessage)
-    return procContext.returncode == 0
+    javaCOutput = procContext.stdout.read()
+    javaCOutput = javaCOutput.decode("cp1252")
+    # convert JUnit text output to simple xml
+    jUnitXml = createJUnitXml(javaCOutput)
+    return (retCode, jUnitXml)
 
 '''
-Runs a single JUnit Test inside the classname
+Runs a single JUnit test method inside the classname
 '''
-def runJUnitTest(filePath, className, methodName) -> bool:
+def runJUnitTestMethod(filePath, className, methodName) -> bool:
     # not needed at the moment and needs a custom java class anyway
     return True
 
@@ -96,7 +106,6 @@ def createJUnitXml(jUnitOutput) -> str:
         # match the second line
         if re.match(pattern2, line):
             rTime = re.match(pattern2, line)[1]
-            print(f"Running time: {rTime}")
         # match the summary line if all tests are OK
         if re.match(pattern3, line):
             testCount = re.match(pattern3, line)[1]
@@ -105,7 +114,6 @@ def createJUnitXml(jUnitOutput) -> str:
         # match the summary line if they are errors
         if re.match(pattern4, line):
             errorCount = re.search(pattern4, line)[2]
-            print(f"Errors: {errorCount}")
             xlResult.text = "error"
             xlErrors = et.SubElement(xlTest, "errors")
             errorMode = True

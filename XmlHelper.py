@@ -25,19 +25,17 @@ class XmlHelper:
         self.xmlPath = path.join(currentDir, xmlFile)
         self.root = et.parse(self.xmlPath)
         today = datetime.now().strftime("%d-%m-%Y")
-        resultReportname = f"GradingResultReport_{today}.xml"
+        resultReportname = f"GradingResultreport_{today}.xml"
+        # directory had been already created
         self.simpelgraderDir = os.path.join(os.path.expanduser("~"), "documents/simpelgrader")
-        # create reports subdir
-        if not os.path.exists(self.simpelgraderDir):
-            os.mkdir(self.simpelgraderDir)
         # copy all css files to the report directory
         for fi in [f for f in os.listdir(currentDir) if f.endswith("css")]:
             cssPath = os.path.join(currentDir, fi)
             shutil.copy(cssPath, self.simpelgraderDir)
         self.gradeResultReportpath = path.join(self.simpelgraderDir, resultReportname)
-        actionReportName = f"GradingActionReport_{today}.xml"
+        actionReportName = f"GradingActionreport_{today}.xml"
         self.gradeActionReportpath = path.join(self.simpelgraderDir, actionReportName)
-        submissionValidationReportname = f"SubmissionValidationReport_{today}.xml"
+        submissionValidationReportname = f"SubmissionValidationreport_{today}.xml"
         self.submissionValidationReportpath = path.join(self.simpelgraderDir, submissionValidationReportname)
         feedbackReportName = f"GradingFeedbackReport_{today}.xml"
         self.feedbackReportpath = path.join(self.simpelgraderDir, feedbackReportName)
@@ -158,10 +156,14 @@ class XmlHelper:
             xlExercise.text = feedbackItem.submission.exercise
             xlTimeStamp = et.SubElement(xlFeedbackItem, "timestamp")
             xlTimeStamp.text = datetime.strftime(feedbackItem.submission.timestamp, "%d.%m.%Y %H:%M")
-            xlReport = et.SubElement(xlFeedbackItem, "report")
-            xlReport.text = feedbackItem.report
+            xlMessage = et.SubElement(xlFeedbackItem, "message")
+            xlMessage.text = feedbackItem.message
             xlSeverity = et.SubElement(xlFeedbackItem, "severity")
             xlSeverity.text = feedbackItem.severity
+            xlCheckstyleReportpath = et.SubElement(xlFeedbackItem, "checkstyleReportpath")
+            xlCheckstyleReportpath.text = feedbackItem.checkstyleReportpath
+            xlJunitReportpath = et.SubElement(xlFeedbackItem, "jUnitReportpath")
+            xlJunitReportpath.text = feedbackItem.jUnitReportpath
 
         # Write the report
         tree = et.ElementTree(xlRoot)
@@ -176,7 +178,7 @@ class XmlHelper:
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
-            xsltPath = "GradingResultReport.xslt"
+            xsltPath = "GradingResultreport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
@@ -288,5 +290,56 @@ class XmlHelper:
             Loghelper.logInfo(infoMessage)
         except Exception as ex:
             infoMessage = f"convertValidationReport2Html: error ({ex})"
+            Loghelper.logError(infoMessage)
+        return htmlPath
+
+
+    '''
+    Converts a checkstyle xml report into html
+    '''
+    def convertCheckstyleReport2Html(self, xmlPath, student, exercise) -> str:
+        htmlPath = ""
+        try:
+            htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
+            xsltPath = "CheckstyleReport.xslt"
+            xmlDom = et.parse(xmlPath)
+            xsltDom = et.parse(xsltPath)
+            transform = et.XSLT(xsltDom)
+            newDom = transform(xmlDom, student=et.XSLT.strparam(student),
+                                        exercise=et.XSLT.strparam(exercise))
+            htmlText = et.tostring(newDom, pretty_print=True)
+            # One more time tostring() returns bytes[] not str
+            htmlLines = htmlText.decode().split("\n")
+            with open(htmlPath, "w", encoding="utf-8") as fh:
+                fh.writelines(htmlLines)
+            infoMessage = f"convertCheckstyleReport2Html: generated {htmlPath}"
+            Loghelper.logInfo(infoMessage)
+        except Exception as ex:
+            infoMessage = f"convertCheckstyleReport2Html: error ({ex})"
+            Loghelper.logError(infoMessage)
+        return htmlPath
+
+    '''
+    Converts a JUnit xml report into html
+    '''
+    def convertJUnitReport2Html(self, xmlPath, student, exercise) -> str:
+        htmlPath = ""
+        try:
+            htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
+            xsltPath = "JUnitReport.xslt"
+            xmlDom = et.parse(xmlPath)
+            xsltDom = et.parse(xsltPath)
+            transform = et.XSLT(xsltDom)
+            newDom = transform(xmlDom, student=et.XSLT.strparam(student),
+                                        exercise=et.XSLT.strparam(exercise))
+            htmlText = et.tostring(newDom, pretty_print=True)
+            # One more time tostring() returns bytes[] not str
+            htmlLines = htmlText.decode().split("\n")
+            with open(htmlPath, "w", encoding="utf-8") as fh:
+                fh.writelines(htmlLines)
+            infoMessage = f"convertJUnitReport2Html: generated {htmlPath}"
+            Loghelper.logInfo(infoMessage)
+        except Exception as ex:
+            infoMessage = f"convertJUnitReport2Html: error ({ex})"
             Loghelper.logError(infoMessage)
         return htmlPath

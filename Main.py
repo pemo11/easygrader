@@ -1,7 +1,7 @@
 # =============================================================================
-# Automatisiertes Bewerten von Java-Programmieraufgaben
+# Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 04/30/22
+# last update: 05/02/22
 # Version 0.8
 # =============================================================================
 from datetime import datetime
@@ -45,6 +45,7 @@ submissionPath = ""
 submissionDestPath = ""
 gradingPlanPath = ""
 studentRosterPath = ""
+simpelgraderDir = ""
 submissionDic = None
 dbPath = ""
 gradeModule = ""
@@ -62,7 +63,7 @@ get values for global variables from ini file
 def initVariables():
     global submissionPath, gradingPlanPath, studentRosterPath, submissionDestPath
     global gradeModule, gradeSemester, gradingOperator, deleteSubmissionTree
-    global dbPath
+    global dbPath, simpelgraderDir
     config = configparser.ConfigParser()
     config.read("Simpelgrader.ini")
     submissionPath = config["path"]["submissionPath"]
@@ -90,6 +91,12 @@ def initVariables():
         os.makedirs(submissionDestPath)
         infoMessage = f"initVariables: created directory {submissionDestPath}"
         Loghelper.logInfo(infoMessage)
+    simpelgraderDir = os.path.join(os.path.expanduser("~"), "documents/simpelgrader")
+    # create directory for report files
+    if not os.path.exists(simpelgraderDir):
+        os.mkdir(simpelgraderDir)
+        infoMessage = f"initVariables: created directory {simpelgraderDir}"
+        Loghelper.logInfo(infoMessage)
 
 # =============================================================================
 # Helper functions
@@ -109,7 +116,7 @@ Shows application main menue
 def showMenu():
     menuList = []
     menuList.append("Precheck der Ini-Einstellungen (optional)")
-    menuList.append("Alle Abgaben aus Zip-Archiv einlesen")
+    menuList.append(Fore.LIGHTYELLOW_EX + "Alle Abgaben aus Zip-Archiv einlesen" + Style.RESET_ALL)
     menuList.append("Abgaben validieren (optional)")
     menuList.append(Fore.LIGHTYELLOW_EX + "Bewertungsdurchlauf starten" + Style.RESET_ALL)
     menuList.append("Bewertungsdurchläufe anzeigen")
@@ -186,6 +193,12 @@ def MenueA_preCheck() -> None:
         print(f"!!! {javaPath} existiert nicht")
         errorFlag = True
     dicCheck["javaPath"] = (javaPath, errorFlag)
+    errorFlag = False
+    ckeckstyleRulePath = config["path"]["checkstyleRulePath"]
+    if not os.path.exists(ckeckstyleRulePath):
+        print(f"!!! {ckeckstyleRulePath} existiert nicht")
+        errorFlag = True
+    dicCheck["ckeckstyleRulePath"] = (ckeckstyleRulePath, errorFlag)
 
     print("*" * 80)
     for checkName,checkValue in dicCheck.items():
@@ -319,6 +332,7 @@ def MenueC_validateSubmissions() -> None:
                     infoMessage = f"Missing files in submission {submission.id}: {','.join(missingFiles)}"
                     Loghelper.logWarning(f"validateSubmissions: {infoMessage}")
                     validation = SubmissionValidation(exercise, "Error", infoMessage)
+                    print(Fore.LIGHTYELLOW_EX + "*** Fehlende Dateien: {','.join(missingFiles)} ***" + Style.RESET_ALL)
                     # update submission info
                     submission.complete = False
                 else:
@@ -368,6 +382,7 @@ def MenueD_startGradingRun() -> None:
     gradeResultList = []
     # List for the feedback items
     feedbackItemList = []
+
     submisssionsGraded = 0
 
     # for clocking the grading run duration
@@ -378,6 +393,7 @@ def MenueD_startGradingRun() -> None:
         # get all the details from the submission object
         for studentName in submissionDic[exercise]:
             for submission in submissionDic[exercise][studentName]:
+                problemCount = 0
                 infoMessage = f"startGradingRun: grading submission {submission.id}/{submission.exercise} for student {studentName}"
                 Loghelper.logInfo(infoMessage)
                 print(f"*** Starte Bewertung für Abgabe {submission.id}/{submission.exercise} und Student {studentName} ({submission.studentId}) ***")
@@ -399,17 +415,21 @@ def MenueD_startGradingRun() -> None:
                 if len(missingFiles) > 0:
                     infoMessage = f"startGradingRun: missing files in submission {submission.id}: {','.join(missingFiles)}"
                     Loghelper.logWarning(infoMessage)
+                    print(Fore.LIGHTYELLOW_EX + "*** Fehlende Dateien: {','.join(missingFiles)} ***" + Style.RESET_ALL)
+                    problemCount += 1
+                # run the action for each java file
                 for javaFile in files:
-                    # Get all actions for the task from the xml file
+                    javaFilePath = os.path.join(filesPath, javaFile)
+                    # get all actions for the task from the xml file
                     actionList = xmlHelper.getActionList(exercise)
-                    # Go through all the actions
+                    # go through all the actions
                     for action in actionList:
                         # skip not active actions
                         if not eval(action.active):
                             infoMessage = f"startGradingRun: leaving out action {action.command} for {javaFile}"
                             Loghelper.logInfo(infoMessage)
                             continue
-                        # Execute the action
+                        # execute the action
                         infoMessage = f"startGradingRun: executing action {action.command} for {javaFile}/StudentId: {submission.studentId}"
                         Loghelper.logInfo(infoMessage)
                         # the action depends on the action type
@@ -422,7 +442,7 @@ def MenueD_startGradingRun() -> None:
                             # a new item for the grade result report
                             gradeResult = GradeResult(action.type)
                             gradeResult.description = f"Compiling {javaFile}"
-                            javaFilePath = os.path.join(filesPath, javaFile)
+                            # javaFilePath = os.path.join(filesPath, javaFile)
                             # JUnit test file names follow the pattern <name>Test.java
                             if not javaFile.split(".")[0].lower().endswith("test"):
                                 # compile the java file - the result is either 1 or 0
@@ -432,6 +452,7 @@ def MenueD_startGradingRun() -> None:
                             gradePoints = 1 if compileResult[0] == 0 else 0
                             gradeResult.points = gradePoints
                             gradeResult.errorMessage = compileResult[1]
+                            problemCount += 1 if compileResult[0] == 1 else 0
                             # TODO: what makes a  success?
                             actionSuccess = gradePoints > 0
                             gradeResult.success = actionSuccess
@@ -441,16 +462,26 @@ def MenueD_startGradingRun() -> None:
                             # TODO: better mechanismen for generating the id (if necessary at all)
                             feedbackItemid = len(feedbackItemList) + 1
                             feedbackItem = FeedbackItem(feedbackItemid, submission)
-                            feedbackItem.report = compileResult[1]
+                            feedbackItem.message = compileResult[1]
                             feedbackItemList.append(feedbackItem)
                         else:
                             infoMessage = f"startGradingRun: {action.type} is an unknown action type"
                             Loghelper.logInfo(infoMessage)
 
-                    # Get all the tests for the exercise
+                # variables must exist ?
+                jUnitReportHtmlPath = ""
+                checkstyleReportHtmlPath = ""
+
+                # run the test for each java file
+                for javaFile in files:
+                    # don't test the fest files
+                    if javaFile.split(".")[0].lower().endswith("test"):
+                        continue
+
+                    # get all the tests for the exercise
                     testList = xmlHelper.getTestList(exercise)
                     for test in testList:
-                        # is the test active? it has to be True and not true in the xml
+                        # is the test active? it has to be True not true in the xml
                         if not eval(test.active):
                             infoMessage = f"startGradingRun: leaving out Test {test.id} for {javaFile}"
                             Loghelper.logInfo(infoMessage)
@@ -468,13 +499,42 @@ def MenueD_startGradingRun() -> None:
 
                         gradeResult = GradeResult(f"{test.type}-Test")
                         gradeResult.submission = submission
+                        gradeResult.description = f"Running {test.type}-Test"
                         # what test to run?
                         if test.type.lower() == "checkstyle":
-                            # TODO: get the Checkstyle messages?
                             # return value is a tuple (returncode, message)
-                            points += CheckstyleHelper.runCheckstyle(javaFile)[0]
+                            checkstyleResult, checkstyleMessage = CheckstyleHelper.runCheckstyle(javaFilePath)
+                            points += 1 if checkstyleResult == 0 else 0
+                            problemCount += 1 if checkstyleResult != 0 else 0
+                            # TODO: better message
+                            gradeResult.errorMessage = "OK" if checkstyleResult == 0 else "Error"
+                            # store the checkstyle report as xml
+                            checkstyleName = f"{studentName}_{exercise}_CheckstyleResult.xml"
+                            checkstyleReportpath = os.path.join(simpelgraderDir, checkstyleName)
+                            with open(checkstyleReportpath, mode="w", encoding="utf8") as fh:
+                                checkstyleLines = checkstyleMessage.split("\n")
+                                fh.writelines(checkstyleLines)
+                            infoMessage = f"startGradingRun: saved checkstyle report {checkstyleName}"
+                            Loghelper.logInfo(infoMessage)
+                            # convert the xml to html
+                            checkstyleReportHtmlPath = xmlHelper.convertCheckstyleReport2Html(checkstyleReportpath, studentName, exercise)
+
                         elif test.type.lower() == "junit":
-                            points += JUnitHelper.runJUnitTest(javaFile)
+                            classPath = javaFilePath.split(".")[0]
+                            junitResult,junitXmlMessage = JUnitHelper.runJUnitTest(classPath)
+                            points += junitResult
+                            problemCount += 1 if junitResult > 0 else 0
+                            # TODO: better message
+                            gradeResult.errorMessage = "OK" if junitResult == 0 else "Error"
+                            jUnitName = f"{studentName}_{exercise}_JUnitResult.xml"
+                            jUnitReportpath = os.path.join(simpelgraderDir, jUnitName)
+                            with open(jUnitReportpath, mode="w", encoding="utf8") as fh:
+                                jUnitLines = junitXmlMessage.split("\n")
+                                fh.writelines(jUnitLines)
+                            infoMessage = f"startGradingRun: saved JUnit report {jUnitName}"
+                            Loghelper.logInfo(infoMessage)
+                            # convert the xml to html
+                            jUnitReportHtmlPath = xmlHelper.convertJUnitReport2Html(jUnitReportpath, studentName, exercise)
                         elif test.type.lower() == "textcompare":
                             pass
                         elif test.type.lower() == "testdriver":
@@ -491,8 +551,14 @@ def MenueD_startGradingRun() -> None:
                         # TODO: better mechanismen for generating the id (if necessary at all)
                         feedbackItemid = len(feedbackItemList) + 1
                         feedbackItem = FeedbackItem(feedbackItemid, submission)
-                        feedbackItem.report = "*** Testresult comming soon ***"
+                        if checkstyleReportHtmlPath != "":
+                            feedbackItem.checkstyleReportpath = checkstyleReportHtmlPath
+                        if jUnitReportHtmlPath != "":
+                            feedbackItem.jUnitReportpath = jUnitReportHtmlPath
+                        feedbackItem.message = f"Points/Problems: {points}/{problemCount}"
                         feedbackItemList.append(feedbackItem)
+
+                print(Fore.LIGHTCYAN_EX + f"*** Bewertung abgeschlossen - Anzahl Probleme: {problemCount} ***" + Style.RESET_ALL)
 
                 # count the graded submissions
                 submisssionsGraded += 1
