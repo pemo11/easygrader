@@ -463,6 +463,8 @@ def MenueD_startGradingRun() -> None:
                             feedbackItemid = len(feedbackItemList) + 1
                             feedbackItem = FeedbackItem(feedbackItemid, submission)
                             feedbackItem.message = compileResult[1]
+                            # TODO: When high?
+                            feedbackItem.severity = "normal"
                             feedbackItemList.append(feedbackItem)
                         else:
                             infoMessage = f"startGradingRun: {action.type} is an unknown action type"
@@ -556,6 +558,8 @@ def MenueD_startGradingRun() -> None:
                         if jUnitReportHtmlPath != "":
                             feedbackItem.jUnitReportpath = jUnitReportHtmlPath
                         feedbackItem.message = f"Points/Problems: {points}/{problemCount}"
+                        # TODO: When high?
+                        feedbackItem.severity = "normal"
                         feedbackItemList.append(feedbackItem)
 
                 print(Fore.LIGHTCYAN_EX + f"*** Bewertung abgeschlossen - Anzahl Probleme: {problemCount} ***" + Style.RESET_ALL)

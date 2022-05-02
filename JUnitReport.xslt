@@ -16,14 +16,12 @@
                 <table id="entries">
                     <tr bgcolor="#9acd32">
                         <th>Nr</th>
-                        <th>Test</th>
                         <th>Result</th>
                         <th>ErrorCount</th>
                     </tr>
                     <xsl:for-each select="//test">
                         <tr>
                             <td><xsl:number value="position()" /></td>
-                            <td><xsl:value-of select="test"/></td>
                             <td><xsl:value-of select="result"/></td>
                             <xsl:choose>
                                 <xsl:when test="count(errors/error) > 0">

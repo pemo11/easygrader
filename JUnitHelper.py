@@ -114,7 +114,7 @@ def createJUnitXml(jUnitOutput) -> str:
         # match the summary line if they are errors
         if re.match(pattern4, line):
             errorCount = re.search(pattern4, line)[2]
-            xlResult.text = "error"
+            xlResult.text = "Error"
             xlErrors = et.SubElement(xlTest, "errors")
             errorMode = True
         # match the line with the error details

@@ -39,22 +39,34 @@
                                     <td bgcolor='lightgrey'><xsl:value-of select="severity"/></td>
                                 </xsl:otherwise>
                             </xsl:choose>
-                            <td>
-                                <xls:element name="a">
-                                    <xsl:attribute name="href">
-                                        file:///<xsl:value-of select="checkstyleReportpath" />
+                            <xsl:choose>
+                                <xsl:when test="not(normalize-space(checkstyleReportpath)='')">
+                                    <td>
+                                        <xls:element name="a">
+                                    <xsl:attribute name="href">file:///<xsl:value-of select="checkstyleReportpath" />
                                     </xsl:attribute>
                                     <xsl:text>Checkstyle-Report</xsl:text>
                                 </xls:element>
-                            </td>
-                            <td>
-                                <xls:element name="a">
-                                    <xsl:attribute name="href">
-                                        file:///<xsl:value-of select="jUnitReportpath" />
-                                    </xsl:attribute>
-                                    <xsl:text>JUnit-Report</xsl:text>
-                                </xls:element>
-                            </td>
+                                    </td>
+                                </xsl:when>
+                            <xsl:otherwise>
+                                <td bgcolor='lightgrey'>Kein Report</td>
+                            </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:choose>
+                                <xsl:when test="not(normalize-space(jUnitReportpath)='')">
+                                <td>
+                                   <xls:element name="a">
+                                       <xsl:attribute name="href">file:///<xsl:value-of select="jUnitReportpath" />
+                                       </xsl:attribute>
+                                       <xsl:text>JUnit-Report</xsl:text>
+                                   </xls:element>
+                                </td>
+                                </xsl:when>
+                                    <xsl:otherwise>
+                                        <td bgcolor='lightgrey'>Kein Report</td>
+                                    </xsl:otherwise>
+                                </xsl:choose>
                         </tr>
                     </xsl:for-each>
                 </table>
