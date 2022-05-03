@@ -134,3 +134,15 @@ def createJUnitXml(jUnitOutput) -> str:
     # return a nice xml string - decode() to make it a str, cp1252 is for the Umlaute
     return et.tostring(xlRoot, pretty_print=True).decode("cp1252")
 
+'''
+gets the return value from the JUnit xml
+'''
+def getJUnitResult(xmlText) -> str:
+    xlRoot = et.parse(xmlText)
+    xPathExpr = f".//result"
+    resultElements = xlRoot.xpath(xPathExpr)
+    if len(resultElements) > 0:
+        return resultElements[0].text
+    else:
+        return ""
+

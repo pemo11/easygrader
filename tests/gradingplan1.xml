@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sig:tasks xmlns:sig="urn:simpelgrader">
+  <sig:task id="1000" exercise="EA1" title="Aufgabe EA1">
+    <sig:description>description for task 1000</sig:description>
+    <sig:files>
+      <sig:file>App.java</sig:file>
+      <sig:file>AppTest.java</sig:file>
+    </sig:files>
+    <sig:actions>
+      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
+    </sig:actions>
+    <sig:tests>
+      <sig:test id="T01" active="True">
+        <sig:test-type>checkstyle</sig:test-type>
+        <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
+        <sig:test-score>1</sig:test-score>
+      </sig:test>
+      <sig:test id="T02" active="True">
+        <sig:test-type>JUnit</sig:test-type>
+        <sig:test-description>Alle JUnit-Tests ausführen</sig:test-description>
+        <sig:test-score>2</sig:test-score>
+      </sig:test>
+      <sig:test id="T03" active="True">
+        <sig:test-type>TextCompare</sig:test-type>
+        <sig:test-description>Ausgabevergleich mit MySchaltjahrtester</sig:test-description>
+        <sig:test-testerClass>MySchaltjahrTester</sig:test-testerClass>
+        <sig:test-testerRegex>(\d+)\s+ist\s+ein\s+Schaltjahr:\s+(\w+)\s+\(expected:\s+(\w+)\)</sig:test-testerRegex>
+        <sig:test-score>2</sig:test-score>
+      </sig:test>
+    </sig:tests>
+  </sig:task>
+</sig:tasks>

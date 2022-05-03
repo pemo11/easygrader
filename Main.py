@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 05/02/22
+# last update: 05/03/22
 # Version 0.8
 # =============================================================================
 from datetime import datetime
@@ -15,8 +15,9 @@ import colorama
 from colorama import Fore, Back, Style
 import zipfile
 
-import CheckstyleHelper
-import JUnitHelper
+import CheckstyleTestHelper
+import CompareTestHelper
+import JUnitTestHelper
 import JavaFileHelper
 import ZipHelper
 import Loghelper
@@ -502,10 +503,12 @@ def MenueD_startGradingRun() -> None:
                         gradeResult = GradeResult(f"{test.type}-Test")
                         gradeResult.submission = submission
                         gradeResult.description = f"Running {test.type}-Test"
+
                         # what test to run?
+                        # a checkstyle test?
                         if test.type.lower() == "checkstyle":
                             # return value is a tuple (returncode, message)
-                            checkstyleResult, checkstyleMessage = CheckstyleHelper.runCheckstyle(javaFilePath)
+                            checkstyleResult, checkstyleMessage = CheckstyleTestHelper.runCheckstyle(javaFilePath)
                             points += 1 if checkstyleResult == 0 else 0
                             problemCount += 1 if checkstyleResult != 0 else 0
                             # TODO: better message
@@ -521,13 +524,15 @@ def MenueD_startGradingRun() -> None:
                             # convert the xml to html
                             checkstyleReportHtmlPath = xmlHelper.convertCheckstyleReport2Html(checkstyleReportpath, studentName, exercise)
 
+                        # a junit test?
                         elif test.type.lower() == "junit":
                             classPath = javaFilePath.split(".")[0]
-                            junitResult,junitXmlMessage = JUnitHelper.runJUnitTest(classPath)
+                            junitResult,junitXmlMessage = JUnitTestHelper.runJUnitTest(classPath)
                             points += junitResult
                             problemCount += 1 if junitResult > 0 else 0
                             # TODO: better message
-                            gradeResult.errorMessage = "OK" if junitResult == 0 else "Error"
+                            gradeResult.result = True if junitResult == 0 else False
+                            gradeResult.errorMessage = f"JUnit-Result: {xmlHelper.getJUnitResult(junitXmlMessage)}"
                             jUnitName = f"{studentName}_{exercise}_JUnitResult.xml"
                             jUnitReportpath = os.path.join(simpelgraderDir, jUnitName)
                             with open(jUnitReportpath, mode="w", encoding="utf8") as fh:
@@ -537,10 +542,14 @@ def MenueD_startGradingRun() -> None:
                             Loghelper.logInfo(infoMessage)
                             # convert the xml to html
                             jUnitReportHtmlPath = xmlHelper.convertJUnitReport2Html(jUnitReportpath, studentName, exercise)
+
+                        # a textcompare test?
                         elif test.type.lower() == "textcompare":
-                            pass
-                        elif test.type.lower() == "testdriver":
-                            pass
+                            classPath = javaFilePath.split(".")[0]
+                            textcompareResult, textcompareMessage = CompareTestHelper.runTextCompare(classPath, exercise)
+                            gradeResult.result = True if textcompareResult == 0 else False
+                            gradeResult.errorMessage = textcompareMessage
+
                         else:
                             infoMessage = f"startGradingRun: {test.type} is an unknown test type"
                             Loghelper.logInfo(infoMessage)

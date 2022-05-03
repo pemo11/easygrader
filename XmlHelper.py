@@ -79,6 +79,21 @@ class XmlHelper:
         return testList
 
     '''
+    gets the textcompare test for the exercise
+    '''
+    def getTextCompareTest(self, exercise):
+        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:tests/sig:test/sig:test-type[.='TextCompare']//parent::sig:test"
+        testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
+        if len(testElements) > 0:
+            testElement = testElements[0]
+            description = testElement.find("sig:test-description",namespaces={"sig": "urn:simpelgrader"}).text
+            testClass = testElement.find("sig:test-testerClass",namespaces={"sig": "urn:simpelgrader"}).text
+            testRegex = testElement.find("sig:test-testerRegex",namespaces={"sig": "urn:simpelgrader"}).text
+            return {"description":description,"testClass":testClass,"testRegex":testRegex}
+        else:
+            return None
+
+    '''
     Get all files associated with this task/exercise
     '''
     def getFileList(self, exercise):
