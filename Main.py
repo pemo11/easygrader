@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 05/03/22
+# last update: 05/04/22
 # Version 0.8
 # =============================================================================
 from datetime import datetime
@@ -449,7 +449,7 @@ def MenueD_startGradingRun() -> None:
                                 # compile the java file - the result is either 1 or 0
                                 compileResult = JavaHelper.compileJava(javaFilePath)
                             else:
-                                compileResult = JUnitHelper.compileJavaTest(javaFilePath)
+                                compileResult = JUnitTestHelper.compileJavaTest(javaFilePath)
                             gradePoints = 1 if compileResult[0] == 0 else 0
                             gradeResult.points = gradePoints
                             gradeResult.errorMessage = compileResult[1]
@@ -477,9 +477,15 @@ def MenueD_startGradingRun() -> None:
 
                 # run the test for each java file
                 for javaFile in files:
-                    # don't test the fest files
-                    if javaFile.split(".")[0].lower().endswith("test"):
+                    # don't test the JUnit and the tester classes
+                    javaFileName = javaFile.split(".")[0].lower()
+                    if javaFileName.endswith("test") or javaFileName.endswith("tester"):
+                        infoMessage = f"startGradingRun: skipped test for file {javaFile}"
+                        Loghelper.logInfo(infoMessage)
                         continue
+
+                    # build the file path
+                    javaFilePath = os.path.join(submission.path, javaFile)
 
                     # get all the tests for the exercise
                     testList = xmlHelper.getTestList(exercise)
@@ -526,22 +532,28 @@ def MenueD_startGradingRun() -> None:
 
                         # a junit test?
                         elif test.type.lower() == "junit":
-                            classPath = javaFilePath.split(".")[0]
-                            junitResult,junitXmlMessage = JUnitTestHelper.runJUnitTest(classPath)
-                            points += junitResult
-                            problemCount += 1 if junitResult > 0 else 0
+                            dirPath = os.path.dirname(javaFilePath)
+                            testClassName = test.testClass
+                            junitResult,junitXmlMessage = JUnitTestHelper.runJUnitTest(dirPath, testClassName)
+                            if junitResult == 0:
+                                points += junitResult
+                            problemCount += 1 if junitResult != 0 else 0
                             # TODO: better message
                             gradeResult.result = True if junitResult == 0 else False
-                            gradeResult.errorMessage = f"JUnit-Result: {xmlHelper.getJUnitResult(junitXmlMessage)}"
-                            jUnitName = f"{studentName}_{exercise}_JUnitResult.xml"
-                            jUnitReportpath = os.path.join(simpelgraderDir, jUnitName)
-                            with open(jUnitReportpath, mode="w", encoding="utf8") as fh:
-                                jUnitLines = junitXmlMessage.split("\n")
-                                fh.writelines(jUnitLines)
-                            infoMessage = f"startGradingRun: saved JUnit report {jUnitName}"
-                            Loghelper.logInfo(infoMessage)
-                            # convert the xml to html
-                            jUnitReportHtmlPath = xmlHelper.convertJUnitReport2Html(jUnitReportpath, studentName, exercise)
+                            if junitXmlMessage != "":
+                                gradeResult.errorMessage = f"JUnit-Result: {JUnitTestHelper.getJUnitResult(junitXmlMessage)}"
+
+                                jUnitName = f"{studentName}_{exercise}_JUnitResult.xml"
+                                jUnitReportpath = os.path.join(simpelgraderDir, jUnitName)
+                                with open(jUnitReportpath, mode="w", encoding="utf8") as fh:
+                                    jUnitLines = junitXmlMessage.split("\n")
+                                    fh.writelines(jUnitLines)
+                                infoMessage = f"startGradingRun: saved JUnit report {jUnitName}"
+                                Loghelper.logInfo(infoMessage)
+                                # convert the xml to html
+                                jUnitReportHtmlPath = xmlHelper.convertJUnitReport2Html(jUnitReportpath, studentName, exercise)
+                            else:
+                                gradeResult.errorMessage = f"JUnit-Result: JUnit could not run"
 
                         # a textcompare test?
                         elif test.type.lower() == "textcompare":

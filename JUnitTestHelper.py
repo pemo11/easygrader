@@ -21,14 +21,13 @@ jUnitPath = config["path"]["jUnitPath"]
 Runs the JUnit-Tests inside the classname
 class file should already exists
 '''
-def runJUnitTest(filePath) -> ():
-    if not os.path.exists(filePath + ".class"):
-        infoMessage = f"runJUnitTest: {filePath} not found"
+def runJUnitTest(dirPath, testClass) -> ():
+    classPath = os.path.join(dirPath, testClass + ".class")
+    if not os.path.exists(classPath):
+        infoMessage = f"runJUnitTest: {classPath} class not found"
         Loghelper.logWarning(infoMessage)
         return (-1, infoMessage)
-    dirPath = os.path.dirname(filePath)
-    className = os.path.basename(filePath)
-    javaArgs = f"{javaPath} -cp {jUnitPath}\*;.;{dirPath} org.junit.runner.JUnitCore {className}"
+    javaArgs = f"{javaPath} -cp {jUnitPath}\*;.;{dirPath} org.junit.runner.JUnitCore {testClass}"
     procContext = Popen(javaArgs, shell=True, env={"PATH": dirPath}, stdout=PIPE, stderr=STDOUT)
     procContext.wait()
     retCode = procContext.returncode
@@ -36,8 +35,11 @@ def runJUnitTest(filePath) -> ():
     Loghelper.logInfo(infoMessage)
     javaCOutput = procContext.stdout.read()
     javaCOutput = javaCOutput.decode("cp1252")
-    # convert JUnit text output to simple xml
-    jUnitXml = createJUnitXml(javaCOutput)
+    # if test ran sucessfully then convert JUnit text output to simple xml
+    if retCode == 0:
+        jUnitXml = createJUnitXml(javaCOutput)
+    else:
+        jUnitXml = ""
     return (retCode, jUnitXml)
 
 '''
@@ -138,7 +140,7 @@ def createJUnitXml(jUnitOutput) -> str:
 gets the return value from the JUnit xml
 '''
 def getJUnitResult(xmlText) -> str:
-    xlRoot = et.parse(xmlText)
+    xlRoot = et.fromstring(xmlText)
     xPathExpr = f".//result"
     resultElements = xlRoot.xpath(xPathExpr)
     if len(resultElements) > 0:

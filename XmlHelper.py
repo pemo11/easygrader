@@ -72,7 +72,8 @@ class XmlHelper:
         for test in testElements:
             tt = TaskTest(test.attrib["id"], test.attrib["active"], test.find("sig:test-type", namespaces=nsmap).text)
             tt.testDescription = test.find("sig:test-description", namespaces=nsmap).text
-            if test.find("sig:test-type", namespaces=nsmap) == "JUNIT":
+            if test.find("sig:test-type", namespaces=nsmap).text.lower() == "junit":
+                tt.testClass = test.find("sig:test-class", namespaces=nsmap).text
                 tt.testMethod = test.find("sig:test-method", namespaces=nsmap).text
             tt.testScore = test.find("sig:test-score", namespaces=nsmap)
             testList.append(tt)

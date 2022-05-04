@@ -20,7 +20,8 @@ Compiles a single java file
 '''
 def compileJava(filePath) -> (int, str):
     dirPath = os.path.dirname(filePath)
-    javaArgs = f"{javaCPath} {filePath}"
+    # -cp is always important because the java file is not in the current directory
+    javaArgs = f"{javaCPath} -cp {dirPath} {filePath}"
     infoMessage = f"compileJava: java compiling {filePath}"
     Loghelper.logInfo(infoMessage)
     # shell=True?
@@ -39,6 +40,9 @@ def compileJava(filePath) -> (int, str):
             outputText = re.findall(outputPattern,javaCOutput)[0]
         else:
             outputText = "Error"
+        infoMessage = f"compileJava: java compiler message={javaCOutput}"
+        Loghelper.logInfo(infoMessage)
+
     return (procContext.returncode, outputText)
 
 '''

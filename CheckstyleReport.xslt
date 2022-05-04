@@ -23,20 +23,19 @@
                     <xsl:for-each select="//file">
                         <h3><xsl:value-of select="name"/></h3>
                         <xsl:for-each select="//error">
-                        <tr>
-                            <td><xsl:number value="position()" /></td>
-                            <td><xsl:value-of select="@line"/></td>
-                            <td><xsl:value-of select="@severity"/></td>
-                            <td><xsl:value-of select="@message"/></td>
-                            <xsl:choose>
-                                <xsl:when test="@severity = 'high'">
-                                    <td style="background-color:orange"><xsl:value-of select="@severity"/></td>
-                                </xsl:when>
-                                <xsl:otherwise>
-                                    <td bgcolor='lightgrey'><xsl:value-of select="@severity"/></td>
-                                </xsl:otherwise>
-                            </xsl:choose>
-                        </tr>
+                            <tr>
+                                <td><xsl:number value="position()" /></td>
+                                <td><xsl:value-of select="@line"/></td>
+                                <xsl:choose>
+                                    <xsl:when test="@severity='high'">
+                                        <td style="background-color:orange"><xsl:value-of select="@severity"/></td>
+                                    </xsl:when>
+                                    <xsl:otherwise>
+                                        <td bgcolor='lightgrey'><xsl:value-of select="@severity"/></td>
+                                    </xsl:otherwise>
+                                </xsl:choose>
+                                <td><xsl:value-of select="@message"/></td>
+                            </tr>
                         </xsl:for-each>
                     </xsl:for-each>
                 </table>
