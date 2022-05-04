@@ -37,7 +37,8 @@ def runTextCompare(classPath, exercise) -> ():
     javaLOutput = javaLOutput.decode("cp1252")
     # compare each line with the regex for the test
     errorCount = 0
-    allLines = javaLOutput.split("\n")
+    # skip the empty line(s)
+    allLines = [l for l in javaLOutput.split("\n") if l != ""]
     for line in allLines:
         if re.findall(testRegex, line) == None:
             errorCount += 1
@@ -54,8 +55,11 @@ def runTextCompare(classPath, exercise) -> ():
                     errorCount += 1
             else:
                 errorCount += 1
+        # write text compare lines to report file
 
-    textCompareMessage = f"{len(allLines)} lines with {errorCount} errors"
+    lineCountAlias = "line" if len(allLines) == 1 else "lines"
+    errorCountAlias = "error" if errorCount == 1 else "errors"
+    textCompareMessage = f"{len(allLines)} {lineCountAlias} with {errorCount} {errorCountAlias}"
     result = 1 if errorCount == 0 else 0
-    return (result, textCompareMessage)
+    return (result, textCompareMessage, allLines)
 

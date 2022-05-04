@@ -186,6 +186,8 @@ class XmlHelper:
             xlCheckstyleReportpath.text = feedbackItem.checkstyleReportpath
             xlJunitReportpath = et.SubElement(xlFeedbackItem, "jUnitReportpath")
             xlJunitReportpath.text = feedbackItem.jUnitReportpath
+            xlTextcompareReportpath = et.SubElement(xlFeedbackItem, "textCompareReportpath")
+            xlTextcompareReportpath.text = feedbackItem.textCompareReportpath
 
         # Write the report
         tree = et.ElementTree(xlRoot)

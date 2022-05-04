@@ -14,6 +14,7 @@ class FeedbackItem:
         self.severity = "normal"
         self.checkstyleReportpath = ""
         self.jUnitReportpath = ""
+        self.textCompareReportpath = ""
 
     def __repr__(self):
         return f"Id: {self.id} for Submission {self.submission.id}: {self.Report}/{self.severity}"

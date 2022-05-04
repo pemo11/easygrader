@@ -474,6 +474,7 @@ def MenueD_startGradingRun() -> None:
                 # variables must exist ?
                 jUnitReportHtmlPath = ""
                 checkstyleReportHtmlPath = ""
+                textcomparePath = ""
 
                 # run the test for each java file
                 for javaFile in files:
@@ -557,10 +558,19 @@ def MenueD_startGradingRun() -> None:
                         # a textcompare test?
                         elif test.type.lower() == "textcompare":
                             classPath = javaFilePath.split(".")[0]
-                            textcompareResult, textcompareMessage = CompareTestHelper.runTextCompare(classPath, exercise)
+                            # return value is a tuple of three
+                            textcompareResult, textcompareMessage, compareLines = CompareTestHelper.runTextCompare(classPath, exercise)
                             gradeResult.result = True if textcompareResult == 0 else False
                             gradeResult.errorMessage = textcompareMessage
-
+                            if len(compareLines) > 0:
+                                textcompareName = f"{studentName}_{exercise}_TextCompareResult.txt"
+                                textcomparePath = os.path.join(simpelgraderDir, textcompareName)
+                                with open(textcomparePath, mode="w", encoding="utf8") as fh:
+                                    fh.write(f"Text-Compare-Result für {studentName}/{exercise}\n")
+                                    fh.write(textcompareMessage + "\n")
+                                    fh.writelines(compareLines)
+                                infoMessage = f"startGradingRun: saved Text-Compare report {textcompareName}"
+                                Loghelper.logInfo(infoMessage)
                         else:
                             infoMessage = f"startGradingRun: {test.type} is an unknown test type"
                             Loghelper.logInfo(infoMessage)
@@ -577,6 +587,8 @@ def MenueD_startGradingRun() -> None:
                             feedbackItem.checkstyleReportpath = checkstyleReportHtmlPath
                         if jUnitReportHtmlPath != "":
                             feedbackItem.jUnitReportpath = jUnitReportHtmlPath
+                        if textcomparePath != "":
+                            feedbackItem.textCompareReportpath = textcomparePath
                         feedbackItem.message = f"Points/Problems: {points}/{problemCount}"
                         # TODO: When high?
                         feedbackItem.severity = "normal"

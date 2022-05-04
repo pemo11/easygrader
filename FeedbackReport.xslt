@@ -24,6 +24,7 @@
                         <th>Severity</th>
                         <th>Checkstyle-Report</th>
                         <th>JUnit-Report</th>
+                        <th>TextCompare-Report</th>
                     </tr>
                     <xsl:for-each select="//feedbackItem">
                         <tr>
@@ -43,30 +44,44 @@
                                 <xsl:when test="not(normalize-space(checkstyleReportpath)='')">
                                     <td>
                                         <xls:element name="a">
-                                    <xsl:attribute name="href">file:///<xsl:value-of select="checkstyleReportpath" />
-                                    </xsl:attribute>
-                                    <xsl:text>Checkstyle-Report</xsl:text>
-                                </xls:element>
+                                            <xsl:attribute name="href">file:///<xsl:value-of select="checkstyleReportpath" />
+                                            </xsl:attribute>
+                                            <xsl:text>Checkstyle-Report</xsl:text>
+                                        </xls:element>
                                     </td>
                                 </xsl:when>
-                            <xsl:otherwise>
-                                <td bgcolor='lightgrey'>Kein Report</td>
-                            </xsl:otherwise>
+                                <xsl:otherwise>
+                                    <td bgcolor='lightgrey'>Kein Report</td>
+                                </xsl:otherwise>
                             </xsl:choose>
                             <xsl:choose>
                                 <xsl:when test="not(normalize-space(jUnitReportpath)='')">
-                                <td>
-                                   <xls:element name="a">
-                                       <xsl:attribute name="href">file:///<xsl:value-of select="jUnitReportpath" />
-                                       </xsl:attribute>
-                                       <xsl:text>JUnit-Report</xsl:text>
-                                   </xls:element>
-                                </td>
+                                    <td>
+                                       <xls:element name="a">
+                                           <xsl:attribute name="href">file:///<xsl:value-of select="jUnitReportpath" />
+                                           </xsl:attribute>
+                                           <xsl:text>JUnit-Report</xsl:text>
+                                       </xls:element>
+                                    </td>
                                 </xsl:when>
-                                    <xsl:otherwise>
-                                        <td bgcolor='lightgrey'>Kein Report</td>
-                                    </xsl:otherwise>
-                                </xsl:choose>
+                                <xsl:otherwise>
+                                    <td bgcolor='lightgrey'>Kein Report</td>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                            <xsl:choose>
+                                <xsl:when test="not(normalize-space(textCompareReportpath)='')">
+                                    <td>
+                                       <xls:element name="a">
+                                           <xsl:attribute name="href">file:///<xsl:value-of select="textCompareReportpath" />
+                                           </xsl:attribute>
+                                           <xsl:text>TextCompare-Report</xsl:text>
+                                       </xls:element>
+                                    </td>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <td bgcolor='lightgrey'>Kein Report</td>
+                                </xsl:otherwise>
+                            </xsl:choose>
                         </tr>
                     </xsl:for-each>
                 </table>
