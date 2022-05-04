@@ -20,15 +20,16 @@ does a text compare by running a testdriver java class and analyzing the output
 '''
 def runTextCompare(classPath, exercise) -> ():
     xmlHelper = XmlHelper(gradingPlanPath)
+    dirPath = os.path.dirname(classPath)
     # get the details of the test from the grading plan xml
-    result = xmlHelper.getTextCompare(exercise)
+    result = xmlHelper.getTextCompareTest(exercise)
     if result == None:
         infoMessage = f"runTextCompare: no TextCompare test for {exercise} found"
         return (-1, infoMessage)
     # now run the test
-    testRegex = result.testRegex
-    testClass = result.testClass
-    javaArgs = f"{javaPath} -cp {classPath} {testClass}"
+    testRegex = result["testRegex"]
+    testClass = result["testClass"]
+    javaArgs = f"{javaPath} -cp {dirPath} {testClass}"
     procContext = Popen(javaArgs, shell=True, env={"PATH": classPath}, stdout=PIPE, stderr=STDOUT)
     procContext.wait()
     retCode = procContext.returncode
@@ -41,13 +42,17 @@ def runTextCompare(classPath, exercise) -> ():
         if re.findall(testRegex, line) == None:
             errorCount += 1
         else:
+            # findall returns an array with tuples
             matches = re.findall(testRegex, line)
-            # the last group is the expected value
-            expectedValue = matches[-1]
-            # the second last group is the delivered value
-            deliveredValue = matches[-2]
-            # do they match?
-            if expectedValue != deliveredValue:
+            if len(matches) == 1:
+                # the last group is the expected value
+                expectedValue = matches[0][-1]
+                # the second last group is the delivered value
+                deliveredValue = matches[0][-2]
+                # do they match?
+                if expectedValue != deliveredValue:
+                    errorCount += 1
+            else:
                 errorCount += 1
 
     textCompareMessage = f"{len(allLines)} lines with {errorCount} errors"

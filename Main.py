@@ -542,7 +542,6 @@ def MenueD_startGradingRun() -> None:
                             gradeResult.result = True if junitResult == 0 else False
                             if junitXmlMessage != "":
                                 gradeResult.errorMessage = f"JUnit-Result: {JUnitTestHelper.getJUnitResult(junitXmlMessage)}"
-
                                 jUnitName = f"{studentName}_{exercise}_JUnitResult.xml"
                                 jUnitReportpath = os.path.join(simpelgraderDir, jUnitName)
                                 with open(jUnitReportpath, mode="w", encoding="utf8") as fh:
