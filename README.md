@@ -336,17 +336,17 @@ Start the grading process (Menue option D)
 
 ## A few details about the "inner workings" of Simpelgrader
 
-*Simpelgrader* is, as the name implies, a simple programm. But it is not a small programm because there is a lot of house keep to do like
+*Simpelgrader* is, as the name implies, a simple programm. But it is not a small programm because there is a lot of house keeping to do like
 
 * extracting a zip file recursesively
 * CRUD operations with the sqlite database
-* A lot of XML operations like generating XML and querying XML with XPath queries)
+* a lot of XML operations like generating XML and querying XML with XPath queries
 * XSLT transformation for generating HTML reports
-* Running external processes and getting the output
-* Running JUnit tests from Python
+* running external processes like Java and getting the output
+* running JUnit tests from Python
 * storing hierarchical information in a dictionary
 
-So besides being an hopefully helpful tool, SimpelGrader is also about learning comming Python techniques.
+So besides being an hopefully helpful tool, Simpelgrader is also about learning common Python techniques.
 
 All would not have been possible of course with excellent packages like *lXml* and many others and Python itself.
 
