@@ -1,4 +1,4 @@
-04/24/22
+05/05/22
 
 # simpelgrader (version 0.8)
 A simple Python application for grading Java assignments by running defined actions and tests for each submission
@@ -74,7 +74,7 @@ Step 2 is about writing the path of some directories and the name of the semeste
 
 If everything is setup, *SimpelGrader* runs as any Python console application. A grade run will take a couple of minutes and ends always with showing a couple of report files.
 
-## getting started
+## getting started with the project and run Simpelgrader
 
 First clone the repository into an subdirectory of the current directory 
 
@@ -105,6 +105,8 @@ The only possible options without editing *Simpelgrader.ini* are **A** for the p
 ### editing Simpelgrader.ini
 
 Editing *Simpelgrader.ini* means providing the pathes for the several directories that *Simpelgrader* uses.
+
+I am preparing a simple setup assistant but right now the ini file must bei edited with an editor.
 
 Currently they are 9 different pathes that have to be set. Table 1 shows each setting with an explanation and an example.
 
@@ -191,7 +193,9 @@ List of tests
 
 The type names in the xml file are **not** case sensitive.
 
-## working with simpelgrader
+## working with simpelgrader (part 1)
+
+The following instructions assumes that the zip file with the submissions already exists.
 
 When everything (*gradingplan.xml* and *simpelgrader.ini*) are setup up, working with *Simpelgrader* is really simple.
 
@@ -260,9 +264,79 @@ Another way to display the latestet log file. A line that starts with *** means 
 
 if they are any questions left please send me an email. My current address is peter.monadjemi@stud.hs-emden-leer.de
 
-## A few details about the "inner workings" of SimpelGrader
+## working with Simpelgrader (part 2)
 
-*SimpelGrader* is, as the name implies, a simple programm. But it is not a small programm because there is a lot of house keep to do like
+In this part I will explain how to start as a teacher with the first assigments.
+
+Lets assume there is a single assignment for a Java introductionary course:
+
+*Write a class that contains a single method **SchaltjahrTest** that tests if a given year is a leap year. The method shall accept a int value as the only parameter and returns a boolean (true if the year is a leap year, otherwise false).*
+
+A solution file App.java would like this
+xxx
+
+There is JUnit file AppTest.java that looks like this:
+
+xxx
+And there is one more file. A console application SchaltjahrTester.java, that does nothing but call the method several times and outputs the returned value together with expected value:
+xxx
+
+So the assignment with the arbitrary Name EA1 consists of three file:
+
+xxx
+
+And there a three different testing methods:
+
+xxx
+
+The grading plan xml file looks like this:
+
+xxx
+
+The second of three files that is needed is the student roster csv file. It looks like this:
+
+xxx
+
+Lets assume that every student uploaded an assigment with the three java files. That means there are six zip files that have beend uploaded by each student in Moodle:
+
+xxx
+
+Due to the way Moodle handles download there is another zip file for each of the uploaded zip file:
+
+xxx
+
+If the teacher downloads all the submitted zip files the result is one single zip file:
+
+xxx
+
+This zip file has to be the only zip file in the submission directory.
+
+The last step before the grading can start is to setup/update the simpeplgrader.ini file. It can look like this:
+
+xxx
+
+Please note, that the directory paths have to exist on your computer of course.
+
+
+Now start Simpelgrader through:
+
+1. Opening the command prompt (Powershell oder Cmd)
+2. Switching into the project directory
+3. Activating the virtual environment (this step is optional.
+4. Starting the application
+
+python .\App.py
+
+Run the precheck (Menue option A)
+
+Extract the zip file (Menue option B)
+
+Start the grading process (Menue option D)
+
+
+## A few details about the "inner workings" of Simpelgrader
+
+*Simpelgrader* is, as the name implies, a simple programm. But it is not a small programm because there is a lot of house keep to do like
 
 * extracting a zip file recursesively
 * CRUD operations with the sqlite database
