@@ -109,9 +109,7 @@ After the start the application menue is shown.
 
 The only possible options without editing *Simpelgrader.ini* are **A** for the precheck and **H** for showing the current log file.
 
-And, if available, **I** for setting up the *Simpelgrader.ini* file.
-
-I am preparing a simple setup assistant but right now the ini file must bei edited with an editor.
+And there is **I** for setting up the *Simpelgrader.ini* file with single prompts for each entry. More on this later.
 
 ### editing Simpelgrader.ini
 
