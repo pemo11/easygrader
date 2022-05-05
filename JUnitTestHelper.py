@@ -67,6 +67,11 @@ def compileJavaTest(filePath) -> (int, str):
     if len(javaCOutput) > 0:
         # cp1252 is import for Umlaute (utf8 does not work?)
         javaCOutput = javaCOutput.decode("cp1252")
+        # Should not be necessary - the console output does contains the wrong encoding
+        # maybe utf8/win1252 issue?
+        # https://utf8-chartable.de/unicode-utf8-table.pl?utf8=char
+        javaCOuput = javaCOutput.replace("Ã¼", "ü")
+
         # Pattern to extract the error message only
         outputPattern = "java:\d+:\s+(.*)\r"
         if len(re.findall(outputPattern,javaCOutput)) > 0:
