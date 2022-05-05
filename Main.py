@@ -124,6 +124,7 @@ def showMenu():
     menuList.append("Studentenroster anzeigen")
     menuList.append("Alle Abgaben anzeigen")
     menuList.append("Logdatei anzeigen")
+    menuList.append("Simpelgrader.ini erstellen (optional)")
     print("=" * 80)
     prompt = "Eingabe ("
     for i, menuItem in enumerate(menuList):
@@ -146,7 +147,8 @@ def MenueA_preCheck() -> None:
     errorFlag = False
     config = configparser.ConfigParser()
     config.read("Simpelgrader.ini")
-    # check if the gradingfile path exists
+    print("*" * 80)
+    # check if the gradingfile xml file path exists
     if not os.path.exists(gradingPlanPath):
         print(f"!!! {gradingPlanPath} existiert nicht")
         errorFlag = True
@@ -194,12 +196,20 @@ def MenueA_preCheck() -> None:
         print(f"!!! {javaPath} existiert nicht")
         errorFlag = True
     dicCheck["javaPath"] = (javaPath, errorFlag)
+    # check if the checkstyle rule file exists
     errorFlag = False
-    ckeckstyleRulePath = config["path"]["checkstyleRulePath"]
-    if not os.path.exists(ckeckstyleRulePath):
-        print(f"!!! {ckeckstyleRulePath} existiert nicht")
+    checkstyleRulePath = config["path"]["checkstyleRulePath"]
+    if not os.path.exists(checkstyleRulePath):
+        print(f"!!! {checkstyleRulePath} existiert nicht")
         errorFlag = True
-    dicCheck["ckeckstyleRulePath"] = (ckeckstyleRulePath, errorFlag)
+    dicCheck["checkstyleRulePath"] = (checkstyleRulePath, errorFlag)
+    # check if the JUnit directory exists
+    errorFlag = False
+    jUnitPath = config["path"]["jUnitPath"]
+    if not os.path.exists(jUnitPath) or not os.path.isdir(jUnitPath):
+        print(f"!!! {jUnitPath} existiert nicht")
+        errorFlag = True
+    dicCheck["jUnitPath"] = (jUnitPath, errorFlag)
 
     print("*" * 80)
     for checkName,checkValue in dicCheck.items():
@@ -235,6 +245,7 @@ def MenueB_extractSubmissions() -> None:
     # get the full path of the zip file
     zipPath = os.path.join(submissionPath, zipFiles[0])
 
+    # create the submission dest directory if it does not exists
     if not os.path.exists(submissionDestPath):
         os.mkdir(submissionDestPath)
         infoMessage = f"extractSubmissions: directory {submissionDestPath} created"
@@ -701,6 +712,63 @@ def MenueH_showLogfile() -> None:
     else:
         print(f"!!! {Loghelper.logPath} existiert nicht !!!")
 
+'''
+Menue I - updates the simpelgrader.ini file or creates a new one
+'''
+def MenueI_setupSimpelgraderIni() -> None:
+    # backup of the existing ini file
+    # load every prompt from the txt file
+    # test if an directory exists and offer a correction
+    # store the ini file and run a precheck
+    n = 1
+    iniPath = os.path.join(os.getcwd(), "Simpelgrader.ini")
+    # does the file already exists?
+    if not os.path.exists(iniPath):
+        with open(iniPath, mode="w", encoding="utf8") as fh:
+            fh.write("[path]")
+            fh.write("[run")
+            fh.write("[start]")
+    else:
+        abbruch = False
+        while not abbruch or n > 999:
+            newIniPath = os.path.join(os.getcwd(), f"Simpelgrader_{n:03d}.ini")
+            if not os.path.exists(newIniPath):
+                abbruch = True
+                continue
+            n += 1
+        shutil.copy(iniPath, newIniPath)
+        infoMessage = f"setupSimpelgraderIni: copied {iniPath} to {newIniPath}"
+        Loghelper.logInfo(infoMessage)
+
+    config = configparser.ConfigParser()
+    config.read(iniPath)
+    txtpromptsPath = "SimpelgraderSetupPrompts.txt"
+    changeFlag = False
+    with open(txtpromptsPath, mode="r", encoding="utf8") as fh:
+        promptLines = fh.readlines()
+        print("*** Eingabe auslassen per Enter-Taste ***")
+        # strip the / from the last line
+    for promptLine in [pl if pl[-1] != "\n" else pl[:-1] for pl in promptLines if pl != ""]:
+        promptElements = promptLine.split(",")
+        prompt = promptElements[0]
+        section = promptElements[1]
+        entry = promptElements[2]
+        try:
+            promptInput = input(f"{prompt} (currently {config[section][entry]})\n")
+            if promptInput != "":
+                config[section][entry] = promptInput
+                changeFlag = True
+        except Exception as ex:
+            infoMessage = f"setupSimpelgraderIni: error accessing {iniPath} with section={section}/entry={entry}"
+            Loghelper.logError(infoMessage)
+
+    # save everything in the config file again
+    if changeFlag:
+        with open(iniPath, mode="w", encoding="utf8") as fh:
+            config.write(fh)
+            infoMessage = f"setupSimpelgraderIn: updated settings in {iniPath}"
+            Loghelper.logInfo(infoMessage)
+
 # =============================================================================
 # Starting point
 # =============================================================================
@@ -745,8 +813,10 @@ def start() -> None:
             MenueF_showStudentRoster()
         elif choice == "G":                 # Show gradings of a single student
             MenueG_showStudentSubmissions()
-        elif choice == "H":
+        elif choice == "H":                 # Show the current log file
             MenueH_showLogfile()
+        elif choice == "I":
+            MenueI_setupSimpelgraderIni()   # Allow preparting a simpelgrader.ini
         else:
             print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
 

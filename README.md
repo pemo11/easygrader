@@ -248,7 +248,6 @@ simpelgrader
 
 Each submission will be copied into its own sub directory with the name schema *Exercisename_StudentName*.
 
-
 ### Step 4: Validates the submission (Menue C)
 
 This step is optional again. It validates each submission subdirectory by comparing the files in that directory with the files from the grading xml for that exercise.
@@ -452,7 +451,7 @@ This zip file has to be the only zip file in the submission directory.
 The last step before the grading can start is to setup/update the *simpeplgrader.ini* file. It can look like this:
 
 ```
-path]
+[path]
 javaCompilerPath = E:\\Java\\jdk-11.0.14+9\\bin\\javac
 javaLauncherPath = E:\\Java\\jdk-11.0.14+9\\bin\\java
 jUnitPath = C:\\JUnit
@@ -466,7 +465,7 @@ dbPath = E:\\SimpelGrader-Testpool\\simpelgraderv1.db
 
 This means for example that the downloaded zip file is expected in *E:\\SimpelGrader-Testpool\\Submissions*.
 
-This means further that the grading xml is *E:\\SimpelGrader-Testpool\\gradingplan3.xml*
+This means further that the grading xml file is *E:\\SimpelGrader-Testpool\\gradingplan3.xml*
 
 And so on.
 
@@ -515,7 +514,7 @@ Now start *Simpelgrader* through:
 * running JUnit tests from Python
 * storing hierarchical information in a dictionary
 
-So besides being an hopefully helpful tool, Simpelgrader is also about learning common Python techniques.
+So besides being an hopefully helpful tool, *Simpelgrader* is also about learning common Python techniques.
 
 All would not have been possible of course with excellent packages like *lXml* and many others and Python itself.
 
