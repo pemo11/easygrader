@@ -1,18 +1,18 @@
 05/05/22
 
-# simpelgrader (version 0.8)
+# Simpelgrader (version 0.8)
 A simple Python application for grading Java assignments by running defined actions and tests for each submission
 
-## about the programm
-I started the development of Simpelgrader in March 2022 as part of my bachelor thesis about auto grading programming assignments because I felt there is a need for such a tool.
+### about the programm
+I started the development of *Simpelgrader* in March 2022 at the **Hochschule Emden Leer** as part of my bachelor thesis about auto grading programming assignments because I felt there is a need for such a tool.
 
 Wait, another autograder? Aren't there already a couple dozens (or maybe several hundreds) available for more than at least a decade? Why another one? And why as an old fashioned Python console application? And no GPT3 (Open AI)?
 
-My thoughts were exactly the same;) - I definitely did not want to add another auto grader to the menue list. There are very good and well established applications like Praktomat, Graja, GATE, JACK and others and there are Moodle plugins like Coderunner or VirtualProgrammingLab which are all very good.
+My thoughts were exactly the same;) - I definitely did not want to add another auto grader to the menue list. There are very good and well established applications like *Praktomat*, *Graja*, *GATE*, *JACK* and others and there are Moodle plugins like *Coderunner* or *VirtualProgrammingLab* which are all very good.
 
-But I saw couple of short comings:
+But I saw couple of short comings in all of these options:
 
-- Many applications are complex
+- Many applications are too complex
 - Some graders offer too many functions
 - Not every autograder api is very well documented
 - Some autograders are old (which is not automatically bad of course)
@@ -27,9 +27,13 @@ With *Simpelgrader* I'll try to address a few of these shortcommings:
 - Hopefully the whole source code is documented
 - I will try to improve the application in the near future
 
-But most important: *Simpelgrader* is **not** a complete autograder. Its more an assistent for a teacher that should make grading a lot of submission less time consuming. 
+But most important: *Simpelgrader* is **not** a complete autograder. Its more an assistent for a teacher that should make grading a lot of student submissions less time consuming. 
 
-It runs prefined actions and tests associated with each submission file through a xml file.
+It could grade several different exercises submitted by hundreds students within one grading run.
+
+The concept is very simpel and use my many auto graders:
+
+*Simpelgrader* runs prefined actions and tests associated with each submission file through a xml file.
 
 At the moment there is only a basic feedback mechanismen and there are no means to adapt the weighting of points for each action and test.
 
@@ -77,7 +81,7 @@ Step 2 is about writing the path of some directories and the name of the semeste
 
 If everything is setup, *Simpelgrader* runs as any Python console application. A grade run will take a couple of minutes and ends always with showing a couple of report files.
 
-## getting started with the project and run Simpelgrader
+### getting started with the project and run Simpelgrader
 
 First clone the repository into an subdirectory of the current directory 
 
@@ -178,7 +182,7 @@ At the moment, there is only a single action possible, the compile action that c
 List of actions
 - compile
 
-At the moment, there are three different testing methods. Therefore the *tests* element will always contain several *test* elements. More on this later.
+At the moment, there are three different testing methods. Therefore the *tests* element will always contain several *test* subelements. More on this later.
 
 List of tests
 - checkstyle
@@ -197,11 +201,11 @@ Each action or test can be active or not. If a action or test is not active it w
 
 I hope that this does not sound too confusing. There is a sample xml file in the sample directory. The only thing that needs to change are the name of exercises because this names have to be part of the file name for every submission.
 
-**Example**: the name of an exercise is EA1. This means that each submitted zip file has to follow the simple naming scheme:
+**Example**: the name of an exercise is *EA1*. This means that each submitted zip file has to follow the simple naming scheme:
 
 *EA1_FirstName_LastName.zip*
 
-Withouth a task-element with exercise="EA1" *Simpelgrader* would not process this submission.
+Withouth a *task*-element with a 'exercise="EA1"' attribute *Simpelgrader* would not process this submission.
 
 ## working with simpelgrader (part 1)
 
@@ -285,7 +289,7 @@ Lets assume there is a single assignment for a Java introductionary course:
 
 *Write a class that contains a single method **SchaltjahrTest** that tests if a given year is a leap year. The method shall accept a int value as the only parameter and returns a boolean (true if the year is a leap year, otherwise false).*
 
-A solution file App.java would like this:
+A solution file *App.java* would look like this:
 
 ```
 /**
@@ -306,7 +310,9 @@ public class App {
 ```
 The *@author* comment is important and therefore mandatory because the student id will be extracted from this line.
 
-There is JUnit file AppTest.java that looks like this:
+Also important is the student id (*Matrikelnummer* in German). There has to be a unique number following *Matrikel-Nr:*. Otherwise the file will not be accepted.
+
+There is a JUnit file *AppTest.java* that looks like this:
 
 ```
 import static org.junit.Assert.assertFalse;
@@ -364,17 +370,17 @@ public class SchaltjahrTester {
 
 So the assignment with the arbitrary Name EA1 consists of three file:
 
-. App.java
-. AppTest.java
-. Schaltjahrtester.java
+- App.java
+- AppTest.java
+- Schaltjahrtester.java
 
 And there a three different testing methods:
 
-. Checkstyle
-. JUnit
-. Textcompare
+- Checkstyle
+- JUnit
+- Textcompare
 
-The grading plan xml file looks like this:
+The gradingplan xml file looks like this:
 
 ```
 <?xml version="1.0" encoding="utf-8"?>
@@ -430,40 +436,74 @@ The first column is the name, the second column is the studentid which must be u
 
 Lets assume that there are three students every student uploaded an assigment with the three java files.
 
-That means there are six zip files that have beend uploaded by each student in Moodle:
+That means there are six zip files that have been uploaded by each student in Moodle:
 
-Due to the way Moodle handles download there is another zip file for each of the uploaded zip file:
+Due to the way Moodle handles downloads, there is another zip file for each of the uploaded zip file:
 
-xxx
+`Submission_1_EA1_Fred_Meyer.zip
+`
 
-If the teacher downloads all the submitted zip files the result is one single zip file:
+If the teacher later downloads all the submitted zip files the result is one single zip file:
 
-xxx
+`MoodleSubmission_04.05.2022.zip`
 
 This zip file has to be the only zip file in the submission directory.
 
 The last step before the grading can start is to setup/update the *simpeplgrader.ini* file. It can look like this:
 
-xxx
+```
+path]
+javaCompilerPath = E:\\Java\\jdk-11.0.14+9\\bin\\javac
+javaLauncherPath = E:\\Java\\jdk-11.0.14+9\\bin\\java
+jUnitPath = C:\\JUnit
+gradingPlanPath = E:\\SimpelGrader-Testpool\\gradingplan3.xml
+submissionPath = E:\\SimpelGrader-Testpool\\Submissions
+checkstylePath = E:\\Checkstyle\\checkstyle-8.23-all.jar
+checkstyleRulePath = E:\\SimpelGrader-Testpool\\checkstyle-OMI3d.xml
+studentRosterPath = E:\\SimpelGrader-Testpool\\Student_Roster.csv
+dbPath = E:\\SimpelGrader-Testpool\\simpelgraderv1.db
+```
+
+This means for example that the downloaded zip file is expected in *E:\\SimpelGrader-Testpool\\Submissions*.
+
+This means further that the grading xml is *E:\\SimpelGrader-Testpool\\gradingplan3.xml*
+
+And so on.
 
 Please note, that the directory paths have to exist on your computer of course.
+
+The rest of *Simpelgrader.ini* is optional:
+
+```
+[run]
+gradeSemester = WS 20/21
+gradeModule = GP1
+gradingOperator = Pemo22
+
+[start]
+deleteSubmissionTree = Yes
+deleteLogFile = Yes
+databaseBackup = No
+```
+
+The entries in the *run* section are only used for the reports. The entries in the *start* section* should be self explanatory.
 
 Now start *Simpelgrader* through:
 
 1. Opening the command prompt (Powershell oder Cmd)
-2. Switching into the project directory
-3. Activating the virtual environment (this step is optional).
+2. Switching (*cd*) into the project directory
+3. Activating the virtual environment (this step is optional and had beed described earlier).
 4. Starting the application
 
-`python .\App.py`
+`python .\Main.py`
 
 5. Run the precheck (Menue option A)
 
-6. Extract the zip file (Menue option B)
+6. Extract the zip file in the submission directory (Menue option B)
 
 7. Start the grading process (Menue option D)
 
-## A few details about the "inner workings" of Simpelgrader
+### A few details about the "inner workings" of Simpelgrader
 
 *Simpelgrader* is, as the name implies, a simple programm. But it is not a small programm because there is a lot of house keeping to do like
 
@@ -479,5 +519,8 @@ So besides being an hopefully helpful tool, Simpelgrader is also about learning 
 
 All would not have been possible of course with excellent packages like *lXml* and many others and Python itself.
 
-If they are any questions left please send me an email. My current address is peter.monadjemi@stud.hs-emden-leer.de
+## Future improvements
 
+*Simpelgrader* is (of course) not finished yet. Especially the feedback report is not in its final state. In the end, every grading is done for the feedback.
+
+If they are any questions left, please send me an email. My current address is peter.monadjemi@stud.hs-emden-leer.de
