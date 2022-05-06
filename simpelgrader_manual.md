@@ -124,9 +124,12 @@ The next step is do define a compile action through the *actions* element and a 
       <sig:file>AppTest.java</sig:file>
       <sig:file>SchaltjahrTester.java</sig:file>
     </sig:files>
-    <sig:actions>
-      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
-    </sig:actions>
+```
+&nbsp;&nbsp;&nbsp;&nbsp;<mark><sig:actions></br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sig:action id="A01" active="True" type="java-compile">compile java file</sig:action></br>
+&nbsp;&nbsp;&nbsp;&nbsp;</sig:actions><
+</mark>
+```
   </sig:task> 
 </sig:tasks>
 ```
@@ -242,7 +245,7 @@ The next step is to add one more test, this time its a text-compare test.
         <sig:test-score>2</sig:test-score>
       </sig:test>
 ```
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<mark><sig:test id="T03" active="True"></mark>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<mark><sig:test id="T03" active="True"></mark>
 ```
         <sig:test-type>TextCompare</sig:test-type>
         <sig:test-description>Ausgabe-Vergleich</sig:test-description>
@@ -287,7 +290,107 @@ There is a schema definition file *gradingplan.xsd* - it can be used to validate
 
 ## Setting up the Simpelgrader.ini file
 
-xxx
+The second major task is setting up at least 9 entries in *Simpelgrader.ini* file.
+
+The following lines all belong in the **[path]** section. Every item name is not case sensitive.
+
+###Step 1: What is the path of the java compiler?
+
+Locate the Java compiler of the Java SDK 11 or higher and put the whole path including java in the javacompilerpath line:
+
+```javacompilerpath = D:\jdk-17\bin\javac```
+
+###Step 2: What is the path of the java launcher?
+
+Locate the Java launcher of the Java SDK 11 or higher and put the whole path including java in the javalauncherpath line:
+
+```javaclauncherpath = D:\jdk-17\bin\java```
+
+###Step 3: What is the path of the jUnit directory?
+
+Locate the path of the JUnit 4.x jar files and put the path in the junitpath line:
+
+```junitpath = D:\Java11\jUnit```
+
+###Step 4: What is the path of the grading plan xml file?
+
+Locate the path of the grading xml file that was setup in the last section of this document and put it in the gradingplanpath line:
+
+``gradingplanpath = G:\2022\Simpelgrader-Testpool\gradingplan3.xml``
+
+###Step 5: What is the path of the submission directory?
+
+Decide in what directory the zip file with the (downloaded) submissions is located and put it in the submissionpath line:
+
+```submissionpath = G:\2022\Simpelgrader-Testpool\submissions```
+
+###Step 6: What is the path of the checkstyle jar file?
+
+Locate the path of the directory with the checkstyle jar file in it and put it in the checkstylepath line:
+
+```checkstylepath = G:\2022\Simpelgrader-Testpool\checkstyle\checkstyle-8.23-all.jar```
+
+###Step 7: What is the path of the checkstyle rule file?
+
+Locate the path of the xml file with the checkstyle rules and put it in the checkstylerulepath line:
+
+```checkstylerulepath = G:\2022\Simpelgrader-Testpool\checkstyle-OMI3d.xml```
+
+###Step 8: What is the path of the csv file with the student names, the roster?
+
+Locate the path of the csv file that contains the student roster and put it in the studentrosterpath line:
+
+```studentrosterpath = G:\2022\Simpelgrader-Testpool\Student_Roster.csv```
+
+###Step 9: What is the path and the name of the Sqlite database file?
+
+Decide in what directory the db file will be located and the name of that file and put the path in the dbpath line:
+
+```dbpath = G:\2022\Simpelgrader-Testpool\simpelv1.db```
+
+The next entries belong to the **[run]** section.
+
+###Step 10: What is the name of semester?
+
+For the report only. Put the name of the semester in the gradesemester line:
+
+```gradesemester = WS 20/21?```
+
+###Step 12: What is the name of module?
+
+For the report only. Put the name of the module in the grademodule line:
+
+```grademodule = GP1```
+
+###Step 13: What is the name of operator?
+
+For the report only. Put the name of the operator in the gradeoperator line:
+
+```gradeoperator = Harcourt Fenton Mud```
+
+The next entries belong to the **[start]** section.
+
+###Step 14: Should the submission directory get deleted before each start?
+
+The default is Yes:
+
+```deletesubmissiontree = Yes```
+
+###Step 15: Should the log file get deleted before each start?
+
+The default is Yes:
+
+```deletelogfile = Yes```
+
+###Step 16: Should the database file backuped before the programm terminates?
+
+The default is No:
+
+```databasebackup = No```
+
+And that's it.
+
+All the settings can be changed in *Simpelgrader* through Menue option I too and of course with any text editor.
 
 ## Setting up the submission zip file
 
