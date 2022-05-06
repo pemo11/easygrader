@@ -97,7 +97,7 @@ First, I will include the files through the *files* element:
 <sig:tasks xmlns:sig="urn:simpelgrader">
  <sig:task id="1000" exercise="EA1" title="Aufgabe EA1">
     <sig:description>description for task 1000</sig:description>
-    <sig:files>
+      <sig:files>
       <sig:file>App.java</sig:file>
       <sig:file>AppTest.java</sig:file>
       <sig:file>SchaltjahrTester.java</sig:file>
@@ -241,8 +241,9 @@ The next step is to add one more test, this time its a text-compare test.
         <sig:test-class>AppTest</sig:test-class>
         <sig:test-score>2</sig:test-score>
       </sig:test>
-      
-    <sig:test id="T03" active="True">
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<mark><sig:test id="T03" active="True"></mark>
+```
         <sig:test-type>TextCompare</sig:test-type>
         <sig:test-description>Ausgabe-Vergleich</sig:test-description>
         <sig:test-testerRegex>(\d+)\s+is\s+a\s+leap year:\s+(\w+)\s+\(expected:\s+(\w+)\)</sig:test-testerRegex>
@@ -282,7 +283,7 @@ A task element in the grading xml does not mean that there have to be submission
 
 It only means that if this task should be graded too, there has to be a definition in the grading xml file.
 
-There is a schema definition file *gradingplan.xsd* - it can be used to validate a grading xml file (my favorite XML editor is Oxygene Xml;).
+There is a schema definition file *gradingplan.xsd* - it can be used to validate a grading xml file (my favorite XML editor is <oXygene/> Xml;).
 
 ## Setting up the Simpelgrader.ini file
 
