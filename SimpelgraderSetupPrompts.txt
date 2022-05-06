@@ -1,9 +1,9 @@
 Path for the Java compiler?,path,javaCompilerPath,""
 Path for the Java launcher?,path,javaLauncherPath,""
-Path for JUnit?,path,jUnitPath,C:\\JUnit
-Path for the Gradingplan xml file?,path,gradingPlanPath,""
+Path for JUnit directory?,path,jUnitPath,C:\\JUnit
+Path for the Gradingplan xml filename?,path,gradingPlanPath,""
 Path for the submission directory?,path,submissionPath,""
 Path for the Checkstyle jar?,path,checkstylePath,C:\\Checkstyle\\checkstyle-8.23-all.jar
-Path for the Checkstyle rule path?,path,checkstyleRulePath,""
-Path for the Student roster csv file?,path,studentRosterPath,C:\\Student_Roster.csv
-Name of the database file?,path,dbPath,C:\\simpelgraderv1.db
+Path for the Checkstyle rule filename?,path,checkstyleRulePath,""
+Path for the Student roster csv filename?,path,studentRosterPath,C:\\Student_Roster.csv
+Path for the database filename?,path,dbPath,C:\\simpelgraderv1.db

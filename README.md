@@ -10,7 +10,7 @@ Wait, another autograder? Aren't there already a couple dozens (or maybe several
 
 My thoughts were exactly the same;) - I definitely did not want to add another auto grader to the menue list. There are very good and well established applications like *Praktomat*, *Graja*, *GATE*, *JACK* and others and there are Moodle plugins like *Coderunner* or *VirtualProgrammingLab* which are all very good.
 
-But I saw couple of short comings in all of these options:
+But I saw couple of short comings in these options:
 
 - Many applications are too complex
 - Some graders offer too many functions
@@ -18,20 +18,21 @@ But I saw couple of short comings in all of these options:
 - Some autograders are old (which is not automatically bad of course)
 - Not very autograder is an Open Source project on GitHub, GitLab etc
 - Not every institution uses Moodle
-- And: When autograding a lot of assignments everything may start with a huge zip file
+
+And finally: When autograding a lot of assignments everything may start with a huge zip file
 
 With *Simpelgrader* I'll try to address a few of these shortcommings:
 
 - Processing a single zip file that contains all the assignments
 - A small project that should be easy to understand
 - Hopefully the whole source code is documented
-- I will try to improve the application in the near future
+- I will try to improve the application in the near future (top on the list is support for Python)
 
 But most important: *Simpelgrader* is **not** a complete autograder. Its more an assistent for a teacher that should make grading a lot of student submissions less time consuming. 
 
 It could grade several different exercises submitted by hundreds students within one grading run.
 
-The concept is very simpel and use my many auto graders:
+The concept is very simple and use my many auto graders:
 
 *Simpelgrader* runs prefined actions and tests associated with each submission file through a xml file.
 
@@ -60,24 +61,25 @@ The assistant/teacher still has to look at the source code, may be rerun tests, 
 But since the boring and error prone tasks are already done, there should be more time and energy left for the important parts:
 
 - To really look at the solution
+- Take the students "learning profile" into account
 - May be check for plagiarism
 - Write a formative feedback
 
-*Simpelgrader* is easy to install. I developed the application on Windows but it should run with no problemo on Linux and MacOS.
+*Simpelgrader* is easy to install. I developed the application on Windows 10 but it should run with no problemo on Linux and MacOS (I will tests this in the near future).
 
-Python 3.8 is a requirement because I wanted to use a nice improvements for while loops.
+Python >= 3.8 is a requirement because I wanted to use a nice improvements for while loops.
 
-*Simpelgrader* cannot run out of the box because two things have to be prepared first:
+*Simpelgrader* cannot run out of the box because three things have to be prepared first:
 
 1. the grading xml file
 2. the settings in *simpelgrader.ini*
-3. Some Python packages (like lxml) have to be installed first (there is a *requirements.txt* of course)
+3. Some Python packages (like lXml) have to be installed (there is a *requirements.txt* of course)
 
 Preparing the xml file can be a little time consuming because it means to define for each exercise a name, the name of the needed files, and additional actions and tests if compile and checkstyle is not enough.
 
 The sample grade xml file *gradingplan1.xml* in the *sampledata* directory is a template for a customized grading plan.
 
-Step 2 is about writing the path of some directories and the name of the semester and the module in the ini file.
+Step 2 is about writing the path of some directories and the name of the semester and the module in the ini file. Menue option H which queries each settings can be a shortcut for setting the ini file up.
 
 If everything is setup, *Simpelgrader* runs as any Python console application. A grade run will take a couple of minutes and ends always with showing a couple of report files.
 

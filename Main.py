@@ -1,9 +1,10 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 05/05/22
+# last update: 06/05/22
 # Version 0.8
 # =============================================================================
+import random
 from datetime import datetime
 import os
 import re
@@ -104,11 +105,28 @@ def initVariables():
 # =============================================================================
 
 '''
+get a quote from the quotes.txt file
+'''
+def getQuote() -> str:
+    quote = ""
+    if os.path.exists("quotes.txt"):
+        with open ("quotes.txt", mode="r",encoding="utf8") as fh:
+            quotes = [li.strip() for li in fh.readlines()]
+        z = random.randint(0, len(quotes)-1)
+        quote = quotes[z]
+    return quote
+
+
+'''
 Shows the Welcome Banner
 '''
 def showBanner():
     print(Fore.LIGHTGREEN_EX + "*" * 80)
     print(f"{'*' * 24}{f' Welcome to {appName} {appVersion} '}{'*' * 25}")
+    quote = getQuote()
+    if quote != "":
+        starCount = (80 - len(quote)) // 2
+        print(f"{'*' * (starCount-1)} ({quote}) {'*' * (starCount-2)}")
     print("*" * 80 + Style.RESET_ALL)
 
 '''
@@ -166,13 +184,13 @@ def MenueA_preCheck() -> None:
     dicCheck["submissionPath"] = (submissionPath, errorFlag)
     errorFlag = False
     # check if the student roster file exists
-    if not os.path.exists(studentRosterPath):
+    if not os.path.exists(studentRosterPath) or not os.path.isfile(studentRosterPath):
         print(f"!!! {studentRosterPath} existiert nicht")
         errorFlag = True
     dicCheck["studentRoster"] = (studentRosterPath, errorFlag)
     # check if the db file exists
     errorFlag = False
-    if not os.path.exists(dbPath):
+    if not os.path.exists(dbPath) or not os.path.isfile(dbPath):
         print(f"!!! {dbPath} existiert nicht")
         errorFlag = True
     dicCheck["dbPath"] = (dbPath, errorFlag)
@@ -182,7 +200,7 @@ def MenueA_preCheck() -> None:
     # if Windows, add exe extension for the test
     if os.name == "nt":
         javaCPath += ".exe"
-    if not os.path.exists(javaCPath):
+    if not os.path.exists(javaCPath) or not os.path.isfile(javaCPath):
         print(f"!!! {javaCPath} existiert nicht")
         errorFlag = True
     dicCheck["javaCPath"] = (javaCPath, errorFlag)
@@ -192,14 +210,14 @@ def MenueA_preCheck() -> None:
     # if Windows, add exe extension for the test
     if os.name == "nt":
         javaPath += ".exe"
-    if not os.path.exists(javaPath):
+    if not os.path.exists(javaPath) or not os.path.isfile(javaPath):
         print(f"!!! {javaPath} existiert nicht")
         errorFlag = True
     dicCheck["javaPath"] = (javaPath, errorFlag)
     # check if the checkstyle rule file exists
     errorFlag = False
     checkstyleRulePath = config["path"]["checkstyleRulePath"]
-    if not os.path.exists(checkstyleRulePath):
+    if not os.path.exists(checkstyleRulePath) or not os.path.isfile(checkstyleRulePath):
         print(f"!!! {checkstyleRulePath} existiert nicht")
         errorFlag = True
     dicCheck["checkstyleRulePath"] = (checkstyleRulePath, errorFlag)
@@ -768,6 +786,7 @@ def MenueI_setupSimpelgraderIni() -> None:
             config.write(fh)
             infoMessage = f"setupSimpelgraderIn: updated settings in {iniPath}"
             Loghelper.logInfo(infoMessage)
+            print("*** Simpelgrader.ini wurde aktualisiert ***")
 
 # =============================================================================
 # Starting point

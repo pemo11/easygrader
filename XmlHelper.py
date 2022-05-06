@@ -29,8 +29,9 @@ class XmlHelper:
         # directory had been already created
         self.simpelgraderDir = os.path.join(os.path.expanduser("~"), "documents/simpelgrader")
         # copy all css files to the report directory
-        for fi in [f for f in os.listdir(currentDir) if f.endswith("css")]:
-            cssPath = os.path.join(currentDir, fi)
+        XSLTDir = os.path.join(currentDir, "XSLT")
+        for fi in [f for f in os.listdir(XSLTDir) if f.endswith("css")]:
+            cssPath = os.path.join(XSLTDir, fi)
             shutil.copy(cssPath, self.simpelgraderDir)
         self.gradeResultReportpath = path.join(self.simpelgraderDir, resultReportname)
         actionReportName = f"GradingActionreport_{today}.xml"
@@ -202,7 +203,7 @@ class XmlHelper:
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
-            xsltPath = "GradingResultreport.xslt"
+            xsltPath = "XSLT/GradingResultreport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
@@ -229,7 +230,7 @@ class XmlHelper:
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
-            xsltPath = "FeedbackReport.xslt"
+            xsltPath = "XSLT/FeedbackReport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
@@ -299,7 +300,7 @@ class XmlHelper:
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
-            xsltPath = "SubmissionValidationReport.xslt"
+            xsltPath = "XSLT/SubmissionValidationReport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
@@ -325,7 +326,7 @@ class XmlHelper:
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
-            xsltPath = "CheckstyleReport.xslt"
+            xsltPath = "XSLT/CheckstyleReport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
@@ -350,7 +351,7 @@ class XmlHelper:
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
-            xsltPath = "JUnitReport.xslt"
+            xsltPath = "XSLT/JUnitReport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
