@@ -214,6 +214,13 @@ def MenueA_preCheck() -> None:
         print(f"!!! {javaPath} existiert nicht")
         errorFlag = True
     dicCheck["javaPath"] = (javaPath, errorFlag)
+    # check if the checkstyle jar file exists
+    errorFlag = False
+    checkstylJarPath = config["path"]["checkstylepath"]
+    if not os.path.exists(checkstylJarPath) or not os.path.isfile(checkstylJarPath):
+        print(f"!!! {checkstylJarPath} existiert nicht")
+        errorFlag = True
+    dicCheck["checkstylJarPath"] = (checkstylJarPath, errorFlag)
     # check if the checkstyle rule file exists
     errorFlag = False
     checkstyleRulePath = config["path"]["checkstyleRulePath"]
