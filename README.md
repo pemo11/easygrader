@@ -5,7 +5,7 @@ A simple Python application for grading Java assignments by running defined acti
 
 ### how to use the programm?
 
-I wrote a description for using the programm in the file  [a simpelgrader_manual.md](simpelgrader_manual.md) that is part of this repo.
+I wrote a description for using the programm in the file  [simpelgrader_manual.md](simpelgrader_manual.md) that is part of this repo.
 
 ### about the programm
 I started the development of *Simpelgrader* in March 2022 at the **Hochschule Emden Leer** as part of my bachelor thesis about auto grading programming assignments because I felt there is a need for such a tool.
