@@ -30,7 +30,7 @@ For setting up *Simpelgrader.ini* you will need the directory pathes of the foll
 - the checkstyle directory that contains checkstyle-8.23-all.jar (or any other version that works with the rule file)
 - a checkstyle rule file (the xml file that contains the checkstyle rules)
 
-JavaC and Java must be part of the path so typing in "java" in the command window should start the Java launcher for example.
+JavaC and Java must be part of the path so typing in "java" in the command window (Terminal) should start the Java launcher for example.
 
 This is usually the case if the Java SDK had been installed properly.
 
