@@ -16,7 +16,7 @@ The first (and only) requirement is Python version 3.8 or higher.
 
 ## Preparation
 
-Simpelgrader is simple, the involved programms are not that simple. To be able to use Simpelgrader for grading Java source files you will need some equipment:
+*Simpelgrader* is simple, the involved programms are not that simple. To be able to use *Simpelgrader* for grading Java source files you will need some equipment:
 
 - a Java SDK (eg. version 11 or 17)
 - JUnit 4.x (two jar files)
@@ -46,9 +46,9 @@ The next step is to install the Python packages needed for this application.
 
 I recommend creating a Virtual Environment first because the installed packages won't interfere with the packages used by other Python applications on this computer.
 
-If Simpelgrader will be the only Python application on this computer or package versions doesn't matter than you can skip this step.
+If *Simpelgrader* will be the only Python application on this computer or package versions doesn't matter than you can skip this step.
 
-Start Simplegrader to check if everything is working:
+Start *Simpelgrader* to check if everything is working:
 
 `python .\Main.py`
 
@@ -294,55 +294,55 @@ The second major task is setting up at least 9 entries in *Simpelgrader.ini* fil
 
 The following lines all belong in the **[path]** section. Every item name is not case sensitive.
 
-###Step 1: What is the path of the java compiler?
+### Step 1: What is the path of the java compiler?
 
 Locate the Java compiler of the Java SDK 11 or higher and put the whole path including java in the javacompilerpath line:
 
 ```javacompilerpath = D:\jdk-17\bin\javac```
 
-###Step 2: What is the path of the java launcher?
+### Step 2: What is the path of the java launcher?
 
 Locate the Java launcher of the Java SDK 11 or higher and put the whole path including java in the javalauncherpath line:
 
 ```javaclauncherpath = D:\jdk-17\bin\java```
 
-###Step 3: What is the path of the jUnit directory?
+### Step 3: What is the path of the jUnit directory?
 
 Locate the path of the JUnit 4.x jar files and put the path in the junitpath line:
 
 ```junitpath = D:\Java11\jUnit```
 
-###Step 4: What is the path of the grading plan xml file?
+### Step 4: What is the path of the grading plan xml file?
 
 Locate the path of the grading xml file that was setup in the last section of this document and put it in the gradingplanpath line:
 
 ``gradingplanpath = G:\2022\Simpelgrader-Testpool\gradingplan3.xml``
 
-###Step 5: What is the path of the submission directory?
+### Step 5: What is the path of the submission directory?
 
 Decide in what directory the zip file with the (downloaded) submissions is located and put it in the submissionpath line:
 
 ```submissionpath = G:\2022\Simpelgrader-Testpool\submissions```
 
-###Step 6: What is the path of the checkstyle jar file?
+### Step 6: What is the path of the checkstyle jar file?
 
 Locate the path of the directory with the checkstyle jar file in it and put it in the checkstylepath line:
 
 ```checkstylepath = G:\2022\Simpelgrader-Testpool\checkstyle\checkstyle-8.23-all.jar```
 
-###Step 7: What is the path of the checkstyle rule file?
+### Step 7: What is the path of the checkstyle rule file?
 
 Locate the path of the xml file with the checkstyle rules and put it in the checkstylerulepath line:
 
 ```checkstylerulepath = G:\2022\Simpelgrader-Testpool\checkstyle-OMI3d.xml```
 
-###Step 8: What is the path of the csv file with the student names, the roster?
+### Step 8: What is the path of the csv file with the student names, the roster?
 
 Locate the path of the csv file that contains the student roster and put it in the studentrosterpath line:
 
 ```studentrosterpath = G:\2022\Simpelgrader-Testpool\Student_Roster.csv```
 
-###Step 9: What is the path and the name of the Sqlite database file?
+### Step 9: What is the path and the name of the Sqlite database file?
 
 Decide in what directory the db file will be located and the name of that file and put the path in the dbpath line:
 
@@ -350,19 +350,19 @@ Decide in what directory the db file will be located and the name of that file a
 
 The next entries belong to the **[run]** section.
 
-###Step 10: What is the name of semester?
+### Step 10: What is the name of semester?
 
 For the report only. Put the name of the semester in the gradesemester line:
 
 ```gradesemester = WS 20/21?```
 
-###Step 12: What is the name of module?
+### Step 12: What is the name of module?
 
 For the report only. Put the name of the module in the grademodule line:
 
 ```grademodule = GP1```
 
-###Step 13: What is the name of operator?
+### Step 13: What is the name of operator?
 
 For the report only. Put the name of the operator in the gradeoperator line:
 
@@ -370,19 +370,19 @@ For the report only. Put the name of the operator in the gradeoperator line:
 
 The next entries belong to the **[start]** section.
 
-###Step 14: Should the submission directory get deleted before each start?
+### Step 14: Should the submission directory get deleted before each start?
 
 The default is Yes:
 
 ```deletesubmissiontree = Yes```
 
-###Step 15: Should the log file get deleted before each start?
+### Step 15: Should the log file get deleted before each start?
 
 The default is Yes:
 
 ```deletelogfile = Yes```
 
-###Step 16: Should the database file backuped before the programm terminates?
+### Step 16: Should the database file backuped before the programm terminates?
 
 The default is No:
 
@@ -394,12 +394,50 @@ All the settings can be changed in *Simpelgrader* through Menue option I too and
 
 ## Setting up the submission zip file
 
-xxx
+*Simpelgrader* expects a single zip file inside the submission directory.
+
+The grading plan consists of a single assignment with three files:
+
+- App.java
+- AppTest.java
+- Schaltjahrtester.java
+
+If student Fred Meyer uploads his assignment he will upload the file EA1_Fred_Meyer.zip that contains these three files.
+
+When the teacher later downloads the submitted file from Moodle, it will be one zip file that contains each submitted zip file inside another zip file.
+
+So the structure of the downloaded zip file looks like:
+
+```
+Moodle_Submission0505_22.zip
+--Submission_1_EA1_Fred_Meyer.zip
+----EA1_Fred_Meyer.zip
+------App.java
+------TestApp.java
+------Schaltjahrtester.java
+```
+
+For testing *Simpelgrader* without Moodle this single zip file has to be packed and has to be inside the submission directory (eg. G:\2022\Simpelgrader-Testpool\submissions)
 
 ## First run
 
-xxx
+Start *Simpelgrader* and choose Menue Option B to extract the zip file into the temp directory (eg. %appdata%\simpelgrader under Windows).
+
+Choose Menue Option D to start the grading run. When its finished, the reports will be shown in the default browser.
+
+That's it.
+
+All the report files are saved in the userprofile directory (eg. %userprofile%\documents\simpelgrader under Windows)
 
 ## Browsing the reports
 
-xxx
+There are several reports.
+
+### the grading action report
+
+This report only contains each grading action and its result.
+
+### the feedback report
+
+This reports contains the feedback (points and message) for each test.
+
