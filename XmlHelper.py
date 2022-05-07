@@ -59,9 +59,33 @@ class XmlHelper:
         actionElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         actionList = []
         for action in actionElements:
-            ta = TaskAction(action.attrib["id"], action.attrib["active"], action.attrib["type"], action.text)
+            ta = TaskAction(action.attrib["id"], action.attrib["active"], action.attrib["type"], action.findtext("sig:action-description", namespaces=nsmap))
             actionList.append(ta)
         return actionList
+
+    '''
+    Get the points associated with an exercise and an action
+    '''
+    def getActionPoints(self, exercise, actionId) -> int:
+        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:actions/sig:action[@id='{actionId}']"
+        actionElements = self.root.xpath(xPathExpr, namespaces=nsmap)
+        if len(actionElements) > 0:
+            points = actionElements[0].findtext("sig:action-points", namespaces=nsmap)
+            return int(points) if points != "" else 0
+        else:
+            return 0
+
+    '''
+    Get the points associated with an exercise and a test
+    '''
+    def getTestPoints(self, exercise, testId) -> int:
+        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:tests/sig:test[@id='{testId}']"
+        testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
+        if len(testElements) > 0:
+            points = testElements[0].findtext("sig:test-points", namespaces=nsmap)
+            return int(points) if points != "" else 0
+        else:
+            return 0
 
     '''
     Get all tests associated with this task/exercise

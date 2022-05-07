@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 06/05/22
+# last update: 07/05/22
 # Version 0.8
 # =============================================================================
 import random
@@ -65,7 +65,7 @@ get values for global variables from ini file
 def initVariables():
     global submissionPath, gradingPlanPath, studentRosterPath, submissionDestPath
     global gradeModule, gradeSemester, gradingOperator, deleteSubmissionTree
-    global dbPath, simpelgraderDir
+    global dbPath
     config = configparser.ConfigParser()
     config.read("Simpelgrader.ini")
     submissionPath = config["path"]["submissionPath"]
@@ -78,6 +78,15 @@ def initVariables():
     gradeSemester = gradeSemester.replace("/", "_")
     gradingOperator = config["run"]["gradingOperator"]
     submissionDestPath = os.path.join(tempfile.gettempdir(), appName, gradeSemester, gradeModule)
+
+'''
+Initialize the application after the start
+'''
+def initApp():
+    global simpelgraderDir
+    initVariables()
+    config = configparser.ConfigParser()
+    config.read("Simpelgrader.ini")
     # Delete the today log file if it already exists
     deleteLogfile = config["start"]["deleteLogfile"]
     if deleteLogfile.upper().startswith("Y") and os.path.exists(Loghelper.logPath):
@@ -86,18 +95,18 @@ def initVariables():
     deleteSubmissionTree = config["start"]["deleteSubmissionTree"]
     if deleteSubmissionTree.upper().startswith("Y") and os.path.exists(submissionDestPath):
         shutil.rmtree(submissionDestPath)
-        infoMessage = f"initVariables: deleted directory {submissionDestPath} with its content"
+        infoMessage = f"initializeApp: deleted directory {submissionDestPath} with its content"
         Loghelper.logInfo(infoMessage)
     if not os.path.exists(submissionDestPath):
         # create directory with all the subdirectories
         os.makedirs(submissionDestPath)
-        infoMessage = f"initVariables: created directory {submissionDestPath}"
+        infoMessage = f"initializeApp: created directory {submissionDestPath}"
         Loghelper.logInfo(infoMessage)
     simpelgraderDir = os.path.join(os.path.expanduser("~"), "documents/simpelgrader")
     # create directory for report files
     if not os.path.exists(simpelgraderDir):
         os.mkdir(simpelgraderDir)
-        infoMessage = f"initVariables: created directory {simpelgraderDir}"
+        infoMessage = f"initializeApp: created directory {simpelgraderDir}"
         Loghelper.logInfo(infoMessage)
 
 # =============================================================================
@@ -170,7 +179,7 @@ def MenueA_preCheck() -> None:
     if not os.path.exists(gradingPlanPath):
         print(f"!!! {gradingPlanPath} existiert nicht")
         errorFlag = True
-    dicCheck["gradingPlan"] = (gradingPlanPath, errorFlag)
+    dicCheck["gradingPlanPath"] = (gradingPlanPath, errorFlag)
     # validate grading xml file
     if os.path.exists(gradingPlanPath):
         xmlHelper = XmlHelper(gradingPlanPath)
@@ -187,7 +196,7 @@ def MenueA_preCheck() -> None:
     if not os.path.exists(studentRosterPath) or not os.path.isfile(studentRosterPath):
         print(f"!!! {studentRosterPath} existiert nicht")
         errorFlag = True
-    dicCheck["studentRoster"] = (studentRosterPath, errorFlag)
+    dicCheck["studentRosterPath"] = (studentRosterPath, errorFlag)
     # check if the db file exists
     errorFlag = False
     if not os.path.exists(dbPath) or not os.path.isfile(dbPath):
@@ -216,11 +225,11 @@ def MenueA_preCheck() -> None:
     dicCheck["javaPath"] = (javaPath, errorFlag)
     # check if the checkstyle jar file exists
     errorFlag = False
-    checkstylJarPath = config["path"]["checkstylepath"]
-    if not os.path.exists(checkstylJarPath) or not os.path.isfile(checkstylJarPath):
-        print(f"!!! {checkstylJarPath} existiert nicht")
+    checkstyleJarPath = config["path"]["checkstylePath"]
+    if not os.path.exists(checkstyleJarPath) or not os.path.isfile(checkstyleJarPath):
+        print(f"!!! {checkstyleJarPath} existiert nicht")
         errorFlag = True
-    dicCheck["checkstylJarPath"] = (checkstylJarPath, errorFlag)
+    dicCheck["checkstyleJarPath"] = (checkstyleJarPath, errorFlag)
     # check if the checkstyle rule file exists
     errorFlag = False
     checkstyleRulePath = config["path"]["checkstyleRulePath"]
@@ -256,6 +265,7 @@ def MenueB_extractSubmissions() -> None:
     # validate the roster file first
     if not RosterHelper.validateRoster(studentRosterPath):
         # roster file is not valid exit
+        print(Fore.LIGHTRED_EX + f"*** Datei {studentRosterPath} nicht gefunden - bitte den Pfad ändern! ***" + Style.RESET_ALL)
         return
 
     print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden extrahiert - bitte etwas Geduld ***" + Style.RESET_ALL)
@@ -266,7 +276,9 @@ def MenueB_extractSubmissions() -> None:
     if len(zipFiles) != 1:
         infoMessage = f"extractSubmissions: exactly one zip file expected in {submissionPath}"
         Loghelper.logWarning(infoMessage)
-        return False
+        print(Fore.LIGHTRED_EX + f"*** Im Verzeichnis {submissionPath} darf sich nur eine Zip-Datei befinden! ***" + Style.RESET_ALL)
+        return
+
     # get the full path of the zip file
     zipPath = os.path.join(submissionPath, zipFiles[0])
 
@@ -301,6 +313,11 @@ def MenueB_extractSubmissions() -> None:
     infoMessage = f"extractSubmissions: {submissionCount} submissions for {len(submissionDic)} exercise extracted from the Moodle zip file"
     Loghelper.logInfo(infoMessage)
 
+    # any submission extracted?
+    if submissionCount == 0:
+        print(Fore.LIGHTRED_EX + f"*** Im Verzeichnis {submissionPath} wurden keine Abgaben gefunden! ***" + Style.RESET_ALL)
+        return
+
     # delete all previous submissions
     DBHelper.clearAllSubmission(dbPath)
 
@@ -322,6 +339,11 @@ def MenueB_extractSubmissions() -> None:
 
     infoMessage = f"{submissionProcessedCount} submissions stored in the database."
     Loghelper.logInfo(infoMessage)
+
+    # any submission processed?
+    if submissionProcessedCount == 0:
+        print(Fore.LIGHTRED_EX + f"*** Es wurden keine Abgaben verarbeitet! ***" + Style.RESET_ALL)
+        return
 
     # update the roster with the exercises
     RosterHelper.updateStudentRoster(dbPath, submissionDic)
@@ -403,7 +425,7 @@ Menue D - starts a grading run for the submissions in the database
 '''
 def MenueD_startGradingRun() -> None:
     # Any submissions in the dic yet?
-    if submissionDic == None:
+    if submissionDic == None or (submissionDic != None and len(submissionDic) == 0):
         print(Fore.LIGHTRED_EX + "*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***" + Style.RESET_ALL)
         return
     # Initiate grading plan
@@ -467,7 +489,7 @@ def MenueD_startGradingRun() -> None:
                             Loghelper.logInfo(infoMessage)
                             continue
                         # execute the action
-                        infoMessage = f"startGradingRun: executing action {action.command} for {javaFile}/StudentId: {submission.studentId}"
+                        infoMessage = f"startGradingRun: executing action {action.command} for {javaFile} StudentId: {submission.studentId}"
                         Loghelper.logInfo(infoMessage)
                         # the action depends on the action type
                         if action.type == "java-compile":
@@ -486,7 +508,9 @@ def MenueD_startGradingRun() -> None:
                                 compileResult = JavaHelper.compileJava(javaFilePath)
                             else:
                                 compileResult = JUnitTestHelper.compileJavaTest(javaFilePath)
-                            gradePoints = 1 if compileResult[0] == 0 else 0
+                            # now the jury verdict...
+                            actionPoints = xmlHelper.getActionPoints(exercise, action.id)
+                            gradePoints = actionPoints if compileResult[0] == 0 else 0
                             gradeResult.points = gradePoints
                             gradeResult.errorMessage = compileResult[1]
                             problemCount += 1 if compileResult[0] == 1 else 0
@@ -552,7 +576,10 @@ def MenueD_startGradingRun() -> None:
                         if test.type.lower() == "checkstyle":
                             # return value is a tuple (returncode, message)
                             checkstyleResult, checkstyleMessage = CheckstyleTestHelper.runCheckstyle(javaFilePath)
-                            points += 1 if checkstyleResult == 0 else 0
+                            testPoints = xmlHelper.getTestPoints(exercise,test.id)
+                            points += testPoints if checkstyleResult == 0 else 0
+                            # don't forget the points
+                            gradeResult.points = points
                             problemCount += 1 if checkstyleResult != 0 else 0
                             # TODO: better message
                             gradeResult.errorMessage = "OK" if checkstyleResult == 0 else "Error"
@@ -573,10 +600,14 @@ def MenueD_startGradingRun() -> None:
                             testClassName = test.testClass
                             junitResult,junitXmlMessage = JUnitTestHelper.runJUnitTest(dirPath, testClassName)
                             if junitResult == 0:
-                                points += junitResult
+                                # get the points for this exercise
+                                testPoints = xmlHelper.getTestPoints(exercise,test.id)
+                                points += testPoints
                             problemCount += 1 if junitResult != 0 else 0
                             # TODO: better message
                             gradeResult.result = True if junitResult == 0 else False
+                            # don't forget the points
+                            gradeResult.points = points
                             if junitXmlMessage != "":
                                 gradeResult.errorMessage = f"JUnit-Result: {JUnitTestHelper.getJUnitResult(junitXmlMessage)}"
                                 jUnitName = f"{studentName}_{exercise}_JUnitResult.xml"
@@ -596,8 +627,13 @@ def MenueD_startGradingRun() -> None:
                             classPath = javaFilePath.split(".")[0]
                             # return value is a tuple of three
                             textcompareResult, textcompareMessage, compareLines = CompareTestHelper.runTextCompare(classPath, exercise)
-                            gradeResult.result = True if textcompareResult == 0 else False
                             gradeResult.errorMessage = textcompareMessage
+                            # get the points for this exercise
+                            testPoints = xmlHelper.getTestPoints(exercise,test.id)
+                            gradeResult.points = testPoints if textcompareResult == 0 else 0
+                            # TODO: Only provisional of course - better definition for successs needed
+                            gradeResult.result = True if textcompareResult == 0 else False
+                            gradeResult.success = True if points > 0 else False
                             if len(compareLines) > 0:
                                 textcompareName = f"{studentName}_{exercise}_TextCompareResult.txt"
                                 textcomparePath = os.path.join(simpelgraderDir, textcompareName)
@@ -610,9 +646,7 @@ def MenueD_startGradingRun() -> None:
                         else:
                             infoMessage = f"startGradingRun: {test.type} is an unknown test type"
                             Loghelper.logInfo(infoMessage)
-                        # TODO: Only provisional of course - better definition for successs needed
-                        gradeResult.points = points
-                        gradeResult.success = True if points > 0 else False
+
                         gradeResultList.append(gradeResult)
 
                         # Create a feedback object for the action
@@ -794,6 +828,8 @@ def MenueI_setupSimpelgraderIni() -> None:
             infoMessage = f"setupSimpelgraderIn: updated settings in {iniPath}"
             Loghelper.logInfo(infoMessage)
             print("*** Simpelgrader.ini wurde aktualisiert ***")
+            # Re-initialize the variables
+            initVariables()
 
 # =============================================================================
 # Starting point
@@ -803,7 +839,7 @@ def MenueI_setupSimpelgraderIni() -> None:
 Main function for the application
 '''
 def start() -> None:
-    initVariables()
+    initApp()
     infoMessage = f"Starting {appName} (Version {appVersion}) - executing {gradingPlanPath}"
     Loghelper.logInfo(infoMessage)
 

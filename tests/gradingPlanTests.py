@@ -19,3 +19,12 @@ class TestRunner(unittest.TestCase):
         xmlHelper = XmlHelper(gradingPlanPath)
         result = xmlHelper.getTextCompareTest("EA1")
         self.assertTrue(result != None)
+
+    '''
+    Read a test point from the grading xml file
+    '''
+    def testTestPoints(self):
+        gradingPlanPath = os.path.join(os.path.dirname(__file__), "gradingplan1.xml")
+        xmlHelper = XmlHelper(gradingPlanPath)
+        result = xmlHelper.getTestPoints("EA1", "T01")
+        self.assertTrue(result == 1)

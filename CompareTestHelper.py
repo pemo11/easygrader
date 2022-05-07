@@ -60,6 +60,6 @@ def runTextCompare(classPath, exercise) -> ():
     lineCountAlias = "line" if len(allLines) == 1 else "lines"
     errorCountAlias = "error" if errorCount == 1 else "errors"
     textCompareMessage = f"{len(allLines)} {lineCountAlias} with {errorCount} {errorCountAlias}"
-    result = 1 if errorCount == 0 else 0
+    result = 0 if errorCount == 0 else 1
     return (result, textCompareMessage, allLines)
 

@@ -7,7 +7,10 @@
       <sig:file>AppTest.java</sig:file>
     </sig:files>
     <sig:actions>
-      <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
+      <sig:action id="A01" active="True" type="java-compile">
+      <sig:action-description>compile java file</sig:action-description>
+      <sig:action-points>1</sig:action-points>
+      </sig:action>
     </sig:actions>
     <sig:tests>
       <sig:test id="T01" active="True">
