@@ -3,6 +3,10 @@
 # Simpelgrader (version 0.8)
 A simple Python application for grading Java assignments by running defined actions and tests for each submission
 
+### how to use the programm?
+
+I wrote a description for using the programm in the file  [a simpelgrader_manual.md](simpelgrader_manual.md) that is part of this repo.
+
 ### about the programm
 I started the development of *Simpelgrader* in March 2022 at the **Hochschule Emden Leer** as part of my bachelor thesis about auto grading programming assignments because I felt there is a need for such a tool.
 
@@ -522,4 +526,6 @@ All would not have been possible of course with excellent packages like *lXml* a
 
 *Simpelgrader* is (of course) not finished yet. Especially the feedback report is not in its final state. In the end, every grading is done for the feedback.
 
-If they are any questions left, please send me an email. My current address is peter.monadjemi@stud.hs-emden-leer.de
+If they are any questions left, please send me an email.
+
+My current address is peter.monadjemi@stud.hs-emden-leer.de
