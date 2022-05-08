@@ -221,6 +221,34 @@ class XmlHelper:
         return self.feedbackReportpath
 
     '''
+    Generates XML/HTML reports for each submission feedback
+    '''
+    def generateSubmissionFeedbackReports(self, feedbackDic):
+        for studentId in feedbackDic:
+            for submissionFeedback in feedbackDic[studentId]:
+                infoMessage = f"generateSubmissionFeedbackReports: generating feedback report for Student/Exercise {submissionFeedback.studentId}/{submissionFeedback.exercise}"
+                Loghelper.logInfo(infoMessage)
+                xlReport = et.Element("report")
+                xlStudent = et.SubElement(xlReport, "student")
+                xlStudent.text = str(submissionFeedback.studentId)
+                xlExercise = et.SubElement(xlReport, "exercise")
+                xlExercise.text = submissionFeedback.exercise
+                xlTestCount = et.SubElement(xlReport, "testcount")
+                xlTestCount = str(submissionFeedback.testCount)
+                xlTotalPoints = et.SubElement(xlReport, "totalpoints")
+                xlTotalPoints = str(submissionFeedback.totalPoints)
+                xlFeedbacktext = et.SubElement(xlReport, "feedbackText")
+                xlFeedbacktext.text = submissionFeedback.feedbackText
+
+
+        submissionFeedbackReportpath = os.path.join(self.simpelgraderDir, f"submissionFeedback_{studentId}_{submissionFeedback.exercise}.xml")
+        # Write the report
+        tree = et.ElementTree(xlReport)
+        tree.write(submissionFeedbackReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        # TODO: Convert to html
+
+
+    '''
     Converts a grading result xml report into html
     '''
     def convertGradingResultReport2Html(self, xmlPath, semester, module, exercise):

@@ -12,6 +12,7 @@ class FeedbackItem:
         self.submission = submission
         self.message = ""
         self.severity = "normal"
+        self.totalPoints = 0
         self.checkstyleReportpath = ""
         self.jUnitReportpath = ""
         self.textCompareReportpath = ""

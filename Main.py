@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 07/05/22
+# last update: 08/05/22
 # Version 0.8
 # =============================================================================
 import random
@@ -26,8 +26,9 @@ import Loghelper
 from GradeAction import GradeAction
 from GradeResult import GradeResult
 from FeedbackItem import FeedbackItem
-from SubmissionName import SubmissionName
+from SubmissionFeedback import SubmissionFeedback
 from SubmissionValidation import SubmissionValidation
+from SubmissionName import SubmissionName
 import RosterHelper
 import JavaHelper
 import DBHelper
@@ -124,7 +125,6 @@ def getQuote() -> str:
         z = random.randint(0, len(quotes)-1)
         quote = quotes[z]
     return quote
-
 
 '''
 Shows the Welcome Banner
@@ -441,6 +441,8 @@ def MenueD_startGradingRun() -> None:
     gradeResultList = []
     # List for the feedback items
     feedbackItemList = []
+    # Dictionary for the submission feedback
+    submissionFeedbackDic = {}
 
     submisssionsGraded = 0
 
@@ -456,6 +458,15 @@ def MenueD_startGradingRun() -> None:
                 infoMessage = f"startGradingRun: grading submission {submission.id}/{submission.exercise} for student {studentName}"
                 Loghelper.logInfo(infoMessage)
                 print(f"*** Starte Bewertung für Abgabe {submission.id}/{submission.exercise} und Student {studentName} ({submission.studentId}) ***")
+
+                # entry for student in submisssionFeedback exists?
+                studentId = submission.studentId
+                if submissionFeedbackDic.get(studentId) == None:
+                    submissionFeedbackDic[studentId] = []
+                # create new SubmissionFeedback
+                submissionFeedback = SubmissionFeedback(studentId)
+                submissionFeedback.exercise = exercise
+
                 # go through all submitted files in the archive directory
                 # get all file names from the gradingplan xml
                 # check if exercise exists in the gradingplan
@@ -515,8 +526,7 @@ def MenueD_startGradingRun() -> None:
                             gradeResult.errorMessage = compileResult[1]
                             problemCount += 1 if compileResult[0] == 1 else 0
                             # TODO: what makes a  success?
-                            actionSuccess = gradePoints > 0
-                            gradeResult.success = actionSuccess
+                            gradeResult.success = gradePoints > 0
                             gradeResult.submission = submission
                             gradeResultList.append(gradeResult)
                             # Create a feedback object for the action
@@ -524,6 +534,7 @@ def MenueD_startGradingRun() -> None:
                             feedbackItemid = len(feedbackItemList) + 1
                             feedbackItem = FeedbackItem(feedbackItemid, submission)
                             feedbackItem.message = compileResult[1]
+                            feedbackItem.totalPoints = actionPoints
                             # TODO: When high?
                             feedbackItem.severity = "normal"
                             feedbackItemList.append(feedbackItem)
@@ -579,7 +590,7 @@ def MenueD_startGradingRun() -> None:
                             testPoints = xmlHelper.getTestPoints(exercise,test.id)
                             points += testPoints if checkstyleResult == 0 else 0
                             # don't forget the points
-                            gradeResult.points = points
+                            gradeResult.points = testPoints
                             problemCount += 1 if checkstyleResult != 0 else 0
                             # TODO: better message
                             gradeResult.errorMessage = "OK" if checkstyleResult == 0 else "Error"
@@ -607,7 +618,7 @@ def MenueD_startGradingRun() -> None:
                             # TODO: better message
                             gradeResult.result = True if junitResult == 0 else False
                             # don't forget the points
-                            gradeResult.points = points
+                            gradeResult.points = testPoints
                             if junitXmlMessage != "":
                                 gradeResult.errorMessage = f"JUnit-Result: {JUnitTestHelper.getJUnitResult(junitXmlMessage)}"
                                 jUnitName = f"{studentName}_{exercise}_JUnitResult.xml"
@@ -630,6 +641,7 @@ def MenueD_startGradingRun() -> None:
                             gradeResult.errorMessage = textcompareMessage
                             # get the points for this exercise
                             testPoints = xmlHelper.getTestPoints(exercise,test.id)
+                            points += testPoints
                             gradeResult.points = testPoints if textcompareResult == 0 else 0
                             # TODO: Only provisional of course - better definition for successs needed
                             gradeResult.result = True if textcompareResult == 0 else False
@@ -649,10 +661,12 @@ def MenueD_startGradingRun() -> None:
 
                         gradeResultList.append(gradeResult)
 
-                        # Create a feedback object for the action
+                        # Create a feedback object for the test
                         # TODO: better mechanismen for generating the id (if necessary at all)
                         feedbackItemid = len(feedbackItemList) + 1
                         feedbackItem = FeedbackItem(feedbackItemid, submission)
+                        # assign the total test points
+                        feedbackItem.totalPoints = points
                         if checkstyleReportHtmlPath != "":
                             feedbackItem.checkstyleReportpath = checkstyleReportHtmlPath
                         if jUnitReportHtmlPath != "":
@@ -663,6 +677,9 @@ def MenueD_startGradingRun() -> None:
                         # TODO: When high?
                         feedbackItem.severity = "normal"
                         feedbackItemList.append(feedbackItem)
+
+                    # store the submission feedback for the student
+                    submissionFeedbackDic[studentId].append(submissionFeedback)
 
                 print(Fore.LIGHTCYAN_EX + f"*** Bewertung abgeschlossen - Anzahl Probleme: {problemCount} ***" + Style.RESET_ALL)
 
@@ -702,6 +719,9 @@ def MenueD_startGradingRun() -> None:
     gradeReportPath = xmlHelper.generateGradingResultReport(gradeResultList)
     # display report file
     # subprocess.call(["notepad.exe", gradeReportPath])
+
+    # write the xml reports for the submission feedback
+    xmlHelper.generateSubmissionFeedbackReports(submissionFeedbackDic)
 
     # convert the grading results report to html
     htmlPath = xmlHelper.convertGradingResultReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
@@ -829,7 +849,7 @@ def MenueI_setupSimpelgraderIni() -> None:
             Loghelper.logInfo(infoMessage)
             print("*** Simpelgrader.ini wurde aktualisiert ***")
             # Re-initialize the variables
-            initVariables()
+        initVariables()
 
 # =============================================================================
 # Starting point

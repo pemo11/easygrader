@@ -9,4 +9,4 @@ Path for the Student roster csv filename?,path,studentRosterPath,C:\\Student_Ros
 Path for the database filename?,path,dbPath,C:\\simpelgraderv1.db
 Name of the Semester?,run,gradesemester,""
 Name of the Module?,run,grademodule,""
-Name of the Operator?run,gradingoperator,"teacher"
+Name of the Operator?,run,gradingoperator,"teacher"
