@@ -282,11 +282,12 @@ class XmlHelper:
                 # Write the report
                 tree = et.ElementTree(xlReport)
                 tree.write(submissionFeedbackReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
-                # TODO: Convert to html
-
+                # Convert to html
+                htmlPath = self.convertSubmissionReport2Html(submissionFeedbackReportpath, studentId, submissionFeedback.exercise)
                 # save the reportpath in the dictionary with the studenId as key
                 if reportDic.get(studentId) == None:
-                    reportDic[studentId] = submissionFeedbackReportpath
+                    # reportDic[studentId] = submissionFeedbackReportpath
+                    reportDic[studentId] = htmlPath
 
         return reportDic
 
@@ -321,7 +322,6 @@ class XmlHelper:
     Generates a single submission report for all submission feedback and return the html path
     '''
     def generateSubmissionReport(self, feedbackDic) -> str:
-        # TODO: do some coding...
         infoMessage = f"generateSubmissionReport: generating feedback report for {len(feedbackDic)} submissions"
         Loghelper.logInfo(infoMessage)
         xlReport = et.Element("report")
@@ -354,7 +354,7 @@ class XmlHelper:
         tree = et.ElementTree(xlReport)
         tree.write(submissionPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
         # convert xml to html
-        htmlPath = self.convertSubmissionReport2Html(submissionPath)
+        htmlPath = self.convertSubmissionReport2Html(submissionPath, "", "")
         return htmlPath
 
 
@@ -490,7 +490,7 @@ class XmlHelper:
     '''
     Converts a submission xml report to html
     '''
-    def convertSubmissionReport2Html(self, xmlPath) -> str:
+    def convertSubmissionReport2Html(self, xmlPath, student, exercise) -> str:
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
@@ -498,7 +498,8 @@ class XmlHelper:
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
-            newDom = transform(xmlDom)
+            newDom = transform(xmlDom,student=et.XSLT.strparam(student),
+                                      exercise=et.XSLT.strparam(exercise))
             htmlText = et.tostring(newDom, pretty_print=True)
             # One more time tostring() returns bytes[] not str
             htmlLines = htmlText.decode().split("\n")
