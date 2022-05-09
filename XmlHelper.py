@@ -265,10 +265,12 @@ class XmlHelper:
                 xlStudent.text = str(submissionFeedback.studentId)
                 xlExercise = et.SubElement(xlReport, "exercise")
                 xlExercise.text = submissionFeedback.exercise
-                xlTestCount = et.SubElement(xlReport, "testcount")
-                xlTestCount = str(submissionFeedback.testCount)
-                xlTotalPoints = et.SubElement(xlReport, "totalpoints")
-                xlTotalPoints = str(submissionFeedback.totalPoints)
+                xlTestCount = et.SubElement(xlReport, "testCount")
+                xlTestCount.text = str(submissionFeedback.testCount)
+                xlExercisePoints = et.SubElement(xlReport, "exercisePoints")
+                xlExercisePoints.text = str(submissionFeedback.exercisePoints)
+                xlTotalPoints = et.SubElement(xlReport, "totalPoints")
+                xlTotalPoints.text = str(submissionFeedback.totalPoints)
                 xlActionSummary = et.SubElement(xlReport, "actionSummary")
                 xlActionSummary.text = submissionFeedback.actionSummary
                 xlTestSummary = et.SubElement(xlReport, "testSummary")
@@ -330,10 +332,14 @@ class XmlHelper:
                 xlStudent.text = str(submissionFeedback.studentId)
                 xlExercise = et.SubElement(xlSubmission, "exercise")
                 xlExercise.text = submissionFeedback.exercise
-                xlTestCount = et.SubElement(xlSubmission, "testcount")
-                xlTestCount = str(submissionFeedback.testCount)
-                xlTotalPoints = et.SubElement(xlSubmission, "totalpoints")
-                xlTotalPoints = str(submissionFeedback.totalPoints)
+                xlActionCount = et.SubElement(xlSubmission, "actionCount")
+                xlActionCount.text = str(submissionFeedback.actionCount)
+                xlTestCount = et.SubElement(xlSubmission, "testCount")
+                xlTestCount.text = str(submissionFeedback.testCount)
+                xlExercisePoints = et.SubElement(xlSubmission, "exercisePoints")
+                xlExercisePoints.text = str(submissionFeedback.exercisePoints)
+                xlTotalPoints = et.SubElement(xlSubmission, "totalPoints")
+                xlTotalPoints.text = str(submissionFeedback.totalPoints)
                 xlActionSummary = et.SubElement(xlSubmission, "actionSummary")
                 xlActionSummary.text = submissionFeedback.actionSummary
                 xlTestSummary = et.SubElement(xlReport, "testSummary")
@@ -343,7 +349,7 @@ class XmlHelper:
 
         # submission report path in the report directory contains the current date
         heute = datetime.now().date()
-        submissionPath = os.path.join(self.simpelgraderDir, f"submissionReport_{heute}.xml")
+        submissionPath = os.path.join(self.simpelgraderDir, f"SubmissionReport_{heute}.xml")
         # Write the report
         tree = et.ElementTree(xlReport)
         tree.write(submissionPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")

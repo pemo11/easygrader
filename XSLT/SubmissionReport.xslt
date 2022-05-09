@@ -15,12 +15,15 @@
                     <table id="infoTable">
                         <tr><td>Student</td><td><xsl:value-of select="student"/></td></tr>
                         <tr><td>Exercise</td><td><xsl:value-of select="exercise"/></td></tr>
-                        <tr><td>Number tests</td><td><xsl:value-of select="testcount"/></td></tr>
+                        <tr><td>Number of actions</td><td><xsl:value-of select="actionCount"/></td></tr>
+                        <tr><td>Number of tests</td><td><xsl:value-of select="testCount"/></td></tr>
+                        <tr><td>Exercise points</td><td><xsl:value-of select="exercisePoints"/></td></tr>
                         <tr><td>Total points</td><td><xsl:value-of select="totalPoints"/></td></tr>
                         <tr><td>Action summary</td><td><xsl:value-of select="actionSummary"/></td></tr>
                         <tr><td>Test summary</td><td><xsl:value-of select="testSummary"/></td></tr>
                         <tr><td>Feedback summary</td><td><xsl:value-of select="feedbackSummary"/></td></tr>
                     </table>
+                    <hr/>
                 </xsl:for-each>
             </body>
         </html>

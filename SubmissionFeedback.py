@@ -8,6 +8,7 @@ class SubmissionFeedback:
         self.timestamp = datetime.now()
         self.studentId = studentId
         self.exercise = ""
+        self.actionCount = 0
         self.testCount = 0
         self.exercisePoints = 0
         self.totalPoints = 0
