@@ -823,7 +823,9 @@ Menue H - show current log file
 '''
 def MenueH_showLogfile() -> None:
     if os.path.exists(Loghelper.logPath):
-        subprocess.Popen(["notepad", Loghelper.logPath])
+        # works only with Windows
+        # subprocess.Popen(["notepad", Loghelper.logPath])
+        os.startfile(Loghelper.logPath)
     else:
         print(f"!!! {Loghelper.logPath} existiert nicht !!!")
 
