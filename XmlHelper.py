@@ -449,7 +449,7 @@ class XmlHelper:
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
             newDom = transform(xmlDom, student=et.XSLT.strparam(student),
-                                        exercise=et.XSLT.strparam(exercise))
+                                       exercise=et.XSLT.strparam(exercise))
             htmlText = et.tostring(newDom, pretty_print=True)
             # One more time tostring() returns bytes[] not str
             htmlLines = htmlText.decode().split("\n")
@@ -490,15 +490,15 @@ class XmlHelper:
     '''
     Converts a submission xml report to html
     '''
-    def convertSubmissionReport2Html(self, xmlPath, student, exercise) -> str:
+    def convertSubmissionReport2Html(self, xmlPath, studentId, exercise) -> str:
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
-            xsltPath = "XSLT/SubmissionReport.xslt"
+            xsltPath = "XSLT/SubmissionFeedbackReport.xslt"
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
-            newDom = transform(xmlDom,student=et.XSLT.strparam(student),
+            newDom = transform(xmlDom,student=et.XSLT.strparam(str(studentId)),
                                       exercise=et.XSLT.strparam(exercise))
             htmlText = et.tostring(newDom, pretty_print=True)
             # One more time tostring() returns bytes[] not str

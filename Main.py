@@ -543,6 +543,7 @@ def MenueD_startGradingRun() -> None:
 
                             # add action result to submission feedback too
                             submissionFeedback.actionSummary += f"{compilerMessage};"
+                            submissionFeedback.actionCount += 1
                             submissionFeedback.totalPoints += actionPoints
                         else:
                             infoMessage = f"startGradingRun: {action.type} is an unknown action type"

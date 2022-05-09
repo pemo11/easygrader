@@ -32,7 +32,7 @@
                             <td>
                                <xls:element name="a">
                                     <xsl:attribute name="href">file:///<xsl:value-of select="submissionReportpath" /></xsl:attribute>
-                                    <xsl:text>Submission-Report</xsl:text>
+                                    <xsl:value-of select="student"/>
                                </xls:element>
                             </td>
                             <td><xsl:value-of select="exercise"/></td>

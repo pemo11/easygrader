@@ -3,23 +3,21 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     version="1.0">
-    <xsl:param name="semester"/>
-    <xsl:param name="module"/>
+    <xsl:param name="student"/>
     <xsl:param name="exercise"/>
-    <xsl:param name="gradingTime"/>
-    <xsl:template match="/">
+    <xsl:template match="report">
         <html>
              <head>
                 <meta charset="UTF-8" />
                 <link href="SubmissionFeedbackReport.css" type="text/css" rel="stylesheet" />
             </head>
            <body>
-                <xsl:for-each select="//" >
-                    <h3>Submission-Feedback for <xsl:value-of select="$student"/>/<xsl:value-of select="$exercise"/></h3>
-                    <xsl:value-of select="testCount"/>
-                    <xsl:value-of select="totalPoints"/>
-                    <xsl:value-of select="feedbackMessage"/>
-                </xsl:for-each>
+                <h3>Submission-Feedback for <xsl:value-of select="$student"/>/<xsl:value-of select="$exercise"/></h3>
+                <table>
+                    <tr><td>Anzahl Tests:</td><td><xsl:value-of select="testCount"/></td></tr>
+                    <tr><td>Anzahl Punkte:</td><td><xsl:value-of select="totalPoints"/></td></tr>
+                    <tr><td>Feedback:</td><td><xsl:value-of select="feedbackSummary"/></td></tr>
+                </table>
             </body>
         </html>
     </xsl:template>
