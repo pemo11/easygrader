@@ -29,7 +29,12 @@
                     <xsl:for-each select="//feedbackItem">
                         <tr>
                             <td><xsl:value-of select="timestamp"/></td>
-                            <td><xsl:value-of select="student"/></td>
+                            <td>
+                               <xls:element name="a">
+                                    <xsl:attribute name="href">file:///<xsl:value-of select="submissionReportpath" /></xsl:attribute>
+                                    <xsl:text>Submission-Report</xsl:text>
+                               </xls:element>
+                            </td>
                             <td><xsl:value-of select="exercise"/></td>
                             <td><xsl:value-of select="message"/></td>
                             <xsl:choose>

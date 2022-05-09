@@ -45,9 +45,9 @@ class XmlHelper:
     tests if an exercise exists in the grading plan
     '''
     def exerciseExists(self, exercise) -> bool:
-        xPathExpr = f".//sig:task[@exercise='{exercise}']"
-        exercise = self.root.xpath(xPathExpr, namespaces=nsmap)
-        return len(exercise) > 0
+        xPathExpr = f".//sig:task[@name='{exercise}']"
+        tasks = self.root.xpath(xPathExpr, namespaces=nsmap)
+        return len(tasks) > 0
 
     '''
     Get all actions associated with this exercise
@@ -55,7 +55,7 @@ class XmlHelper:
     def getActionList(self, exercise):
         # 20/04/22 - level ist jetzt Teil des Exercise-Namens, z.B. EA1A
         # xPathExpr = f".//sig:task[@name='{exercise}' and @level='{level}']/actions/action"
-        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:actions/sig:action"
+        xPathExpr = f".//sig:task[@name='{exercise}']/sig:actions/sig:action"
         actionElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         actionList = []
         for action in actionElements:
@@ -64,10 +64,22 @@ class XmlHelper:
         return actionList
 
     '''
+    Get the points associated with an exercise
+    '''
+    def getExercisePoints(self, exercise) -> int:
+        xPathExpr = f".//sig:task[@name='{exercise}']"
+        taskElements = self.root.xpath(xPathExpr, namespaces=nsmap)
+        if len(taskElements) > 0:
+            points = int(taskElements[0].attrib["points"])
+            return points
+        else:
+            return 0
+
+    '''
     Get the points associated with an exercise and an action
     '''
     def getActionPoints(self, exercise, actionId) -> int:
-        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:actions/sig:action[@id='{actionId}']"
+        xPathExpr = f".//sig:task[@name='{exercise}']/sig:actions/sig:action[@id='{actionId}']"
         actionElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         if len(actionElements) > 0:
             points = actionElements[0].findtext("sig:action-points", namespaces=nsmap)
@@ -79,7 +91,7 @@ class XmlHelper:
     Get the points associated with an exercise and a test
     '''
     def getTestPoints(self, exercise, testId) -> int:
-        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:tests/sig:test[@id='{testId}']"
+        xPathExpr = f".//sig:task[@name='{exercise}']/sig:tests/sig:test[@id='{testId}']"
         testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         if len(testElements) > 0:
             points = testElements[0].findtext("sig:test-points", namespaces=nsmap)
@@ -91,7 +103,7 @@ class XmlHelper:
     Get all tests associated with this task/exercise
     '''
     def getTestList(self, exercise):
-        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:tests/sig:test"
+        xPathExpr = f".//sig:task[@name='{exercise}']/sig:tests/sig:test"
         testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         testList = []
         for test in testElements:
@@ -114,7 +126,7 @@ class XmlHelper:
     gets the textcompare test for the exercise
     '''
     def getTextCompareTest(self, exercise):
-        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:tests/sig:test/sig:test-type[.='TextCompare']//parent::sig:test"
+        xPathExpr = f".//sig:task[@name='{exercise}']/sig:tests/sig:test/sig:test-type[.='TextCompare']//parent::sig:test"
         testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         if len(testElements) > 0:
             testElement = testElements[0]
@@ -129,7 +141,7 @@ class XmlHelper:
     Get all files associated with this task/exercise
     '''
     def getFileList(self, exercise):
-        xPathExpr = f".//sig:task[@exercise='{exercise}']/sig:files/sig:file"
+        xPathExpr = f".//sig:task[@name='{exercise}']/sig:files/sig:file"
         fileElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         fileList = [fi.text for fi in fileElements] # May be a filter if fi.endswith(".java") is needed
         return fileList
@@ -213,6 +225,8 @@ class XmlHelper:
             xlJunitReportpath.text = feedbackItem.jUnitReportpath
             xlTextcompareReportpath = et.SubElement(xlFeedbackItem, "textCompareReportpath")
             xlTextcompareReportpath.text = feedbackItem.textCompareReportpath
+            xlSubmissionReportpath = et.SubElement(xlFeedbackItem, "submissionReportpath")
+            xlSubmissionReportpath.text = feedbackItem.submissionReportpath
 
         # Write the report
         tree = et.ElementTree(xlRoot)
@@ -223,7 +237,8 @@ class XmlHelper:
     '''
     Generates XML/HTML reports for each submission feedback
     '''
-    def generateSubmissionFeedbackReports(self, feedbackDic):
+    def generateSubmissionFeedbackReports(self, feedbackDic) -> {}:
+        reportDic = {}
         for studentId in feedbackDic:
             for submissionFeedback in feedbackDic[studentId]:
                 infoMessage = f"generateSubmissionFeedbackReports: generating feedback report for Student/Exercise {submissionFeedback.studentId}/{submissionFeedback.exercise}"
@@ -237,16 +252,24 @@ class XmlHelper:
                 xlTestCount = str(submissionFeedback.testCount)
                 xlTotalPoints = et.SubElement(xlReport, "totalpoints")
                 xlTotalPoints = str(submissionFeedback.totalPoints)
-                xlFeedbacktext = et.SubElement(xlReport, "feedbackText")
-                xlFeedbacktext.text = submissionFeedback.feedbackText
+                xlActionSummary = et.SubElement(xlReport, "actionSummary")
+                xlActionSummary.text = submissionFeedback.actionSummary
+                xlTestSummary = et.SubElement(xlReport, "testSummary")
+                xlTestSummary.text = submissionFeedback.testSummary
+                xlFeedbackSummary = et.SubElement(xlReport, "feedbackSummary")
+                xlFeedbackSummary.text = submissionFeedback.feedbackSummary
+                # TODO: student name instead of id
+                submissionFeedbackReportpath = os.path.join(self.simpelgraderDir, f"{studentId}_{submissionFeedback.exercise}_submissionFeedback.xml")
+                # Write the report
+                tree = et.ElementTree(xlReport)
+                tree.write(submissionFeedbackReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+                # TODO: Convert to html
 
+                # save the reportpath in the dictionary with the studenId as key
+                if reportDic.get(studentId) == None:
+                    reportDic[studentId] = submissionFeedbackReportpath
 
-        submissionFeedbackReportpath = os.path.join(self.simpelgraderDir, f"submissionFeedback_{studentId}_{submissionFeedback.exercise}.xml")
-        # Write the report
-        tree = et.ElementTree(xlReport)
-        tree.write(submissionFeedbackReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
-        # TODO: Convert to html
-
+        return reportDic
 
     '''
     Converts a grading result xml report into html

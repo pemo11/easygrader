@@ -28,3 +28,12 @@ class TestRunner(unittest.TestCase):
         xmlHelper = XmlHelper(gradingPlanPath)
         result = xmlHelper.getTestPoints("EA1", "T01")
         self.assertTrue(result == 1)
+
+    '''
+    Read exercise points from the grading xml file
+    '''
+    def testExercisePoints(self):
+        gradingPlanPath = os.path.join(os.path.dirname(__file__), "gradingplan1.xml")
+        xmlHelper = XmlHelper(gradingPlanPath)
+        result = xmlHelper.getExercisePoints("EA1")
+        self.assertTrue(result == 6)

@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 08/05/22
+# last update: 09/05/22
 # Version 0.8
 # =============================================================================
 import random
@@ -466,6 +466,7 @@ def MenueD_startGradingRun() -> None:
                 # create new SubmissionFeedback
                 submissionFeedback = SubmissionFeedback(studentId)
                 submissionFeedback.exercise = exercise
+                submissionFeedback.exercisePoints = xmlHelper.getExercisePoints(exercise)
 
                 # go through all submitted files in the archive directory
                 # get all file names from the gradingplan xml
@@ -475,6 +476,7 @@ def MenueD_startGradingRun() -> None:
                     Loghelper.logWarning(infoMessage)
                     print(Fore.LIGHTYELLOW_EX +  f"*** Kein Eintrag für Aufgabe {exercise} - Aufgabe wird nicht bewertet ***" + Style.RESET_ALL)
                     continue
+
                 # get the expected files from the grading plan
                 exerciseFiles = xmlHelper.getFileList(exercise)
                 # get all file names from the submission
@@ -515,16 +517,16 @@ def MenueD_startGradingRun() -> None:
                             # javaFilePath = os.path.join(filesPath, javaFile)
                             # JUnit test file names follow the pattern <name>Test.java
                             if not javaFile.split(".")[0].lower().endswith("test"):
-                                # compile the java file - the result is either 1 or 0
-                                compileResult = JavaHelper.compileJava(javaFilePath)
+                                # compile the java file - the returnCode is either 0 for OK or 1
+                                returnCode,compilerMessage = JavaHelper.compileJava(javaFilePath)
                             else:
-                                compileResult = JUnitTestHelper.compileJavaTest(javaFilePath)
+                                returnCode,compilerMessage = JUnitTestHelper.compileJavaTest(javaFilePath)
                             # now the jury verdict...
                             actionPoints = xmlHelper.getActionPoints(exercise, action.id)
-                            gradePoints = actionPoints if compileResult[0] == 0 else 0
+                            gradePoints = actionPoints if returnCode == 0 else 0
                             gradeResult.points = gradePoints
-                            gradeResult.errorMessage = compileResult[1]
-                            problemCount += 1 if compileResult[0] == 1 else 0
+                            gradeResult.errorMessage = compilerMessage
+                            problemCount += 1 if returnCode == 1 else 0
                             # TODO: what makes a  success?
                             gradeResult.success = gradePoints > 0
                             gradeResult.submission = submission
@@ -533,19 +535,24 @@ def MenueD_startGradingRun() -> None:
                             # TODO: better mechanismen for generating the id (if necessary at all)
                             feedbackItemid = len(feedbackItemList) + 1
                             feedbackItem = FeedbackItem(feedbackItemid, submission)
-                            feedbackItem.message = compileResult[1]
+                            feedbackItem.message = compilerMessage
                             feedbackItem.totalPoints = actionPoints
                             # TODO: When high?
                             feedbackItem.severity = "normal"
                             feedbackItemList.append(feedbackItem)
+
+                            # add action result to submission feedback too
+                            submissionFeedback.actionSummary += f"{compilerMessage};"
+                            submissionFeedback.totalPoints += actionPoints
                         else:
                             infoMessage = f"startGradingRun: {action.type} is an unknown action type"
                             Loghelper.logInfo(infoMessage)
 
-                # variables must exist ?
+                # the variables must exist ?
                 jUnitReportHtmlPath = ""
                 checkstyleReportHtmlPath = ""
                 textcomparePath = ""
+                submissionFeedbackPath = ""
 
                 # run the test for each java file
                 for javaFile in files:
@@ -562,10 +569,13 @@ def MenueD_startGradingRun() -> None:
                     # get all the tests for the exercise
                     testList = xmlHelper.getTestList(exercise)
                     for test in testList:
+                        testRun = True
+                        testMessage = ""
                         # is the test active? it has to be True not true in the xml
                         if not eval(test.active):
                             infoMessage = f"startGradingRun: leaving out Test {test.id} for {javaFile}"
                             Loghelper.logInfo(infoMessage)
+                            testRun = False
                             continue
 
                         infoMessage = f"startGradingRun: executing test {test.id} for file {javaFile}"
@@ -589,7 +599,7 @@ def MenueD_startGradingRun() -> None:
                             checkstyleResult, checkstyleMessage = CheckstyleTestHelper.runCheckstyle(javaFilePath)
                             testPoints = xmlHelper.getTestPoints(exercise,test.id)
                             points += testPoints if checkstyleResult == 0 else 0
-                            # don't forget the points
+                            # don't forget the points for the grade result
                             gradeResult.points = testPoints
                             problemCount += 1 if checkstyleResult != 0 else 0
                             # TODO: better message
@@ -604,7 +614,9 @@ def MenueD_startGradingRun() -> None:
                             Loghelper.logInfo(infoMessage)
                             # convert the xml to html
                             checkstyleReportHtmlPath = xmlHelper.convertCheckstyleReport2Html(checkstyleReportpath, studentName, exercise)
-
+                            # the test message for the submission feedback
+                            checkstyleIssues = len(checkstyleMessage.split("\n"))
+                            testMessage = f"checkstyle: {checkstyleIssues} infos and warnings"
                         # a junit test?
                         elif test.type.lower() == "junit":
                             dirPath = os.path.dirname(javaFilePath)
@@ -633,6 +645,9 @@ def MenueD_startGradingRun() -> None:
                             else:
                                 gradeResult.errorMessage = f"JUnit-Result: JUnit could not run"
 
+                           # the test message for the submission feedback
+                            testMessage = f"jUnit-Result: {True if junitResult == 0 else False} {jUnitLines} errors"
+
                         # a textcompare test?
                         elif test.type.lower() == "textcompare":
                             classPath = javaFilePath.split(".")[0]
@@ -655,13 +670,17 @@ def MenueD_startGradingRun() -> None:
                                     fh.writelines(compareLines)
                                 infoMessage = f"startGradingRun: saved Text-Compare report {textcompareName}"
                                 Loghelper.logInfo(infoMessage)
+
+                            # the test message for the submission feedback
+                            testMessage = f"textCompare-Result: {True if textcompareResult == 0 else False}"
+
                         else:
                             infoMessage = f"startGradingRun: {test.type} is an unknown test type"
                             Loghelper.logInfo(infoMessage)
 
                         gradeResultList.append(gradeResult)
 
-                        # Create a feedback object for the test
+                        # create a feedbackItem object for the test result
                         # TODO: better mechanismen for generating the id (if necessary at all)
                         feedbackItemid = len(feedbackItemList) + 1
                         feedbackItem = FeedbackItem(feedbackItemid, submission)
@@ -673,10 +692,18 @@ def MenueD_startGradingRun() -> None:
                             feedbackItem.jUnitReportpath = jUnitReportHtmlPath
                         if textcomparePath != "":
                             feedbackItem.textCompareReportpath = textcomparePath
+                        if submissionFeedbackPath != "":
+                            feedbackItem.submissionReportpath = submissionFeedbackPath
                         feedbackItem.message = f"Points/Problems: {points}/{problemCount}"
                         # TODO: When high?
                         feedbackItem.severity = "normal"
                         feedbackItemList.append(feedbackItem)
+
+                        # add the test result to the submission feedback
+                        if testRun:
+                            submissionFeedback.testSummary += f"{testMessage};"
+                            submissionFeedback.testCount += 1
+                            submissionFeedback.totalPoints += testPoints
 
                     # store the submission feedback for the student
                     submissionFeedbackDic[studentId].append(submissionFeedback)
@@ -697,7 +724,6 @@ def MenueD_startGradingRun() -> None:
                 # store the current submission in the database
                 DBHelper.storeSubmissionResult(dbPath, gradeRunId, submission.id, exercise, gradeSemester,
                                                gradeModule, totalGradePoints, gradeErrors)
-
 
     # Prepare to store current graderun in the database
     timestamp = datetime.now().strftime("%d.%m.%y %H:%M")
@@ -721,7 +747,12 @@ def MenueD_startGradingRun() -> None:
     # subprocess.call(["notepad.exe", gradeReportPath])
 
     # write the xml reports for the submission feedback
-    xmlHelper.generateSubmissionFeedbackReports(submissionFeedbackDic)
+    submissionReportDic = xmlHelper.generateSubmissionFeedbackReports(submissionFeedbackDic)
+
+    # TODO: update the feedback report with the submission path for each student
+    for feedbackItem in feedbackItemList:
+        if submissionReportDic.get(feedbackItem.submission.studentId) != None:
+            feedbackItem.submissionReportpath = submissionReportDic[feedbackItem.submission.studentId]
 
     # convert the grading results report to html
     htmlPath = xmlHelper.convertGradingResultReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)

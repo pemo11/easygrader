@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <sig:tasks xmlns:sig="urn:simpelgrader">
-  <sig:task id="1000" exercise="EA1" title="Aufgabe EA1">
-    <sig:description>description for task 1000</sig:description>
+  <sig:task id="1000" name="EA1" title="Aufgabe EA1" points="6" level="A" author="pemo" lang="de">
+    <sig:description>Schaltjahrtester (Level A)</sig:description>
     <sig:files>
       <sig:file>App.java</sig:file>
       <sig:file>AppTest.java</sig:file>
