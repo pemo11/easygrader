@@ -8,5 +8,5 @@ Path for the Checkstyle rule filename?,path,checkstyleRulePath,""
 Path for the Student roster csv filename?,path,studentRosterPath,C:\\Student_Roster.csv
 Path for the database filename?,path,dbPath,C:\\simpelgraderv1.db
 Name of the Semester?,run,gradesemester,""
-Name of the Module?,run,grademodule,""
-Name of the Operator?,run,gradingoperator,"teacher"
+Name of the Module?,run,gradeModule,""
+Name of the Operator?,run,gradingOperator,"teacher"

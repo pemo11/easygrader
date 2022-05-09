@@ -749,10 +749,14 @@ def MenueD_startGradingRun() -> None:
     # write the xml reports for the submission feedback
     submissionReportDic = xmlHelper.generateSubmissionFeedbackReports(submissionFeedbackDic)
 
-    # TODO: update the feedback report with the submission path for each student
+    # update the feedback list with the submission path for each submission
     for feedbackItem in feedbackItemList:
         if submissionReportDic.get(feedbackItem.submission.studentId) != None:
             feedbackItem.submissionReportpath = submissionReportDic[feedbackItem.submission.studentId]
+
+    # generate a single submission feedback report for every submission
+    htmlPath = submissionFeedbackPath = xmlHelper.generateSubmissionReport(submissionFeedbackDic)
+    os.startfile(htmlPath)
 
     # convert the grading results report to html
     htmlPath = xmlHelper.convertGradingResultReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
@@ -763,6 +767,7 @@ def MenueD_startGradingRun() -> None:
     feedbackReportPath = xmlHelper.generateFeedbackReport(feedbackItemList)
     htmlPath = xmlHelper.convertFeedbackReport2Html(feedbackReportPath, gradeSemester, gradeModule, exercise)
     os.startfile(htmlPath)
+
 
 '''
 Menue E - outputs all grading runs in the database

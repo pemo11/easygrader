@@ -147,6 +147,23 @@ class XmlHelper:
         return fileList
 
     '''
+   Validates the current gradingplan file against the xsd schema
+   '''
+    def validateXml(self) -> bool:
+        try:
+            xsdPath = path.join(path.dirname(__file__), "gradingplan.xsd")
+            if not path.exists(xsdPath):
+                return False
+            xmlSchemaDoc = et.parse(xsdPath)
+            xmlSchema = et.XMLSchema(xmlSchemaDoc)
+            xmlDoc = et.parse(self.xmlPath)
+            result = xmlSchema.validate(xmlDoc)
+        except Exception as ex:
+            Loghelper.logError(f"validateXml: Fehler bei der Xml-Validierung ({ex})")
+            result = False
+        return result
+
+    '''
     Generates a Xml file for all grading results
     '''
     def generateGradingResultReport(self, resultList):
@@ -271,6 +288,70 @@ class XmlHelper:
 
         return reportDic
 
+
+    '''
+    Generates a Xml file for all submission validation entries
+    '''
+    def generateSubmissionValidationReport(self, submissionValidationList) -> str:
+        root = et.Element("report")
+        for submissionEntry in submissionValidationList:
+            subValidation = et.SubElement(root, "submissionValidation")
+            submissionId = et.SubElement(subValidation, "submissionId")
+            submissionId.text = str(submissionEntry.submissionId)
+            studentId = et.SubElement(subValidation, "studentId")
+            studentId.text = str(submissionEntry.studentId)
+            exercise = et.SubElement(subValidation, "exercise")
+            exercise.text = submissionEntry.exercise
+            validationType = et.SubElement(subValidation, "type")
+            validationType.text = submissionEntry.type
+            validationMessage = et.SubElement(subValidation, "message")
+            validationMessage.text = submissionEntry.message
+            timeStamp = et.SubElement(subValidation, "timestamp")
+            timeStamp.text = datetime.strftime(submissionEntry.timestamp, "%d.%m.%Y %H:%M")
+
+        # Write the report
+        tree = et.ElementTree(root)
+        tree.write(self.submissionValidationReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+        return self.submissionValidationReportpath
+
+    '''
+    Generates a single submission report for all submission feedback and return the html path
+    '''
+    def generateSubmissionReport(self, feedbackDic) -> str:
+        # TODO: do some coding...
+        infoMessage = f"generateSubmissionReport: generating feedback report for {len(feedbackDic)} submissions"
+        Loghelper.logInfo(infoMessage)
+        xlReport = et.Element("report")
+        for studentId in feedbackDic:
+            for submissionFeedback in feedbackDic[studentId]:
+                xlSubmission = et.SubElement(xlReport, "submission")
+                xlStudent = et.SubElement(xlSubmission, "student")
+                xlStudent.text = str(submissionFeedback.studentId)
+                xlExercise = et.SubElement(xlSubmission, "exercise")
+                xlExercise.text = submissionFeedback.exercise
+                xlTestCount = et.SubElement(xlSubmission, "testcount")
+                xlTestCount = str(submissionFeedback.testCount)
+                xlTotalPoints = et.SubElement(xlSubmission, "totalpoints")
+                xlTotalPoints = str(submissionFeedback.totalPoints)
+                xlActionSummary = et.SubElement(xlSubmission, "actionSummary")
+                xlActionSummary.text = submissionFeedback.actionSummary
+                xlTestSummary = et.SubElement(xlReport, "testSummary")
+                xlTestSummary.text = submissionFeedback.testSummary
+                xlFeedbackSummary = et.SubElement(xlSubmission, "feedbackSummary")
+                xlFeedbackSummary.text = submissionFeedback.feedbackSummary
+
+        # submission report path in the report directory contains the current date
+        heute = datetime.now().date()
+        submissionPath = os.path.join(self.simpelgraderDir, f"submissionReport_{heute}.xml")
+        # Write the report
+        tree = et.ElementTree(xlReport)
+        tree.write(submissionPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        # convert xml to html
+        htmlPath = self.convertSubmissionReport2Html(submissionPath)
+        return htmlPath
+
+
     '''
     Converts a grading result xml report into html
     '''
@@ -326,49 +407,6 @@ class XmlHelper:
         return htmlPath
 
     '''
-    Validates the current gradingplan file against the xsd schema
-    '''
-    def validateXml(self) -> bool:
-        try:
-            xsdPath = path.join(path.dirname(__file__), "gradingplan.xsd")
-            if not path.exists(xsdPath):
-                return False
-            xmlSchemaDoc = et.parse(xsdPath)
-            xmlSchema = et.XMLSchema(xmlSchemaDoc)
-            xmlDoc = et.parse(self.xmlPath)
-            result = xmlSchema.validate(xmlDoc)
-        except Exception as ex:
-            Loghelper.logError(f"validateXml: Fehler bei der Xml-Validierung ({ex})")
-            result = False
-        return result
-
-    '''
-    Generates a Xml file for all submission validation entries
-    '''
-    def generateSubmissionValidationReport(self, submissionValidationList) -> str:
-        root = et.Element("report")
-        for submissionEntry in submissionValidationList:
-            subValidation = et.SubElement(root, "submissionValidation")
-            submissionId = et.SubElement(subValidation, "submissionId")
-            submissionId.text = str(submissionEntry.submissionId)
-            studentId = et.SubElement(subValidation, "studentId")
-            studentId.text = str(submissionEntry.studentId)
-            exercise = et.SubElement(subValidation, "exercise")
-            exercise.text = submissionEntry.exercise
-            validationType = et.SubElement(subValidation, "type")
-            validationType.text = submissionEntry.type
-            validationMessage = et.SubElement(subValidation, "message")
-            validationMessage.text = submissionEntry.message
-            timeStamp = et.SubElement(subValidation, "timestamp")
-            timeStamp.text = datetime.strftime(submissionEntry.timestamp, "%d.%m.%Y %H:%M")
-
-        # Write the report
-        tree = et.ElementTree(root)
-        tree.write(self.submissionValidationReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
-
-        return self.submissionValidationReportpath
-
-    '''
     Converts a submission validation xml report into html
     '''
     def convertSubmissionValidationReport2Html(self, xmlPath) -> str:
@@ -392,7 +430,6 @@ class XmlHelper:
             infoMessage = f"convertValidationReport2Html: error ({ex})"
             Loghelper.logError(infoMessage)
         return htmlPath
-
 
     '''
     Converts a checkstyle xml report into html
@@ -441,5 +478,29 @@ class XmlHelper:
             Loghelper.logInfo(infoMessage)
         except Exception as ex:
             infoMessage = f"convertJUnitReport2Html: error ({ex})"
+            Loghelper.logError(infoMessage)
+        return htmlPath
+
+    '''
+    Converts a submission xml report to html
+    '''
+    def convertSubmissionReport2Html(self, xmlPath) -> str:
+        htmlPath = ""
+        try:
+            htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
+            xsltPath = "XSLT/SubmissionReport.xslt"
+            xmlDom = et.parse(xmlPath)
+            xsltDom = et.parse(xsltPath)
+            transform = et.XSLT(xsltDom)
+            newDom = transform(xmlDom)
+            htmlText = et.tostring(newDom, pretty_print=True)
+            # One more time tostring() returns bytes[] not str
+            htmlLines = htmlText.decode().split("\n")
+            with open(htmlPath, "w", encoding="utf-8") as fh:
+                fh.writelines(htmlLines)
+            infoMessage = f"convertSubmissionReport2Html: generated {htmlPath}"
+            Loghelper.logInfo(infoMessage)
+        except Exception as ex:
+            infoMessage = f"convertSubmissionReport2Html: error ({ex})"
             Loghelper.logError(infoMessage)
         return htmlPath
