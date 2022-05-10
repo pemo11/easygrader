@@ -835,7 +835,7 @@ def MenueH_showLogfile() -> None:
             try:
                 os.system(f"open -e {Loghelper.logPath}")
             except Exception as ex:
-                infoMessage = f"showLogfile - generall error ({ex})"
+                infoMessage = f"showLogfile - general error ({ex})"
                 Loghelper.logError(infoMessage)
     else:
         print(f"!!! {Loghelper.logPath} existiert nicht !!!")
