@@ -414,7 +414,15 @@ def MenueC_validateSubmissions() -> None:
     # create a html report
     htmlPath = xmlHelper.convertSubmissionValidationReport2Html(xmlPath)
     # show html file in browser
-    os.startfile(htmlPath)
+    if os.name == "nt":
+        os.startfile(htmlPath)
+    else:
+        # does work on MacOS only
+        try:
+            os.system(f"open -e {htmlPath}")
+        except Exception as ex:
+            infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
+            Loghelper.logError(infoMessage)
 
     print("*" * 80)
     print(f"*** Alle Abgaben wurden validiert ***")
@@ -760,18 +768,44 @@ def MenueD_startGradingRun() -> None:
 
     # generate a single submission feedback report for every submission and a feedback for each submission
     htmlPath = submissionFeedbackPath = xmlHelper.generateSubmissionReport(submissionFeedbackDic)
-    os.startfile(htmlPath)
+    # check if its Windose
+    if os.name == "nt":
+        os.startfile(htmlPath)
+    else:
+        # does work on MacOS only
+        try:
+            os.system(f"open -e {htmlPath}")
+        except Exception as ex:
+            infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
+            Loghelper.logError(infoMessage)
 
     # convert the grading results report to html
     htmlPath = xmlHelper.convertGradingResultReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
-    os.startfile(htmlPath)
+    # check if its Windose
+    if os.name == "nt":
+        os.startfile(htmlPath)
+    else:
+        # does work on MacOS only
+        try:
+            os.system(f"open -e {htmlPath}")
+        except Exception as ex:
+            infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
+            Loghelper.logError(infoMessage)
     print(f"{submisssionsGraded} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
 
     # convert the feedback report to html
     feedbackReportPath = xmlHelper.generateFeedbackReport(feedbackItemList)
     htmlPath = xmlHelper.convertFeedbackReport2Html(feedbackReportPath, gradeSemester, gradeModule, exercise)
-    os.startfile(htmlPath)
-
+    # check if its Windose
+    if os.name == "nt":
+        os.startfile(htmlPath)
+    else:
+        # does work on MacOS only
+        try:
+            os.system(f"open -e {htmlPath}")
+        except Exception as ex:
+            infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
+            Loghelper.logError(infoMessage)
 
 '''
 Menue E - outputs all grading runs in the database
