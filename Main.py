@@ -831,7 +831,12 @@ def MenueH_showLogfile() -> None:
         if os.name == "nt":
             subprocess.Popen(["notepad", Loghelper.logPath])
         else:
-            os.system(Loghelper.logPath)
+            # does work on MacOS only
+            try:
+                os.system(f"open -e {Loghelper.logPath}")
+            except Exception as ex:
+                infoMessage = f"showLogfile - generall error ({ex})"
+                Loghelper.logError(infoMessage)
     else:
         print(f"!!! {Loghelper.logPath} existiert nicht !!!")
 
