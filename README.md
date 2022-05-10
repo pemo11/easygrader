@@ -69,9 +69,11 @@ But since the boring and error prone tasks are already done, there should be mor
 - May be check for plagiarism
 - Write a formative feedback
 
-*Simpelgrader* is easy to install. I developed the application on Windows 10 but it should run with no problemo on *MacOS* too.
+*Simpelgrader* is easy to install. I developed the application on Windows 10.
 
-I **does not** run on *Linux* at the moment but only because I don't have found the equivalent for the **open** command yet (but I will;) which is used to show the html files in the browser and the log file in a text editor.
+At the moment it does not run on *MacOS* and *Linux* due to some minor issues I could not fix yet like launching an html file and the log file with a separate application.
+
+So if you want to test the application, please use Windows at the moment.
 
 Python >= 3.8 is a requirement because I wanted to use a nice improvements for while loops.
 
