@@ -344,7 +344,7 @@ class XmlHelper:
                 xlTotalPoints.text = str(submissionFeedback.totalPoints)
                 xlActionSummary = et.SubElement(xlSubmission, "actionSummary")
                 xlActionSummary.text = submissionFeedback.actionSummary
-                xlTestSummary = et.SubElement(xlReport, "testSummary")
+                xlTestSummary = et.SubElement(xlSubmission, "testSummary")
                 xlTestSummary.text = submissionFeedback.testSummary
                 xlFeedbackSummary = et.SubElement(xlSubmission, "feedbackSummary")
                 xlFeedbackSummary.text = submissionFeedback.feedbackSummary
