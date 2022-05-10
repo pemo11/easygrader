@@ -15,7 +15,7 @@ class GradeResult:
         self.success = False
         self.submission = None
         self.remarks = "No Paseran"
-        self.errorMessage = ""
+        self.message = ""
 
     def __repr__(self):
         return f"Type: {self.type} Description: {self.description} Student: {self.submission.studentId} Points: {self.points } Sucess: {self.success}"

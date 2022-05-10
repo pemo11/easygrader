@@ -40,6 +40,8 @@ class XmlHelper:
         self.submissionValidationReportpath = path.join(self.simpelgraderDir, submissionValidationReportname)
         feedbackReportName = f"GradingFeedbackReport_{today}.xml"
         self.feedbackReportpath = path.join(self.simpelgraderDir, feedbackReportName)
+        self.submissionPath = os.path.join(self.simpelgraderDir, f"SubmissionReport_{today}.xml")
+
 
     '''
     tests if an exercise exists in the grading plan
@@ -182,7 +184,7 @@ class XmlHelper:
             gradePoints = et.SubElement(xlGradeResult, "points")
             gradePoints.text = str(gradeResult.points)
             gradeErrorMessage  = et.SubElement(xlGradeResult, "message")
-            gradeErrorMessage.text = gradeResult.errorMessage
+            gradeErrorMessage.text = gradeResult.message
             gradeSuccess = et.SubElement(xlGradeResult, "gradeSuccess")
             gradeSuccess.text = str(gradeResult.success)
 
@@ -278,12 +280,12 @@ class XmlHelper:
                 xlFeedbackSummary = et.SubElement(xlReport, "feedbackSummary")
                 xlFeedbackSummary.text = submissionFeedback.feedbackSummary
                 # TODO: student name instead of id
-                submissionFeedbackReportpath = os.path.join(self.simpelgraderDir, f"{studentId}_{submissionFeedback.exercise}_submissionFeedback.xml")
+                submissionFeedbackReportpath = os.path.join(self.simpelgraderDir, f"{studentId}_{submissionFeedback.exercise}_SubmissionFeedback.xml")
                 # Write the report
                 tree = et.ElementTree(xlReport)
                 tree.write(submissionFeedbackReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
                 # Convert to html
-                htmlPath = self.convertSubmissionReport2Html(submissionFeedbackReportpath, studentId, submissionFeedback.exercise)
+                htmlPath = self.convertSingleSubmissionReport2Html(submissionFeedbackReportpath, studentId, submissionFeedback.exercise)
                 # save the reportpath in the dictionary with the studenId as key
                 if reportDic.get(studentId) == None:
                     # reportDic[studentId] = submissionFeedbackReportpath
@@ -346,15 +348,17 @@ class XmlHelper:
                 xlTestSummary.text = submissionFeedback.testSummary
                 xlFeedbackSummary = et.SubElement(xlSubmission, "feedbackSummary")
                 xlFeedbackSummary.text = submissionFeedback.feedbackSummary
+                # generate report for the current submission
+                #singleSubmissionPath = os.path.join(self.simpelgraderDir, f"{submissionFeedback.studentId}_{submissionFeedback.exercise}_SubmissionFeedback.xml")
+                #tree2 = et.ElementTree(xlSubmission)
+                #tree2.write(singleSubmissionPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
 
         # submission report path in the report directory contains the current date
-        heute = datetime.now().date()
-        submissionPath = os.path.join(self.simpelgraderDir, f"SubmissionReport_{heute}.xml")
         # Write the report
         tree = et.ElementTree(xlReport)
-        tree.write(submissionPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        tree.write(self.submissionPath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
         # convert xml to html
-        htmlPath = self.convertSubmissionReport2Html(submissionPath, "", "")
+        htmlPath = self.convertSubmissionReport2Html(self.submissionPath)
         return htmlPath
 
 
@@ -370,9 +374,9 @@ class XmlHelper:
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
             newDom = transform(xmlDom, gradingTime=et.XSLT.strparam(datetime.now().strftime("%d.%m.%Y %H:%M")),
-                                        semester=et.XSLT.strparam(semester),
-                                        module=et.XSLT.strparam(module),
-                                        exercise=et.XSLT.strparam(exercise))
+                                       semester=et.XSLT.strparam(semester),
+                                       module=et.XSLT.strparam(module),
+                                       exercise=et.XSLT.strparam(exercise))
             htmlText = et.tostring(newDom, pretty_print=True)
             # One more time tostring() returns bytes[] not str
             htmlLines = htmlText.decode().split("\n")
@@ -397,9 +401,9 @@ class XmlHelper:
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
             newDom = transform(xmlDom, feedbackTime=et.XSLT.strparam(datetime.now().strftime("%d.%m.%Y %H:%M")),
-                               semester=et.XSLT.strparam(semester),
-                               module=et.XSLT.strparam(module),
-                               exercise=et.XSLT.strparam(exercise))
+                                       semester=et.XSLT.strparam(semester),
+                                       module=et.XSLT.strparam(module),
+                                       exercise=et.XSLT.strparam(exercise))
             htmlText = et.tostring(newDom, pretty_print=True)
             # One more time tostring() returns bytes[] not str
             htmlLines = htmlText.decode().split("\n")
@@ -474,7 +478,7 @@ class XmlHelper:
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
             newDom = transform(xmlDom, student=et.XSLT.strparam(student),
-                                        exercise=et.XSLT.strparam(exercise))
+                                       exercise=et.XSLT.strparam(exercise))
             htmlText = et.tostring(newDom, pretty_print=True)
             # One more time tostring() returns bytes[] not str
             htmlLines = htmlText.decode().split("\n")
@@ -490,7 +494,31 @@ class XmlHelper:
     '''
     Converts a submission xml report to html
     '''
-    def convertSubmissionReport2Html(self, xmlPath, studentId, exercise) -> str:
+    def convertSubmissionReport2Html(self, xmlPath) -> str:
+        htmlPath = ""
+        try:
+            htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
+            xsltPath = "XSLT/SubmissionReport.xslt"
+            xmlDom = et.parse(xmlPath)
+            xsltDom = et.parse(xsltPath)
+            transform = et.XSLT(xsltDom)
+            newDom = transform(xmlDom)
+            htmlText = et.tostring(newDom, pretty_print=True)
+            # One more time tostring() returns bytes[] not str
+            htmlLines = htmlText.decode().split("\n")
+            with open(htmlPath, "w", encoding="utf-8") as fh:
+                fh.writelines(htmlLines)
+            infoMessage = f"convertSubmissionReport2Html: generated {htmlPath}"
+            Loghelper.logInfo(infoMessage)
+        except Exception as ex:
+            infoMessage = f"convertSubmissionReport2Html: error ({ex})"
+            Loghelper.logError(infoMessage)
+        return htmlPath
+
+    '''
+    Converts a single submission xml report to html
+    '''
+    def convertSingleSubmissionReport2Html(self, xmlPath, studentId, exercise) -> str:
         htmlPath = ""
         try:
             htmlPath = ".".join(xmlPath.split(".")[:-1]) + ".html"
@@ -505,9 +533,9 @@ class XmlHelper:
             htmlLines = htmlText.decode().split("\n")
             with open(htmlPath, "w", encoding="utf-8") as fh:
                 fh.writelines(htmlLines)
-            infoMessage = f"convertSubmissionReport2Html: generated {htmlPath}"
+            infoMessage = f"convertSingleSubmissionReport2Html: generated {htmlPath}"
             Loghelper.logInfo(infoMessage)
         except Exception as ex:
-            infoMessage = f"convertSubmissionReport2Html: error ({ex})"
+            infoMessage = f"convertSingleSubmissionReport2Html: error ({ex})"
             Loghelper.logError(infoMessage)
         return htmlPath

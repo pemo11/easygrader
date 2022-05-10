@@ -16,7 +16,8 @@
                 <table>
                     <tr><td>Anzahl Tests:</td><td><xsl:value-of select="testCount"/></td></tr>
                     <tr><td>Anzahl Punkte:</td><td><xsl:value-of select="totalPoints"/></td></tr>
-                    <tr><td>Feedback:</td><td><xsl:value-of select="feedbackSummary"/></td></tr>
+                    <tr><td>Testmeldungen:</td><td><xsl:value-of select="testSummary"/></td></tr>
+                    <tr><td>Gesamt-Feedback:</td><td><xsl:value-of select="feedbackSummary"/></td></tr>
                 </table>
             </body>
         </html>

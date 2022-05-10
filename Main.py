@@ -1,8 +1,8 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 09/05/22
-# Version 0.8
+# last update: 10/05/22
+# Version 0.82
 # =============================================================================
 import random
 from datetime import datetime
@@ -40,7 +40,7 @@ import csv
 # =============================================================================
 # Some global variables
 # =============================================================================
-appVersion = "0.80"
+appVersion = "0.82"
 appName = "SimpelGrader"
 # this path contains the path of the directory with the submitted zip file
 submissionPath = ""
@@ -454,6 +454,7 @@ def MenueD_startGradingRun() -> None:
         # get all the details from the submission object
         for studentName in submissionDic[exercise]:
             for submission in submissionDic[exercise][studentName]:
+                # set problem counter for the submission to zero
                 problemCount = 0
                 infoMessage = f"startGradingRun: grading submission {submission.id}/{submission.exercise} for student {studentName}"
                 Loghelper.logInfo(infoMessage)
@@ -489,6 +490,7 @@ def MenueD_startGradingRun() -> None:
                     Loghelper.logWarning(infoMessage)
                     print(Fore.LIGHTYELLOW_EX + "*** Fehlende Dateien: {','.join(missingFiles)} ***" + Style.RESET_ALL)
                     problemCount += 1
+
                 # run the action for each java file
                 for javaFile in files:
                     javaFilePath = os.path.join(filesPath, javaFile)
@@ -525,7 +527,7 @@ def MenueD_startGradingRun() -> None:
                             actionPoints = xmlHelper.getActionPoints(exercise, action.id)
                             gradePoints = actionPoints if returnCode == 0 else 0
                             gradeResult.points = gradePoints
-                            gradeResult.errorMessage = compilerMessage
+                            gradeResult.message = compilerMessage
                             problemCount += 1 if returnCode == 1 else 0
                             # TODO: what makes a  success?
                             gradeResult.success = gradePoints > 0
@@ -604,7 +606,7 @@ def MenueD_startGradingRun() -> None:
                             gradeResult.points = testPoints
                             problemCount += 1 if checkstyleResult != 0 else 0
                             # TODO: better message
-                            gradeResult.errorMessage = "OK" if checkstyleResult == 0 else "Error"
+                            gradeResult.message = "OK" if checkstyleResult == 0 else "Error"
                             # store the checkstyle report as xml
                             checkstyleName = f"{studentName}_{exercise}_CheckstyleResult.xml"
                             checkstyleReportpath = os.path.join(simpelgraderDir, checkstyleName)
@@ -633,7 +635,7 @@ def MenueD_startGradingRun() -> None:
                             # don't forget the points
                             gradeResult.points = testPoints
                             if junitXmlMessage != "":
-                                gradeResult.errorMessage = f"JUnit-Result: {JUnitTestHelper.getJUnitResult(junitXmlMessage)}"
+                                gradeResult.message = f"JUnit-Result: {JUnitTestHelper.getJUnitResult(junitXmlMessage)}"
                                 jUnitName = f"{studentName}_{exercise}_JUnitResult.xml"
                                 jUnitReportpath = os.path.join(simpelgraderDir, jUnitName)
                                 with open(jUnitReportpath, mode="w", encoding="utf8") as fh:
@@ -644,17 +646,17 @@ def MenueD_startGradingRun() -> None:
                                 # convert the xml to html
                                 jUnitReportHtmlPath = xmlHelper.convertJUnitReport2Html(jUnitReportpath, studentName, exercise)
                             else:
-                                gradeResult.errorMessage = f"JUnit-Result: JUnit could not run"
+                                gradeResult.message = f"JUnit-Result: JUnit could not run"
 
                            # the test message for the submission feedback
-                            testMessage = f"jUnit-Result: {True if junitResult == 0 else False} {jUnitLines} errors"
+                            testMessage = f"jUnit-Result: {True if junitResult == 0 else False} {len(jUnitLines)} errors"
 
                         # a textcompare test?
                         elif test.type.lower() == "textcompare":
                             classPath = javaFilePath.split(".")[0]
                             # return value is a tuple of three
                             textcompareResult, textcompareMessage, compareLines = CompareTestHelper.runTextCompare(classPath, exercise)
-                            gradeResult.errorMessage = textcompareMessage
+                            gradeResult.message = textcompareMessage
                             # get the points for this exercise
                             testPoints = xmlHelper.getTestPoints(exercise,test.id)
                             points += testPoints
@@ -703,6 +705,7 @@ def MenueD_startGradingRun() -> None:
                         # add the test result to the submission feedback
                         if testRun:
                             submissionFeedback.testSummary += f"{testMessage};"
+                            submissionFeedback.feedbackSummary = "No feedback yet"
                             submissionFeedback.testCount += 1
                             submissionFeedback.totalPoints += testPoints
 
@@ -755,7 +758,7 @@ def MenueD_startGradingRun() -> None:
         if submissionReportDic.get(feedbackItem.submission.studentId) != None:
             feedbackItem.submissionReportpath = submissionReportDic[feedbackItem.submission.studentId]
 
-    # generate a single submission feedback report for every submission
+    # generate a single submission feedback report for every submission and a feedback for each submission
     htmlPath = submissionFeedbackPath = xmlHelper.generateSubmissionReport(submissionFeedbackDic)
     os.startfile(htmlPath)
 
