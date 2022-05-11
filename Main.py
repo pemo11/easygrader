@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 10/05/22
+# last update: 11/05/22
 # Version 0.82
 # =============================================================================
 import random
@@ -270,17 +270,19 @@ def MenueB_extractSubmissions() -> None:
 
     print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden extrahiert - bitte etwas Geduld ***" + Style.RESET_ALL)
 
-    # the the single zip file that contains all the submissions
-    zipFiles = [fi for fi in os.listdir(submissionPath) if fi.endswith("zip")]
-    # only one zip file allowed
-    if len(zipFiles) != 1:
-        infoMessage = f"extractSubmissions: exactly one zip file expected in {submissionPath}"
+    # get the newest zip file in the submission directory
+    # zipFiles = [fi for fi in os.listdir(submissionPath) if fi.endswith("zip")]
+    # remember, sorted() does out-place sorting;)
+    zipFiles = sorted([os.path.join(submissionPath,fi) for fi in os.listdir(submissionPath) if fi.endswith("zip")], key=os.path.getmtime)
+    # any zip files?
+    if len(zipFiles) == 0:
+        infoMessage = f"extractSubmissions: no zip file in {submissionPath}"
         Loghelper.logWarning(infoMessage)
-        print(Fore.LIGHTRED_EX + f"*** Im Verzeichnis {submissionPath} darf sich nur eine Zip-Datei befinden! ***" + Style.RESET_ALL)
+        print(Fore.LIGHTRED_EX + f"*** Im Verzeichnis {submissionPath} befindet sich keine Zip-Datei! ***" + Style.RESET_ALL)
         return
 
-    # get the full path of the zip file
-    zipPath = os.path.join(submissionPath, zipFiles[0])
+    # get the full path of the last zip file in the list
+    zipPath = zipFiles[-1]
 
     # create the submission dest directory if it does not exists
     if not os.path.exists(submissionDestPath):
