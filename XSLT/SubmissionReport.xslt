@@ -13,7 +13,7 @@
                 <h3>Submission-Report</h3>
                 <xsl:for-each select="//submission">
                     <table id="infoTable">
-                        <tr><td>Student</td><td><xsl:value-of select="student"/></td></tr>
+                        <tr><td class="info1">Student</td><td><xsl:value-of select="student"/></td></tr>
                         <tr><td>Exercise</td><td><xsl:value-of select="exercise"/></td></tr>
                         <tr><td>Number of actions</td><td><xsl:value-of select="actionCount"/></td></tr>
                         <tr><td>Number of tests</td><td><xsl:value-of select="testCount"/></td></tr>
