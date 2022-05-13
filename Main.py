@@ -5,6 +5,7 @@
 # Version 0.82
 # =============================================================================
 import random
+import tkinter.filedialog
 from datetime import datetime
 import os
 import re
@@ -15,7 +16,8 @@ import subprocess
 import colorama
 from colorama import Fore, Back, Style
 import zipfile
-
+import tkinter as tk
+from tkinter import filedialog
 import CheckstyleTestHelper
 import CompareTestHelper
 import JUnitTestHelper
@@ -917,6 +919,15 @@ def MenueI_setupSimpelgraderIni() -> None:
         entry = promptElements[2]
         try:
             promptInput = input(f"{prompt} (currently {config[section][entry]})\n")
+            '''
+            geht noch nicht - nur als Idee
+            if promptInput == "...":
+                win = tk.Tk()
+                win.geometry("300x150")
+                win.after(10, tkinter.filedialog.askdirectory())
+                win.mainloop()
+            
+            '''
             if promptInput != "":
                 config[section][entry] = promptInput
                 changeFlag = True
