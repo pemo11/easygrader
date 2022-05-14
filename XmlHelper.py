@@ -323,8 +323,8 @@ class XmlHelper:
     '''
     Generates a single submission report for all submission feedback and return the html path
     '''
-    def generateSubmissionReport(self, feedbackDic) -> str:
-        infoMessage = f"generateSubmissionReport: generating feedback report for {len(feedbackDic)} submissions"
+    def generateSubmissionFeedbackReport(self, feedbackDic) -> str:
+        infoMessage = f"generateSubmissionFeedbackReport: generating feedback report for {len(feedbackDic)} submissions"
         Loghelper.logInfo(infoMessage)
         xlReport = et.Element("report")
         for studentId in feedbackDic:
@@ -360,7 +360,6 @@ class XmlHelper:
         # convert xml to html
         htmlPath = self.convertSubmissionReport2Html(self.submissionPath)
         return htmlPath
-
 
     '''
     Converts a grading result xml report into html

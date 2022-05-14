@@ -1,6 +1,7 @@
 # file: ZipHelper.py
 import os
 import zipfile
+from zipfile import  ZipFile
 import tempfile
 import shutil
 
@@ -18,7 +19,7 @@ Extracts a single zip file
 def extractArchive(zipPath, destPath) -> int:
     fileCount = 0
     try:
-        with zipfile.ZipFile(zipPath, mode="r") as fh:
+        with ZipFile(zipPath, mode="r") as fh:
             fh.extractall(destPath)
         # exclude zip files
         fileCount = len([fi for fi in os.listdir(destPath) if not fi.endswith("zip")])
@@ -36,7 +37,7 @@ the directory is unique if two internal zip files have the same name
 def unzipAll(zipPfad, destFolder, fileCount) -> int:
     if not os.path.exists(zipPfad):
         return fileCount
-    with zipfile.ZipFile(zipPfad, mode="r") as zh:
+    with ZipFile(zipPfad, mode="r") as zh:
         # get only file names without extension if it exists
         zipDirs = [d.split(".")[0] for d in zh.namelist()]
         # get the name of all sub directories in the temp directory
@@ -134,3 +135,62 @@ def extractSubmissions(dbPath, zipPath, destPath) -> dict:
 
     return folderDic
     '''
+
+'''
+extracts a zip file in the "new" Moodle zip format
+'''
+def extractNewSubmission(zipPath, tmpPath) -> dict:
+
+    # extract the content of the zip file
+    with ZipFile(zipPath) as zh:
+        zh.extractall(tmpPath)
+
+    zipDic = {}
+    # go through all the zip files
+    for ziFi in [fi for fi in os.listdir(tmpPath) if fi.endswith(".zip")]:
+        destPath = os.path.join(tmpPath, ziFi)
+        with ZipFile(destPath) as zh:
+            # for the future: list of allowed extensions
+            names = [fi for fi in zh.namelist() if fi.endswith(".java")]
+            studName = re.findall(r"file_([\w+_]+)\.zip", ziFi)[0]
+            studPath = os.path.join(destPath, studName)
+            os.mkdir(studPath)
+            # get the exercise name too
+            exercise = ziFi.split("_")[0]
+            if zipDic.get(exercise) == None:
+                zipDic[exercise] = {}
+            if zipDic[exercise].get(studName) == None:
+                zipDic[exercise][studName] = []
+            # extract all files into the student directory
+            for name in names:
+                zh.extract(name, studPath)
+        os.remove(destPath)
+
+        # go through all the directories and disolve all sub directories
+        for zipDir in os.listdir(tmpPath):
+            studPath = os.path.join(tmpPath, zipDir)
+            studName = zipDir
+            for studDirItem in os.listdir(studPath):
+                studItemPath = os.path.join(studPath, studDirItem)
+                if os.path.isdir(studItemPath):
+                    # Move all files to studPath
+                    for studItemFile in [fi for fi in os.listdir(studItemPath) if not fi.startswith("._")]:
+                        studItemFilePath = os.path.join(studItemPath, studItemFile)
+                        if os.path.isfile(studItemFilePath):
+                            # move the file to the student directory
+                            shutil.move(studItemFilePath, studPath)
+                            # append the file to file list of that student
+                            zipDic[exercise][studName].append(studItemFile)
+                        else:
+                            # Some directories contain subdirectories instead of files
+                            for studItemFile2 in [fi for fi in os.listdir(studItemFilePath) if not fi.startswith("._")]:
+                                studItemFilePath2 = os.path.join(studItemFilePath, studItemFile2)
+                                # move file from subdirectory to the student directory
+                                shutil.move(studItemFilePath2, studPath)
+                                zipDic[exercise][studName].append(studItemFile)
+                    # remove the sub directory
+                    shutil.rmtree(studItemPath)
+                else:
+                    # append the file to file list of that student
+                    zipDic[exercise][studName].append(studItemFile)
+    return zipDic

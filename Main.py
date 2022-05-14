@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 13/05/22
+# last update: 14/05/22
 # Version 0.82
 # =============================================================================
 import random
@@ -154,6 +154,7 @@ def showMenu():
     menuList.append("Alle Abgaben anzeigen")
     menuList.append("Logdatei anzeigen")
     menuList.append("Simpelgrader.ini erstellen (optional)")
+    menuList.append("Studentenroster nach Einlesen der Abgaben erstellen (optional)")
     print("=" * 80)
     prompt = "Eingabe ("
     for i, menuItem in enumerate(menuList):
@@ -387,6 +388,14 @@ def MenueC_validateSubmissions() -> None:
         for studentName in exerciseSubmissions:
             infoMessage = f"validateSubmissions: validating submission for student {studentName}"
             Loghelper.logInfo(infoMessage)
+            # check if student is on the roster
+            if DBHelper.getStudentId(dbPath, studentName) == -1:
+                infoMessage = f"validateSubmissions: student {studentName} is not on the roster"
+                Loghelper.logWarning(f"validateSubmissions: {infoMessage}")
+                print(Fore.LIGHTRED_EX + "!!! {studentName} ist nicht bekannt !!!" + Style.RESET_ALL)
+                submission.state = "Unknown student"
+                continue
+
             # go through the (single) submissions of that particular student
             for submission in submissionDic[exercise][studentName]:
                 exercise = submission.exercise
@@ -402,11 +411,13 @@ def MenueC_validateSubmissions() -> None:
                     print(Fore.LIGHTYELLOW_EX + "*** Fehlende Dateien: {','.join(missingFiles)} ***" + Style.RESET_ALL)
                     # update submission info
                     submission.complete = False
+                    submission.state = "Missing files"
                 else:
                     infoMessage = f"All files complete"
                     validation = SubmissionValidation(exercise, "OK", infoMessage)
                     # update submission info
                     submission.complete = True
+                    submission.state = "OK"
 
                 # update submission in the database
                 DBHelper.updateSubmission(dbPath, submission)
@@ -775,7 +786,7 @@ def MenueD_startGradingRun() -> None:
             feedbackItem.submissionReportpath = submissionReportDic[feedbackItem.submission.studentId]
 
     # generate a single submission feedback report for every submission and a feedback for each submission
-    htmlPath = submissionFeedbackPath = xmlHelper.generateSubmissionReport(submissionFeedbackDic)
+    htmlPath = submissionFeedbackPath = xmlHelper.generateSubmissionFeedbackReport(submissionFeedbackDic)
     # check if its Windose
     if os.name == "nt":
         os.startfile(htmlPath)
@@ -951,6 +962,11 @@ def MenueI_setupSimpelgraderIni() -> None:
             # Re-initialize the variables
         initVariables()
 
+'''
+Menue J - creates roster from submissions
+'''
+def MenueJ_createRoster() -> None:
+    pass
 # =============================================================================
 # Starting point
 # =============================================================================
@@ -998,7 +1014,9 @@ def start() -> None:
         elif choice == "H":                 # Show the current log file
             MenueH_showLogfile()
         elif choice == "I":
-            MenueI_setupSimpelgraderIni()   # Allow preparting a simpelgrader.ini
+            MenueI_setupSimpelgraderIni()   # Allow preparing a simpelgrader.ini
+        elif choice == "K":
+            MenueK_createRoster()()         # Creates roster from submissions
         else:
             print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
 

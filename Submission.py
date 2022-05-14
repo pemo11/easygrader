@@ -16,6 +16,7 @@ class Submission:
         self.files = ""
         self.path = ""
         self.complete = False
+        self.state = "OK"
 
     def __repr__(self):
         return f"Id={self.id} Student={self.studentId} Exercise={self.exercise} Time={self.timestamp}"
