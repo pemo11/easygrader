@@ -95,6 +95,7 @@ def buildSubmissionDic(dbPath, destPath) -> dict:
         submission.exercise = exercise
         submission.files = fileNames
         submission.path = zipPath
+        submission.state = "OK" if studentId > 0 else "No Student Id"
         submissionId += 1
         folderDic[exercise][studentName].append(submission)
     return folderDic
@@ -102,6 +103,7 @@ def buildSubmissionDic(dbPath, destPath) -> dict:
 '''
 extracts all submissions inside a single zip file and returns a dict
 dict -> exercise key -> dict -> unique student name key -> list of submisssions
+!!! this is the old version that should not be used in the future !!!
 '''
 def extractSubmissions(dbPath, zipPath, destPath) -> dict:
     fileCount = unzipAll(zipPath, destPath, 0)
@@ -137,13 +139,16 @@ def extractSubmissions(dbPath, zipPath, destPath) -> dict:
     '''
 
 '''
-extracts a zip file in the "new" Moodle zip format
+extracts a zip file in the "new" Moodle zip format - return submission dic
 '''
-def extractNewSubmission(zipPath, tmpPath) -> dict:
+def extractNewSubmission(dbPath, zipPath, tmpPath) -> dict:
 
     # extract the content of the zip file
     with ZipFile(zipPath) as zh:
         zh.extractall(tmpPath)
+
+    # delete the original zip file to avoid mixups
+    os.remove(zipPath)
 
     zipDic = {}
     # go through all the zip files
@@ -152,13 +157,22 @@ def extractNewSubmission(zipPath, tmpPath) -> dict:
         with ZipFile(destPath) as zh:
             # for the future: list of allowed extensions
             names = [fi for fi in zh.namelist() if fi.endswith(".java")]
-            studName = re.findall(r"file_([\w+_]+)\.zip", ziFi)[0]
-            studPath = os.path.join(destPath, studName)
+            studDir = re.findall(r"file_([\w+_]+)\.zip", ziFi)[0]
+            # exclude the module name
+            studDir = "_".join(studDir.split("_")[1:])
+            # get the exercise name
+            exercise = studDir.split("_")[0]
+            # take only the lastname_firstname without exercise
+            # first char should be capital
+            studName = "_".join([namePart.capitalize() for namePart in studDir.split("_")][1:])
+            # path for the submission files subdirectory
+            studPath = os.path.join(tmpPath, studDir)
+            # create the sub directory
             os.mkdir(studPath)
-            # get the exercise name too
-            exercise = ziFi.split("_")[0]
+            # exercise already a key?
             if zipDic.get(exercise) == None:
                 zipDic[exercise] = {}
+            # studName already a key?
             if zipDic[exercise].get(studName) == None:
                 zipDic[exercise][studName] = []
             # extract all files into the student directory
@@ -166,31 +180,81 @@ def extractNewSubmission(zipPath, tmpPath) -> dict:
                 zh.extract(name, studPath)
         os.remove(destPath)
 
-        # go through all the directories and disolve all sub directories
-        for zipDir in os.listdir(tmpPath):
-            studPath = os.path.join(tmpPath, zipDir)
-            studName = zipDir
-            for studDirItem in os.listdir(studPath):
-                studItemPath = os.path.join(studPath, studDirItem)
-                if os.path.isdir(studItemPath):
-                    # Move all files to studPath
-                    for studItemFile in [fi for fi in os.listdir(studItemPath) if not fi.startswith("._")]:
-                        studItemFilePath = os.path.join(studItemPath, studItemFile)
-                        if os.path.isfile(studItemFilePath):
-                            # move the file to the student directory
-                            shutil.move(studItemFilePath, studPath)
-                            # append the file to file list of that student
-                            zipDic[exercise][studName].append(studItemFile)
-                        else:
-                            # Some directories contain subdirectories instead of files
-                            for studItemFile2 in [fi for fi in os.listdir(studItemFilePath) if not fi.startswith("._")]:
-                                studItemFilePath2 = os.path.join(studItemFilePath, studItemFile2)
-                                # move file from subdirectory to the student directory
-                                shutil.move(studItemFilePath2, studPath)
-                                zipDic[exercise][studName].append(studItemFile)
-                    # remove the sub directory
-                    shutil.rmtree(studItemPath)
-                else:
-                    # append the file to file list of that student
-                    zipDic[exercise][studName].append(studItemFile)
-    return zipDic
+    # go through all the directories and disolve all sub directories
+    for zipDir in os.listdir(tmpPath):
+        studPath = os.path.join(tmpPath, zipDir)
+        exercise = zipDir.split("_")[0]
+        # studname without the exercise name
+        studName = "_".join(zipDir.split("_")[1:])
+        # capitalize last and firstname
+        studName = "_".join([namePart.capitalize() for namePart in studName.split("_")])
+        for studDirItem in os.listdir(studPath):
+            studItemPath = os.path.join(studPath, studDirItem)
+            if os.path.isdir(studItemPath):
+                # Move all files to studPath
+                for studItemFile in [fi for fi in os.listdir(studItemPath) if not fi.startswith("._")]:
+                    studItemFilePath = os.path.join(studItemPath, studItemFile)
+                    if os.path.isfile(studItemFilePath):
+                        # move the file to the student directory
+                        shutil.move(studItemFilePath, studPath)
+                        # adjust the moved file path
+                        studItemFilePathNew = os.path.join(studPath, os.path.basename(studItemFilePath))
+                        # append the path of the file to file list of that student
+                        zipDic[exercise][studName].append(studItemFilePathNew)
+                    else:
+                        # Some directories contain subdirectories instead of files
+                        for studItemFile2 in [fi for fi in os.listdir(studItemFilePath) if not fi.startswith("._")]:
+                            studItemFilePath2 = os.path.join(studItemFilePath, studItemFile2)
+                            # move file from subdirectory to the student directory
+                            shutil.move(studItemFilePath2, studPath)
+                            # adjust the moved file path
+                            studItemFilePath2New = os.path.join(studPath, os.path.basename(studItemFilePath2))
+                            # add the whole path not only the file name
+                            zipDic[exercise][studName].append(studItemFilePath2New)
+                # remove the sub directory
+                shutil.rmtree(studItemPath)
+            else:
+                # append the file to file list of that student
+                zipDic[exercise][studName].append(studItemPath)
+
+    # convert zipDic into a submissionDic
+    submissionDic = {}
+    submissionId = 1
+    for exercise in zipDic:
+        for studentName in zipDic[exercise]:
+            exercise = zipDir.split("_")[0]
+            # get the files for that submission
+            studFiles = zipDic[exercise][studentName]
+            # should not be necessary but you'll never know;)
+            if len(studFiles) == 0:
+                continue
+            # get the directory path for the files
+            filesPath = os.path.dirname(studFiles[0])
+            fileNames = [os.path.basename(fi) for fi in studFiles]
+            if submissionDic.get(exercise) == None:
+                submissionDic[exercise] = {}
+            if submissionDic[exercise].get(studentName) == None:
+                submissionDic[exercise][studentName] = []
+            # get the student id for the student name
+            studentId = DBHelper.getStudentId(dbPath, studentName)
+            # id found?
+            if studentId == -1:
+                infoMessage = f"extractNewSubmission: no id for student {studentName} found - Submission will be skipped"
+                Loghelper.logWarning(infoMessage)
+                continue
+            # create a new submission with the student id
+            submission = Submission(submissionId, studentId)
+            # assign the exercise too
+            submission.exercise = exercise
+            # get the semester from the student file path
+            submission.semester = re.findall("SimpelGrader\\\\(\w+)\\\\", filesPath)[0]
+            # set the directory path for the submision files
+            submission.path = filesPath
+            # set the names of the submission files
+            submission.files = fileNames
+            # increment the submission Id
+            submissionId += 1
+            # add the submission to the dict
+            submissionDic[exercise][studentName].append(submission)
+
+    return submissionDic

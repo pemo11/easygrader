@@ -531,7 +531,7 @@ def getStudentId(dbPath, studentName) -> int:
     if len(studentName.split("_")) > 2:
         return -1
 
-    firstName,lastName = studentName.split("_") if len(studentName.split("_")) == 2 else ("",studentName)
+    lastName,firstName = studentName.split("_") if len(studentName.split("_")) == 2 else ("",studentName)
 
     if firstName == "":
         sqlCommand = "Select Id From Student Where Lastname = ?"
@@ -648,7 +648,9 @@ def storeStudent(dbPath, studentId, studentName, studentEMail) -> int:
     try:
         remarks = ""
         if len(studentName.split("_")) > 0:
-            firstName, lastName = studentName.split(" ")
+            lastName = studentName.split("_")[0]
+            # name could be friedke_roman_neu
+            firstName = "_".join(studentName.split("_")[1:])
         else:
             firstName = ""
             lastName = studentName

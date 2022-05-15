@@ -304,7 +304,8 @@ def MenueB_extractSubmissions() -> None:
 
     # extract alle the submissions from the downloaded zip file
     # dbPath for getStudentId query - maybe better solution?
-    submissionDic = ZipHelper.extractSubmissions(dbPath, zipPath, submissionDestPath)
+    # submissionDic = ZipHelper.extractSubmissions(dbPath, zipPath, submissionDestPath)
+    submissionDic = ZipHelper.extractNewSubmission(dbPath, zipPath, submissionDestPath)
 
     # Update semester and module for each submission
     for exercise in submissionDic:
@@ -314,7 +315,7 @@ def MenueB_extractSubmissions() -> None:
                 # TODO: Submission should be deleted
                 print(Fore.LIGHTRED_EX + f"*** Der Student {studentName} ist nicht abgabeberechtig! ***" + Style.RESET_ALL)
             for submission in submissionDic[exercise][studentName]:
-                submission.semester = gradeSemester
+                # submission.semester = gradeSemester
                 submission.module = gradeModule
 
     # flatten the dic to get the total count of all submissions
@@ -335,6 +336,9 @@ def MenueB_extractSubmissions() -> None:
     for exercise in submissionDic:
         for studentName in submissionDic[exercise]:
             # take only the first submission at the moment
+            # TODO: Should not happen
+            if len(submissionDic[exercise][studentName]) == 0:
+                continue
             submission = submissionDic[exercise][studentName][0]
             studentId = submission.studentId
             files = submission.files
