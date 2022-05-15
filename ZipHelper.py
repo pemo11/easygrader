@@ -230,7 +230,7 @@ def extractNewSubmission(dbPath, zipPath, tmpPath) -> dict:
                 continue
             # get the directory path for the files
             filesPath = os.path.dirname(studFiles[0])
-            fileNames = [os.path.basename(fi) for fi in studFiles]
+            fileNames = ",".join([os.path.basename(fi) for fi in studFiles])
             if submissionDic.get(exercise) == None:
                 submissionDic[exercise] = {}
             if submissionDic[exercise].get(studentName) == None:
