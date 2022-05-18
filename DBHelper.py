@@ -343,8 +343,7 @@ def updateSubmission(dbPath, submission) -> bool:
 
     id = submission.id
     complete = submission.complete
-    sqlCommand = f"Update Submission Set Complete={complete} "
-    sqlCommand += f"Where Id={id}"
+    sqlCommand = f"Update Submission Set Complete={complete} Where Id={id}"
     try:
         dbCur = dbCon.cursor()
         dbCur.execute(sqlCommand)
@@ -516,7 +515,8 @@ def getSubmissionResultByStudent(dbPath, student):
 
 '''
 get a single student id by name - either first_last or first last
-'''
+ - case insensitive due to lower()
+ '''
 def getStudentId(dbPath, studentName) -> int:
     try:
         dbCon = sqlite3.connect(dbPath)
@@ -534,15 +534,15 @@ def getStudentId(dbPath, studentName) -> int:
     lastName,firstName = studentName.split("_") if len(studentName.split("_")) == 2 else ("",studentName)
 
     if firstName == "":
-        sqlCommand = "Select Id From Student Where Lastname = ?"
+        sqlCommand = "Select Id From Student Where lower(Lastname) = ?"
     else:
-        sqlCommand = "Select Id From Student Where Firstname=? and Lastname = ?"
+        sqlCommand = "Select Id From Student Where lower(Firstname) = ? and lower(Lastname) = ?"
     try:
         cur = dbCon.cursor()
         if firstName == "":
-            cur.execute(sqlCommand, (studentName,))
+            cur.execute(sqlCommand, (studentName.lower()))
         else:
-            cur.execute(sqlCommand, (firstName,lastName))
+            cur.execute(sqlCommand, (firstName.lower(),lastName.lower()))
         row = cur.fetchone()
         if row != None:
             return row[0]
@@ -569,10 +569,10 @@ def searchStudentId(dbPath, studentName) -> []:
         Loghelper.logError(infoMessage)
         return None
 
-    sqlCommand = "Select Id From Student Where Lastname = ?"
+    sqlCommand = "Select Id From Student Where lower(Lastname) = ?"
     try:
         cur = dbCon.cursor()
-        cur.execute(sqlCommand, (studentName,))
+        cur.execute(sqlCommand, (studentName.lower(),))
         rows = cur.fetchall()
         studentIdList = [row[0] for row in rows]
         return studentIdList

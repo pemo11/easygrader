@@ -7,6 +7,7 @@ class SubmissionFeedback:
     def __init__(self, studentId):
         self.timestamp = datetime.now()
         self.studentId = studentId
+        self.studentName = ""
         self.exercise = ""
         self.actionCount = 0
         self.testCount = 0
@@ -15,5 +16,5 @@ class SubmissionFeedback:
         self.actionSummary = ""
         self.testSummary = ""
         self.feedbackSummary = ""
-
+        self.submissionReportpath = ""
 

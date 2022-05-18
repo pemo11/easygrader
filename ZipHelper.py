@@ -167,8 +167,9 @@ def extractNewSubmission(dbPath, zipPath, tmpPath) -> dict:
             studName = "_".join([namePart.capitalize() for namePart in studDir.split("_")][1:])
             # path for the submission files subdirectory
             studPath = os.path.join(tmpPath, studDir)
-            # create the sub directory
-            os.mkdir(studPath)
+            # create the sub directory if it does not exist
+            if not os.path.exists(studPath):
+                os.mkdir(studPath)
             # exercise already a key?
             if zipDic.get(exercise) == None:
                 zipDic[exercise] = {}
@@ -247,7 +248,10 @@ def extractNewSubmission(dbPath, zipPath, tmpPath) -> dict:
             # assign the exercise too
             submission.exercise = exercise
             # get the semester from the student file path
-            submission.semester = re.findall("SimpelGrader\\\\(\w+)\\\\", filesPath)[0]
+            # TODO: Test with MacOS/Linux
+            submission.semester = re.findall("simpelgrader\\\\(\w+)\\\\", filesPath, re.IGNORECASE)[0]
+            # get the module from the student file patht too
+            submission.module = re.findall("simpelgrader\\\\\w+\\\\(\w+)", filesPath, re.IGNORECASE)[0]
             # set the directory path for the submision files
             submission.path = filesPath
             # set the names of the submission files

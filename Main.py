@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 14/05/22
+# last update: 18/05/22
 # Version 0.82
 # =============================================================================
 import random
@@ -42,7 +42,7 @@ import csv
 # =============================================================================
 # Some global variables
 # =============================================================================
-appVersion = "0.82"
+appVersion = "0.84"
 appName = "SimpelGrader"
 # this path contains the path of the directory with the submitted zip file
 submissionPath = ""
@@ -80,7 +80,7 @@ def initVariables():
     gradeSemester = gradeSemester.replace(" ", "")
     gradeSemester = gradeSemester.replace("/", "_")
     gradingOperator = config["run"]["gradingOperator"]
-    submissionDestPath = os.path.join(tempfile.gettempdir(), appName, gradeSemester, gradeModule)
+    submissionDestPath = os.path.join(tempfile.gettempdir(), appName.lower(), gradeSemester, gradeModule)
 
 '''
 Initialize the application after the start
@@ -93,7 +93,7 @@ def initApp():
     # Delete the today log file if it already exists
     deleteLogfile = config["start"]["deleteLogfile"]
     if deleteLogfile.upper().startswith("Y") and os.path.exists(Loghelper.logPath):
-            os.remove(Loghelper.logPath)
+        os.remove(Loghelper.logPath)
     # Delete the directory if it already exists
     deleteSubmissionTree = config["start"]["deleteSubmissionTree"]
     if deleteSubmissionTree.upper().startswith("Y") and os.path.exists(submissionDestPath):
@@ -261,15 +261,40 @@ def MenueA_preCheck() -> None:
     print("*" * 80)
 
 '''
+Nur provisorisch bis besser gelöst
+'''
+def getSubmissionCount(submissionDict) -> int:
+    anzahl = 0
+    for d2 in [submissionDict[k1] for k1 in submissionDict]:
+        for k2 in d2:
+            anzahl += len(d2[k2])
+    return anzahl
+
+'''
 Menue B - extracts all submission files from a single zip file in the submissionPath directory
 '''
 def MenueB_extractSubmissions() -> None:
     global submissionDic
-    # validate the roster file first
-    if not RosterHelper.validateRoster(studentRosterPath):
-        # roster file is not valid exit
-        print(Fore.LIGHTRED_EX + f"*** Datei {studentRosterPath} nicht gefunden - bitte den Pfad ändern! ***" + Style.RESET_ALL)
+    # does roster file exists?
+    if not os.path.exists(studentRosterPath):
+        print(Fore.LIGHTRED_EX + f"Datei {studentRosterPath} nicht gefunden - bitte den Pfad ändern!" + Style.RESET_ALL)
+        infoMessage = f"extractSubmission: {studentRosterPath} not found"
+        Loghelper.logWarning(infoMessage)
         return
+    # validate the roster file first
+    result = RosterHelper.validateRoster(studentRosterPath)
+    # any errors?
+    if result[0] > 0:
+        # roster file is not valid exit
+        infoMessage = f"extractSubmission: {studentRosterPath} contains {result[0]} validation errors"
+        Loghelper.logWarning(infoMessage)
+        print(Fore.LIGHTRED_EX + f"*** Datei {studentRosterPath} enthält {result[0]} Validierungsfehler - bitte korrigieren! ***" + Style.RESET_ALL)
+        return
+    # any warnings?
+    if result[1] > 0:
+        infoMessage = f"extractSubmission: {studentRosterPath} contains {result[1]} validation warnings"
+        Loghelper.logWarning(infoMessage)
+        print(Fore.YELLOW_EX + f"*** Datei {studentRosterPath} enthält {result[1]} Validierungswarnungen - bitte überprüfen! ***" + Style.RESET_ALL)
 
     print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden extrahiert - bitte etwas Geduld ***" + Style.RESET_ALL)
 
@@ -319,7 +344,9 @@ def MenueB_extractSubmissions() -> None:
                 submission.module = gradeModule
 
     # flatten the dic to get the total count of all submissions
-    submissionCount = len([item for sublist in [submissionDic[k] for k in submissionDic] for item in sublist])
+    # TODO: does not work? count not the real count
+    # submissionCount = len([item for sublist in [submissionDic[k] for k in submissionDic] for item in sublist])
+    submissionCount = getSubmissionCount(submissionDic)
     infoMessage = f"extractSubmissions: {submissionCount} submissions for {len(submissionDic)} exercise extracted from the Moodle zip file"
     Loghelper.logInfo(infoMessage)
 
@@ -437,15 +464,17 @@ def MenueC_validateSubmissions() -> None:
     # create a html report
     htmlPath = xmlHelper.convertSubmissionValidationReport2Html(xmlPath)
     # show html file in browser
+    '''
     if os.name == "nt":
         os.startfile(htmlPath)
     else:
         # does work on MacOS only
         try:
-            os.system(f"open -e {htmlPath}")
+            # os.system(f"open -e {htmlPath}")
         except Exception as ex:
             infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
             Loghelper.logError(infoMessage)
+    '''
 
     print("*" * 80)
     print(f"*** Alle Abgaben wurden validiert ***")
@@ -497,6 +526,7 @@ def MenueD_startGradingRun() -> None:
                     submissionFeedbackDic[studentId] = []
                 # create new SubmissionFeedback
                 submissionFeedback = SubmissionFeedback(studentId)
+                submissionFeedback.studentName = studentName
                 submissionFeedback.exercise = exercise
                 submissionFeedback.exercisePoints = xmlHelper.getExercisePoints(exercise)
 
@@ -507,6 +537,13 @@ def MenueD_startGradingRun() -> None:
                     infoMessage = f"startGradingRun: no grading plan for exercise {exercise}"
                     Loghelper.logWarning(infoMessage)
                     print(Fore.LIGHTYELLOW_EX +  f"*** Kein Eintrag für Aufgabe {exercise} - Aufgabe wird nicht bewertet ***" + Style.RESET_ALL)
+                    continue
+
+                # check if the exercise is active in the gradingplan
+                if not xmlHelper.exerciseActive(exercise):
+                    infoMessage = f"startGradingRun: {exercise} is not active and will be skipped"
+                    Loghelper.logWarning(infoMessage)
+                    print(Fore.LIGHTYELLOW_EX +  f"*** Aufgabe {exercise} ist nicht aktiv und wird ausgelassen ***" + Style.RESET_ALL)
                     continue
 
                 # get the expected files from the grading plan
@@ -740,8 +777,8 @@ def MenueD_startGradingRun() -> None:
                             submissionFeedback.testCount += 1
                             submissionFeedback.totalPoints += testPoints
 
-                    # store the submission feedback for the student
-                    submissionFeedbackDic[studentId].append(submissionFeedback)
+                # store the submission feedback for the student
+                submissionFeedbackDic[studentId].append(submissionFeedback)
 
                 print(Fore.LIGHTCYAN_EX + f"*** Bewertung abgeschlossen - Anzahl Probleme: {problemCount} ***" + Style.RESET_ALL)
 
@@ -804,6 +841,7 @@ def MenueD_startGradingRun() -> None:
 
     # convert the grading results report to html
     htmlPath = xmlHelper.convertGradingResultReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
+    '''
     # check if its Windose
     if os.name == "nt":
         os.startfile(htmlPath)
@@ -815,10 +853,12 @@ def MenueD_startGradingRun() -> None:
             infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
             Loghelper.logError(infoMessage)
     print(f"{submisssionsGraded} Submissions bearbeitet - OK: {okCount} Error: {errorCount}")
+    '''
 
     # convert the feedback report to html
     feedbackReportPath = xmlHelper.generateFeedbackReport(feedbackItemList)
     htmlPath = xmlHelper.convertFeedbackReport2Html(feedbackReportPath, gradeSemester, gradeModule, exercise)
+    '''
     # check if its Windose
     if os.name == "nt":
         os.startfile(htmlPath)
@@ -829,6 +869,7 @@ def MenueD_startGradingRun() -> None:
         except Exception as ex:
             infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
             Loghelper.logError(infoMessage)
+    '''
 
 '''
 Menue E - outputs all grading runs in the database

@@ -6,6 +6,8 @@ from os import path
 from datetime import datetime
 from lxml import etree as et
 import os
+
+import DBHelper
 import Loghelper
 from TaskAction import TaskAction
 from TaskTest import TaskTest
@@ -50,6 +52,14 @@ class XmlHelper:
         xPathExpr = f".//sig:task[@name='{exercise}']"
         tasks = self.root.xpath(xPathExpr, namespaces=nsmap)
         return len(tasks) > 0
+
+    '''
+    returns if an exercise is active in the grading plan
+    '''
+    def exerciseActive(self, exercise) -> bool:
+        xPathExpr = f".//sig:task[@name='{exercise}']"
+        tasks = self.root.xpath(xPathExpr, namespaces=nsmap)
+        return len(tasks) > 0 and tasks[0].attrib["active"].lower() == "true"
 
     '''
     Get all actions associated with this exercise
@@ -331,7 +341,9 @@ class XmlHelper:
             for submissionFeedback in feedbackDic[studentId]:
                 xlSubmission = et.SubElement(xlReport, "submission")
                 xlStudent = et.SubElement(xlSubmission, "student")
-                xlStudent.text = str(submissionFeedback.studentId)
+                xlStudent.text = submissionFeedback.studentName
+                xlStudentId = et.SubElement(xlSubmission, "studentId")
+                xlStudentId.text = str(submissionFeedback.studentId)
                 xlExercise = et.SubElement(xlSubmission, "exercise")
                 xlExercise.text = submissionFeedback.exercise
                 xlActionCount = et.SubElement(xlSubmission, "actionCount")
@@ -501,7 +513,8 @@ class XmlHelper:
             xmlDom = et.parse(xmlPath)
             xsltDom = et.parse(xsltPath)
             transform = et.XSLT(xsltDom)
-            newDom = transform(xmlDom)
+            newDom = transform(xmlDom,
+                               gradingTime=et.XSLT.strparam(datetime.now().strftime("%d.%m.%Y %H:%M")))
             htmlText = et.tostring(newDom, pretty_print=True)
             # One more time tostring() returns bytes[] not str
             htmlLines = htmlText.decode().split("\n")

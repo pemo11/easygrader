@@ -13,12 +13,16 @@ body {
     padding: 8px;
 }
 
-#infoTable info1 td {
+#infoTable td.info {
+    background-color: goldenrod;
+}
+
+#infoTable td.info1 {
     background-color: orangered;
 }
 
-#infoTable info2 td {
-    background-color: orange
+#infoTable td.info2 {
+    background-color: lightblue;
 }
 
 #infoTable th {

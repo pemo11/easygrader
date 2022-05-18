@@ -34,7 +34,9 @@ def saveRosterInDb(dbPath, semester, module, rosterPath) -> None:
 '''
 Validates the roster file for missing columns and unique keys
 '''
-def validateRoster(rosterPath) -> bool:
+def validateRoster(rosterPath) -> ():
+    errorCount = 0
+    warningCount = 0
     try:
         with open(rosterPath, mode="r", encoding="utf8") as fh:
             csvReader = csv.reader(fh, delimiter=",")
@@ -48,7 +50,9 @@ def validateRoster(rosterPath) -> bool:
                 if not key in keysNeeded:
                     infoMessage = f"validateRoster->missing {key} in {rosterPath}"
                     Loghelper.logError(infoMessage)
-                    return False
+                    errorCount += 1
+                    # return because error is severe
+                    return (errorCount, 0)
 
             # check for unique ids
             dictId = {}
@@ -57,28 +61,36 @@ def validateRoster(rosterPath) -> bool:
                 if dictId.get(studentId) != None:
                     infoMessage = f"validateRoster->{studentId} is not unique in {rosterPath}"
                     Loghelper.logError(infoMessage)
-                    return False
+                    errorCount += 1
 
             # check for valid email address
             # TODO: Better pattern
             mailPattern = "(.+)@(.+)"
             for row in csvReader:
                 studentMail = row[2]
+                studentName = row[0]
+                # check for "valid" address
                 if not re.match(mailPattern, studentMail):
                     infoMessage = f"validateRoster->{studentMail} is not valid in {rosterPath}"
                     Loghelper.logError(infoMessage)
-                    return False
+                    errorCount += 1
+                # check for "nomail.org" address
+                if "nomail.org" in studentMail:
+                    infoMessage = f"validateRoster->no email address for {studentName}"
+                    Loghelper.logError(infoMessage)
+                    warningCount += 1
 
-            return True
+            return (errorCount, warningCount)
     except Exception as ex:
-        infoMessage = f"validateRoster: {ex}"
+        infoMessage = f"validateRoster: error {ex}"
         Loghelper.logError(infoMessage)
+        return (-1, 0)
 
 '''
 Updates the roster with the submissions
 '''
 def updateStudentRoster(dbPath, submissionDic) -> None:
-    exerciseCount = 0
+    submissionCount = 0
     for exercise in submissionDic:
         for studentName in submissionDic[exercise]:
             for submission in submissionDic[exercise][studentName]:
@@ -90,8 +102,8 @@ def updateStudentRoster(dbPath, submissionDic) -> None:
                     exercise = submission.exercise
                     # update the exercise in the student roster
                     if DBHelper.updateRoster(dbPath, studentId, exercise):
-                        exerciseCount += 1
-    infoMessage = f"updateStudentRoster: roster update completed for {exerciseCount} exercises"
+                        submissionCount += 1
+    infoMessage = f"updateStudentRoster: roster update completed for {submissionCount} submissions"
     Loghelper.logInfo(infoMessage)
 
 '''
