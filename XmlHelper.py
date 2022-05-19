@@ -296,7 +296,7 @@ class XmlHelper:
                 tree.write(submissionFeedbackReportpath, pretty_print=True, xml_declaration=True, encoding="UTF-8")
                 # Convert to html
                 htmlPath = self.convertSingleSubmissionReport2Html(submissionFeedbackReportpath, studentId, submissionFeedback.exercise)
-                # save the reportpath in the dictionary with the studenId as key
+                # save the reportpath in the dictionary with the studentId as key
                 if reportDic.get(studentId) == None:
                     # reportDic[studentId] = submissionFeedbackReportpath
                     reportDic[studentId] = htmlPath
@@ -360,6 +360,8 @@ class XmlHelper:
                 xlTestSummary.text = submissionFeedback.testSummary
                 xlFeedbackSummary = et.SubElement(xlSubmission, "feedbackSummary")
                 xlFeedbackSummary.text = submissionFeedback.feedbackSummary
+                xlSubmissionReportpath = et.SubElement(xlSubmission, "submissionReportpath")
+                xlSubmissionReportpath.text = submissionFeedback.submissionReportpath
                 # generate report for the current submission
                 #singleSubmissionPath = os.path.join(self.simpelgraderDir, f"{submissionFeedback.studentId}_{submissionFeedback.exercise}_SubmissionFeedback.xml")
                 #tree2 = et.ElementTree(xlSubmission)

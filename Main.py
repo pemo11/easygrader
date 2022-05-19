@@ -1,13 +1,14 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 18/05/22
+# last update: 19/05/22
 # Version 0.82
 # =============================================================================
 import random
 import tkinter.filedialog
 from datetime import datetime
 import os
+import sys
 import re
 import shutil
 import tempfile
@@ -58,6 +59,10 @@ gradeSemester = ""
 gradingOperator = ""
 deleteSubmissionTree = False
 
+# name of the configuration file
+configName = "simpelgrader.ini"
+configPath = ""
+
 # =============================================================================
 # Initialization
 # =============================================================================
@@ -68,9 +73,11 @@ get values for global variables from ini file
 def initVariables():
     global submissionPath, gradingPlanPath, studentRosterPath, submissionDestPath
     global gradeModule, gradeSemester, gradingOperator, deleteSubmissionTree
-    global dbPath
+    global dbPath, configPath
+    # at the moment the config file is supposed to be in the application directory
+    configPath = os.path.join(os.getcwd(), configName)
     config = configparser.ConfigParser()
-    config.read("Simpelgrader.ini")
+    config.read(configPath)
     submissionPath = config["path"]["submissionPath"]
     gradingPlanPath = config["path"]["gradingPlanPath"]
     studentRosterPath = config["path"]["studentRosterPath"]
@@ -89,7 +96,7 @@ def initApp():
     global simpelgraderDir
     initVariables()
     config = configparser.ConfigParser()
-    config.read("Simpelgrader.ini")
+    config.read(configPath)
     # Delete the today log file if it already exists
     deleteLogfile = config["start"]["deleteLogfile"]
     if deleteLogfile.upper().startswith("Y") and os.path.exists(Loghelper.logPath):
@@ -153,7 +160,7 @@ def showMenu():
     menuList.append("Studentenroster anzeigen")
     menuList.append("Alle Abgaben anzeigen")
     menuList.append("Logdatei anzeigen")
-    menuList.append("Simpelgrader.ini erstellen (optional)")
+    menuList.append("Config-Datei erstellen (optional)")
     menuList.append("Studentenroster nach Einlesen der Abgaben erstellen (optional)")
     print("=" * 80)
     prompt = "Eingabe ("
@@ -176,7 +183,7 @@ def MenueA_preCheck() -> None:
     dicCheck = {}
     errorFlag = False
     config = configparser.ConfigParser()
-    config.read("Simpelgrader.ini")
+    config.read(configPath)
     print("*" * 80)
     # check if the gradingfile xml file path exists
     if not os.path.exists(gradingPlanPath):
@@ -296,7 +303,7 @@ def MenueB_extractSubmissions() -> None:
         Loghelper.logWarning(infoMessage)
         print(Fore.YELLOW_EX + f"*** Datei {studentRosterPath} enthält {result[1]} Validierungswarnungen - bitte überprüfen! ***" + Style.RESET_ALL)
 
-    print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden extrahiert - bitte etwas Geduld ***" + Style.RESET_ALL)
+    print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden extrahiert - bitte etwas Geduld ***\n" + Style.RESET_ALL)
 
     # Store the complete student roster in the database
     RosterHelper.saveRosterInDb(dbPath, gradeSemester, gradeModule, studentRosterPath)
@@ -332,16 +339,15 @@ def MenueB_extractSubmissions() -> None:
     # submissionDic = ZipHelper.extractSubmissions(dbPath, zipPath, submissionDestPath)
     submissionDic = ZipHelper.extractNewSubmission(dbPath, zipPath, submissionDestPath)
 
-    # Update semester and module for each submission
+    # check if every submission is from the roster
     for exercise in submissionDic:
         for studentName in submissionDic[exercise]:
             # check if the student is in the db and on the roster
             if DBHelper.getStudentId(dbPath, studentName) == None:
-                # TODO: Submission should be deleted
+                infoMesssage = f"student {studentName} is not in the database - please check the name again"
+                Loghelper.logInfo(infoMessage)
+                # TODO: Submission should be deleted?
                 print(Fore.LIGHTRED_EX + f"*** Der Student {studentName} ist nicht abgabeberechtig! ***" + Style.RESET_ALL)
-            for submission in submissionDic[exercise][studentName]:
-                # submission.semester = gradeSemester
-                submission.module = gradeModule
 
     # flatten the dic to get the total count of all submissions
     # TODO: does not work? count not the real count
@@ -423,7 +429,7 @@ def MenueC_validateSubmissions() -> None:
             if DBHelper.getStudentId(dbPath, studentName) == -1:
                 infoMessage = f"validateSubmissions: student {studentName} is not on the roster"
                 Loghelper.logWarning(f"validateSubmissions: {infoMessage}")
-                print(Fore.LIGHTRED_EX + "!!! {studentName} ist nicht bekannt !!!" + Style.RESET_ALL)
+                print(Fore.LIGHTRED_EX + f"!!! Student {studentName} ist nicht bekannt !!!" + Style.RESET_ALL)
                 submission.state = "Unknown student"
                 continue
 
@@ -464,17 +470,15 @@ def MenueC_validateSubmissions() -> None:
     # create a html report
     htmlPath = xmlHelper.convertSubmissionValidationReport2Html(xmlPath)
     # show html file in browser
-    '''
     if os.name == "nt":
         os.startfile(htmlPath)
     else:
-        # does work on MacOS only
+        # works on MacOS only
         try:
-            # os.system(f"open -e {htmlPath}")
+            os.system(f"open -e {htmlPath}")
         except Exception as ex:
             infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
             Loghelper.logError(infoMessage)
-    '''
 
     print("*" * 80)
     print(f"*** Alle Abgaben wurden validiert ***")
@@ -620,10 +624,10 @@ def MenueD_startGradingRun() -> None:
                             Loghelper.logInfo(infoMessage)
 
                 # the variables must exist ?
-                jUnitReportHtmlPath = ""
-                checkstyleReportHtmlPath = ""
-                textcomparePath = ""
-                submissionFeedbackPath = ""
+                jUnitHtmlReportpath = ""
+                checkstyleHtmlReportpath = ""
+                textcompareReportpath = ""
+                submissionFeedbackpath = ""
 
                 # run the test for each java file
                 for javaFile in files:
@@ -684,7 +688,7 @@ def MenueD_startGradingRun() -> None:
                             infoMessage = f"startGradingRun: saved checkstyle report {checkstyleName}"
                             Loghelper.logInfo(infoMessage)
                             # convert the xml to html
-                            checkstyleReportHtmlPath = xmlHelper.convertCheckstyleReport2Html(checkstyleReportpath, studentName, exercise)
+                            checkstyleHtmlReportpath = xmlHelper.convertCheckstyleReport2Html(checkstyleReportpath, studentName, exercise)
                             # the test message for the submission feedback
                             checkstyleIssues = len(checkstyleMessage.split("\n"))
                             testMessage = f"checkstyle: {checkstyleIssues} infos and warnings"
@@ -712,7 +716,7 @@ def MenueD_startGradingRun() -> None:
                                 infoMessage = f"startGradingRun: saved JUnit report {jUnitName}"
                                 Loghelper.logInfo(infoMessage)
                                 # convert the xml to html
-                                jUnitReportHtmlPath = xmlHelper.convertJUnitReport2Html(jUnitReportpath, studentName, exercise)
+                                jUnitHtmlReportpath = xmlHelper.convertJUnitReport2Html(jUnitReportpath, studentName, exercise)
                             else:
                                 gradeResult.message = f"JUnit-Result: JUnit could not run"
 
@@ -734,8 +738,8 @@ def MenueD_startGradingRun() -> None:
                             gradeResult.success = True if points > 0 else False
                             if len(compareLines) > 0:
                                 textcompareName = f"{studentName}_{exercise}_TextCompareResult.txt"
-                                textcomparePath = os.path.join(simpelgraderDir, textcompareName)
-                                with open(textcomparePath, mode="w", encoding="utf8") as fh:
+                                textcompareReportpath = os.path.join(simpelgraderDir, textcompareName)
+                                with open(textcompareReportpath, mode="w", encoding="cp1252") as fh:
                                     fh.write(f"Text-Compare-Result für {studentName}/{exercise}\n")
                                     fh.write(textcompareMessage + "\n")
                                     fh.writelines(compareLines)
@@ -757,14 +761,12 @@ def MenueD_startGradingRun() -> None:
                         feedbackItem = FeedbackItem(feedbackItemid, submission)
                         # assign the total test points
                         feedbackItem.totalPoints = points
-                        if checkstyleReportHtmlPath != "":
-                            feedbackItem.checkstyleReportpath = checkstyleReportHtmlPath
-                        if jUnitReportHtmlPath != "":
-                            feedbackItem.jUnitReportpath = jUnitReportHtmlPath
-                        if textcomparePath != "":
-                            feedbackItem.textCompareReportpath = textcomparePath
-                        if submissionFeedbackPath != "":
-                            feedbackItem.submissionReportpath = submissionFeedbackPath
+                        if checkstyleHtmlReportpath != "":
+                            feedbackItem.checkstyleReportpath = checkstyleHtmlReportpath
+                        if jUnitHtmlReportpath != "":
+                            feedbackItem.jUnitReportpath = jUnitHtmlReportpath
+                        if textcompareReportpath != "":
+                            feedbackItem.textCompareReportpath = textcompareReportpath
                         feedbackItem.message = f"Points/Problems: {points}/{problemCount}"
                         # TODO: When high?
                         feedbackItem.severity = "normal"
@@ -776,6 +778,10 @@ def MenueD_startGradingRun() -> None:
                             submissionFeedback.feedbackSummary = "No feedback yet"
                             submissionFeedback.testCount += 1
                             submissionFeedback.totalPoints += testPoints
+
+                # TODO: how to generate the report
+                # if submissionFeedbackpath != "":
+                #     submissionFeedback.submissionReportpath = submissionFeedbackpath
 
                 # store the submission feedback for the student
                 submissionFeedbackDic[studentId].append(submissionFeedback)
@@ -826,18 +832,28 @@ def MenueD_startGradingRun() -> None:
         if submissionReportDic.get(feedbackItem.submission.studentId) != None:
             feedbackItem.submissionReportpath = submissionReportDic[feedbackItem.submission.studentId]
 
+    # update the submissionReportpath in the submissionFeedbackDic
+    for studentId in submissionFeedbackDic:
+        if submissionReportDic.get(studentId) != None:
+            for feedbackNr in range(len(submissionFeedbackDic[studentId])):
+                submissionFeedbackDic[studentId][feedbackNr].submissionReportpath = submissionReportDic[studentId]
+
     # generate a single submission feedback report for every submission and a feedback for each submission
     htmlPath = submissionFeedbackPath = xmlHelper.generateSubmissionFeedbackReport(submissionFeedbackDic)
-    # check if its Windose
-    if os.name == "nt":
-        os.startfile(htmlPath)
+    if os.path.exists(htmlPath):
+        # check if its Windose
+        if os.name == "nt":
+            os.startfile(htmlPath)
+        else:
+            # does work on MacOS only
+            try:
+                os.system(f"open -e {htmlPath}")
+            except Exception as ex:
+                infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
+                Loghelper.logError(infoMessage)
     else:
-        # does work on MacOS only
-        try:
-            os.system(f"open -e {htmlPath}")
-        except Exception as ex:
-            infoMessage = f"validateSubmissions - cannot open {htmlPath} ({ex})"
-            Loghelper.logError(infoMessage)
+        infoMessage = f"validateSubmissions: {htmlPath} not found!"
+        Loghelper.logError(infoMessage)
 
     # convert the grading results report to html
     htmlPath = xmlHelper.convertGradingResultReport2Html(gradeReportPath, gradeSemester, gradeModule, exercise)
@@ -939,35 +955,37 @@ def MenueH_showLogfile() -> None:
         print(f"!!! {Loghelper.logPath} existiert nicht !!!")
 
 '''
-Menue I - updates the simpelgrader.ini file or creates a new one
+Menue I - updates the config file or creates a new one
 '''
-def MenueI_setupSimpelgraderIni() -> None:
-    # backup of the existing ini file
+def MenueI_setupSimpelgraderConfig() -> None:
+    # backup of the existing config file
     # load every prompt from the txt file
     # test if an directory exists and offer a correction
     # store the ini file and run a precheck
     n = 1
-    iniPath = os.path.join(os.getcwd(), "Simpelgrader.ini")
-    # does the file already exists?
-    if not os.path.exists(iniPath):
-        with open(iniPath, mode="w", encoding="utf8") as fh:
+    # does the config file already exists?
+    if not os.path.exists(configPath):
+        # configPath = os.path.join(os.getcwd(), "simpelgrader.ini")
+        # does the file already exists?
+        # if not os.path.exists(configPath):
+        with open(configPath, mode="w", encoding="utf8") as fh:
             fh.write("[path]")
             fh.write("[run")
             fh.write("[start]")
     else:
         abbruch = False
         while not abbruch or n > 999:
-            newIniPath = os.path.join(os.getcwd(), f"Simpelgrader_{n:03d}.ini")
-            if not os.path.exists(newIniPath):
+            newConfigPath = os.path.join(os.getcwd(), f"simpelgrader_{n:03d}.ini")
+            if not os.path.exists(newConfigPath):
                 abbruch = True
                 continue
             n += 1
-        shutil.copy(iniPath, newIniPath)
-        infoMessage = f"setupSimpelgraderIni: copied {iniPath} to {newIniPath}"
+        shutil.copy(configPath, newConfigPath)
+        infoMessage = f"setupSimpelgraderIni: copied {configPath} to {newConfigPath}"
         Loghelper.logInfo(infoMessage)
 
     config = configparser.ConfigParser()
-    config.read(iniPath)
+    config.read(configPath)
     txtpromptsPath = "SimpelgraderSetupPrompts.txt"
     changeFlag = False
     with open(txtpromptsPath, mode="r", encoding="utf8") as fh:
@@ -999,19 +1017,30 @@ def MenueI_setupSimpelgraderIni() -> None:
 
     # save everything in the config file again
     if changeFlag:
-        with open(iniPath, mode="w", encoding="utf8") as fh:
+        with open(configPath, mode="w", encoding="utf8") as fh:
             config.write(fh)
-            infoMessage = f"setupSimpelgraderIn: updated settings in {iniPath}"
+            infoMessage = f"setupSimpelgraderIn: updated settings in {configPath}"
             Loghelper.logInfo(infoMessage)
-            print("*** Simpelgrader.ini wurde aktualisiert ***")
+            print(f"*** {configPath} wurde aktualisiert ***")
             # Re-initialize the variables
         initVariables()
 
 '''
-Menue J - creates roster from submissions
+Menue J - creates roster from extracted submission directorx
 '''
 def MenueJ_createRoster() -> None:
-    pass
+    # Any submissions in the dic yet?
+    if submissionDic == None or (submissionDic != None and len(submissionDic) == 0):
+        print(Fore.LIGHTRED_EX + "*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***" + Style.RESET_ALL)
+        return
+
+    # nur provisorisch
+    rosterPath = os.path.join(os.path.dirname(studentRosterPath), "Studenten_RosterNeu.csv")
+    if RosterHelper.createStudentRoster(submissionDestPath, rosterPath):
+        print(Fore.LIGHTGREEN_EX + f"*** Studenten-Roster wurde unter {rosterPath} gespeichert ***" + Style.RESET_ALL)
+    else:
+        print(Fore.LIGHTRED_EX + f"*** Fehler: Studenten-Roster konnte nicht unter {rosterPath} gespeichert werden ***" + Style.RESET_ALL)
+
 # =============================================================================
 # Starting point
 # =============================================================================
@@ -1020,12 +1049,30 @@ def MenueJ_createRoster() -> None:
 Main function for the application
 '''
 def start() -> None:
-    initApp()
-    infoMessage = f"Starting {appName} (Version {appVersion}) - executing {gradingPlanPath}"
-    Loghelper.logInfo(infoMessage)
+    global configPath
 
     # for coloured output
     colorama.init()
+
+    #  check for ini file as args
+    iniPath = ""
+    if len(sys.argv) > 1:
+        iniPath = sys.argv[1]
+        # file only
+        if os.path.isfile(iniPath):
+            configPath = os.path.join(os.getcwd(), iniPath)
+        # check if path exists
+        if not os.path.exists(iniPath):
+            print(Fore.LIGHTRED_EX + f"*** Fehler: Datei {iniPath} nicht gefunden - Programm wird beendet ***" + Style.RESET_ALL)
+            exit(-1)
+    # not ready yet
+    if iniPath != "":
+        configPath = iniPath
+        print(Fore.LIGHTYELLOW_EX +  f"\n*** Verwende Konfigurationsdatei {configPath} ***\n" + Style.RESET_ALL)
+
+    initApp()
+    infoMessage = f"Starting {appName} (Version {appVersion}) - executing {gradingPlanPath}"
+    Loghelper.logInfo(infoMessage)
 
     showBanner()
 
@@ -1059,15 +1106,15 @@ def start() -> None:
         elif choice == "H":                 # Show the current log file
             MenueH_showLogfile()
         elif choice == "I":
-            MenueI_setupSimpelgraderIni()   # Allow preparing a simpelgrader.ini
-        elif choice == "K":
-            MenueK_createRoster()()         # Creates roster from submissions
+            MenueI_setupSimpelgraderConfig()   # Allow preparing a new config file
+        elif choice == "J":
+            MenueJ_createRoster()           # Creates roster from submissions
         else:
             print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
 
     # copy the database file for a backup
     config = configparser.ConfigParser()
-    config.read("Simpelgrader.ini")
+    config.read(configPath)
     databaseBackup = config["start"]["databaseBackup"]
     if databaseBackup.upper().startswith("Y") and os.path.exists(dbPath):
         n = 0

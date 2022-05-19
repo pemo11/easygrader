@@ -140,8 +140,10 @@ creates a student roster csv based on the submission directory
 def createStudentRoster(submissionPath, rosterPath, startId=1000) -> bool:
     studDic = {}
     # go through all subdirectories of the submission directory
-    for studName in os.listdir(submissionPath):
-        studDirPath = os.path.join(submissionPath, studName)
+    for studDir in os.listdir(submissionPath):
+        # the magic of the ? one more time
+        studName = re.match(r"^\w+?_(.+)", studDir).group(1)
+        studDirPath = os.path.join(submissionPath, studDir)
         # go through all the files in the submission directory
         for studFile in os.listdir(studDirPath):
             # file already in the dict?
@@ -159,9 +161,9 @@ def createStudentRoster(submissionPath, rosterPath, startId=1000) -> bool:
     try:
         with open(rosterPath, mode="w", encoding="cp1252") as fh:
             fh.write("Name,StudentId,EMail,Exercises\n")
-            for studentName in studDic:
-                fh.write(f"{','.join(studDic[studentName])},\n")
-        infoMessage = "createStudentRoster: {rosterPath} written with {len(studDic)} entries"
+            for studName in studDic:
+                fh.write(f"{','.join(studDic[studName])},\n")
+        infoMessage = f"createStudentRoster: {rosterPath} written with {len(studDic)} entries"
         Loghelper.logInfo(infoMessage)
         return True
     except Exception as ex:

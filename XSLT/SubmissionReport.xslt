@@ -23,31 +23,16 @@
                         <tr><td>Total points</td><td><xsl:value-of select="totalPoints"/></td></tr>
                         <tr><td>Action summary</td><td><xsl:value-of select="actionSummary"/></td></tr>
                         <tr><td>Test summary</td><td><xsl:value-of select="testSummary"/></td></tr>
-                        <tr><td>Checkstyle result</td>
-                            <td>
-                               <xls:element name="a">
-                                    <xsl:attribute name="href">file:///<xsl:value-of select="submissionReportpath" /></xsl:attribute>
-                                    <xsl:value-of select="studentId"/>
-                               </xls:element>
-                            </td>
-                        </tr>
-                        <tr><td>Text-Compare result</td>
-                            <td>
-                               <xls:element name="a">
-                                    <xsl:attribute name="href">file:///<xsl:value-of select="submissionReportpath" /></xsl:attribute>
-                                    <xsl:value-of select="studentId"/>
-                               </xls:element>
-                            </td>
-                        </tr>
-                        <tr><td>JUnit result</td>
-                            <td>
-                               <xls:element name="a">
-                                    <xsl:attribute name="href">file:///<xsl:value-of select="submissionReportpath" /></xsl:attribute>
-                                    <xsl:value-of select="studentId"/>
-                               </xls:element>
-                            </td>
-                        </tr>
                         <tr><td>Feedback summary</td><td><xsl:value-of select="feedbackSummary"/></td></tr>
+                        <tr>
+                            <td>Submission Feedback-Report</td>
+                            <td>
+                               <xsl:element name="a">
+                                    <xsl:attribute name="href">file:///<xsl:value-of select="submissionReportpath" /></xsl:attribute>
+                                    Feedback für <xsl:value-of select="student"/>
+                               </xsl:element>
+                            </td>
+                        </tr>
                     </table>
                     <hr/>
                 </xsl:for-each>
