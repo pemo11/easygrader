@@ -3,7 +3,7 @@
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
 # last update: 20/05/22
-# Version 0.82
+# Version 0.84
 # =============================================================================
 import random
 import tkinter.filedialog
@@ -678,19 +678,24 @@ def MenueD_startGradingRun() -> None:
                             problemCount += 1 if checkstyleResult != 0 else 0
                             # TODO: better message
                             gradeResult.message = "OK" if checkstyleResult == 0 else "Error"
-                            # store the checkstyle report as xml
-                            checkstyleName = f"{studentName}_{exercise}_CheckstyleResult.xml"
-                            checkstyleReportpath = os.path.join(simpelgraderDir, checkstyleName)
-                            with open(checkstyleReportpath, mode="w", encoding="utf8") as fh:
-                                checkstyleLines = checkstyleMessage.split("\n")
-                                fh.writelines(checkstyleLines)
-                            infoMessage = f"startGradingRun: saved checkstyle report {checkstyleName}"
-                            Loghelper.logInfo(infoMessage)
-                            # convert the xml to html
-                            checkstyleHtmlReportpath = xmlHelper.convertCheckstyleReport2Html(checkstyleReportpath, studentName, exercise)
-                            # the test message for the submission feedback
-                            checkstyleIssues = len(checkstyleMessage.split("\n"))
-                            testMessage = f"checkstyle: {checkstyleIssues} infos and warnings"
+                            # store the checkstyle report as xml only if checkstyle did run
+                            if checkstyleResult == 0:
+                                checkstyleName = f"{studentName}_{exercise}_CheckstyleResult.xml"
+                                checkstyleReportpath = os.path.join(simpelgraderDir, checkstyleName)
+                                with open(checkstyleReportpath, mode="w", encoding="utf8") as fh:
+                                    checkstyleLines = checkstyleMessage.split("\n")
+                                    fh.writelines(checkstyleLines)
+                                infoMessage = f"startGradingRun: saved checkstyle report {checkstyleName}"
+                                Loghelper.logInfo(infoMessage)
+                                # convert the xml to html
+                                checkstyleHtmlReportpath = xmlHelper.convertCheckstyleReport2Html(checkstyleReportpath, studentName, exercise)
+                                # the test message for the submission feedback
+                                checkstyleIssues = len(checkstyleMessage.split("\n"))
+                                testMessage = f"checkstyle: {checkstyleIssues} infos and warnings"
+                            else:
+                                infoMessage = f"startGradingRun: no checkstyle report due to checkstyleResult={checkstyleResult}"
+                                Loghelper.logInfo(infoMessage)
+
                         # a junit test?
                         elif test.type.lower() == "junit":
                             dirPath = os.path.dirname(javaFilePath)

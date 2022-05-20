@@ -208,7 +208,8 @@ def extractNewSubmission(dbPath, zipPath, tmpPath) -> dict:
                         for studItemFile2 in [fi for fi in os.listdir(studItemFilePath) if not fi.startswith("._")]:
                             studItemFilePath2 = os.path.join(studItemFilePath, studItemFile2)
                             # move file from subdirectory to the student directory
-                            shutil.move(studItemFilePath2, studPath)
+                            if not os.path.exists(studPath):
+                                shutil.move(studItemFilePath2, studPath)
                             # adjust the moved file path
                             studItemFilePath2New = os.path.join(studPath, os.path.basename(studItemFilePath2))
                             # add the whole path not only the file name
