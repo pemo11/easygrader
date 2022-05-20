@@ -740,6 +740,7 @@ def MenueD_startGradingRun() -> None:
                             # TODO: Only provisional of course - better definition for successs needed
                             gradeResult.result = True if textcompareResult == 0 else False
                             gradeResult.success = True if points > 0 else False
+                            # save textcompare result only if there is output
                             if len(compareLines) > 0:
                                 textcompareName = f"{studentName}_{exercise}_TextCompareResult.txt"
                                 textcompareReportpath = os.path.join(simpelgraderDir, textcompareName)
@@ -965,7 +966,7 @@ def MenueH_showLogfile() -> None:
                 infoMessage = f"showLogfile - general error ({ex})"
                 Loghelper.logError(infoMessage)
     else:
-        print(f"!!! {Loghelper.logPath} existiert nicht !!!")
+        print(f"!!! Die Logdatei {Loghelper.logPath} existiert nicht !!!")
 
 '''
 Menue I - updates the config file or creates a new one
@@ -1034,7 +1035,7 @@ def MenueI_setupSimpelgraderConfig() -> None:
             config.write(fh)
             infoMessage = f"setupSimpelgraderIn: updated settings in {configPath}"
             Loghelper.logInfo(infoMessage)
-            print(f"*** {configPath} wurde aktualisiert ***")
+            print(f"*** Die Konfigurationsdatei {configPath} wurde aktualisiert ***")
             # Re-initialize the variables
         initVariables()
 
@@ -1047,12 +1048,12 @@ def MenueJ_createRoster() -> None:
         print(Fore.LIGHTRED_EX + "*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***" + Style.RESET_ALL)
         return
 
-    # nur provisorisch
+    # TODO: generate a new file name for each attempt
     rosterPath = os.path.join(os.path.dirname(studentRosterPath), "Studenten_RosterNeu.csv")
     if RosterHelper.createStudentRoster(submissionDestPath, rosterPath):
-        print(Fore.LIGHTGREEN_EX + f"*** Studenten-Roster wurde unter {rosterPath} gespeichert ***" + Style.RESET_ALL)
+        print(Fore.LIGHTGREEN_EX + f"*** Studenten-Roster wurde unter {rosterPath} gespeichert - bitte exercises-Spalte aktualisieren! ***" + Style.RESET_ALL)
     else:
-        print(Fore.LIGHTRED_EX + f"*** Fehler: Studenten-Roster konnte nicht unter {rosterPath} gespeichert werden ***" + Style.RESET_ALL)
+        print(Fore.LIGHTRED_EX + f"*** Fehler: Studenten-Roster konnte nicht unter {rosterPath} gespeichert werden! ***" + Style.RESET_ALL)
 
 # =============================================================================
 # Starting point
