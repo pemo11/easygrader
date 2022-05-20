@@ -1,7 +1,8 @@
 # =============================================================================
+# =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 19/05/22
+# last update: 20/05/22
 # Version 0.82
 # =============================================================================
 import random
@@ -73,10 +74,9 @@ get values for global variables from ini file
 def initVariables():
     global submissionPath, gradingPlanPath, studentRosterPath, submissionDestPath
     global gradeModule, gradeSemester, gradingOperator, deleteSubmissionTree
-    global dbPath, configPath
-    # at the moment the config file is supposed to be in the application directory
-    configPath = os.path.join(os.getcwd(), configName)
+    global dbPath
     config = configparser.ConfigParser()
+    # configPath had already been set
     config.read(configPath)
     submissionPath = config["path"]["submissionPath"]
     gradingPlanPath = config["path"]["gradingPlanPath"]
@@ -138,7 +138,7 @@ def getQuote() -> str:
 '''
 Shows the Welcome Banner
 '''
-def showBanner():
+def showBanner() -> None:
     print(Fore.LIGHTGREEN_EX + "*" * 80)
     print(f"{'*' * 24}{f' Welcome to {appName} {appVersion} '}{'*' * 25}")
     quote = getQuote()
@@ -150,7 +150,7 @@ def showBanner():
 '''
 Shows application main menue
 '''
-def showMenu():
+def showMenu() -> str:
     menuList = []
     menuList.append("Precheck der Ini-Einstellungen (optional)")
     menuList.append(Fore.LIGHTYELLOW_EX + "Alle Abgaben aus Zip-Archiv einlesen" + Style.RESET_ALL)
@@ -284,7 +284,7 @@ def MenueB_extractSubmissions() -> None:
     global submissionDic
     # does roster file exists?
     if not os.path.exists(studentRosterPath):
-        print(Fore.LIGHTRED_EX + f"Datei {studentRosterPath} nicht gefunden - bitte den Pfad ändern!" + Style.RESET_ALL)
+        print(Fore.LIGHTRED_EX + f"Datei {studentRosterPath} nicht gefunden - bitte den Pfad überprüfen!" + Style.RESET_ALL)
         infoMessage = f"extractSubmission: {studentRosterPath} not found"
         Loghelper.logWarning(infoMessage)
         return
@@ -303,8 +303,6 @@ def MenueB_extractSubmissions() -> None:
         Loghelper.logWarning(infoMessage)
         print(Fore.YELLOW_EX + f"*** Datei {studentRosterPath} enthält {result[1]} Validierungswarnungen - bitte überprüfen! ***" + Style.RESET_ALL)
 
-    print(Fore.LIGHTMAGENTA_EX + "*** Alle Abgaben werden extrahiert - bitte etwas Geduld ***\n" + Style.RESET_ALL)
-
     # Store the complete student roster in the database
     RosterHelper.saveRosterInDb(dbPath, gradeSemester, gradeModule, studentRosterPath)
 
@@ -321,6 +319,8 @@ def MenueB_extractSubmissions() -> None:
 
     # get the full path of the last zip file in the list
     zipPath = zipFiles[-1]
+
+    print(Fore.LIGHTMAGENTA_EX + f"*** Die Abgaben werden aus {zipPath} extrahiert - bitte etwas Geduld ***\n" + Style.RESET_ALL)
 
     # create the submission dest directory if it does not exists
     if not os.path.exists(submissionDestPath):
@@ -358,7 +358,7 @@ def MenueB_extractSubmissions() -> None:
 
     # any submission extracted?
     if submissionCount == 0:
-        print(Fore.LIGHTRED_EX + f"*** Im Verzeichnis {submissionPath} wurden keine Abgaben gefunden! ***" + Style.RESET_ALL)
+        print(Fore.LIGHTRED_EX + f"*** Aus {zipPath} wurden keine Abgaben extrahiert - bitte Logdatei überprüfen! ***" + Style.RESET_ALL)
         return
 
     # delete all previous submissions
@@ -430,7 +430,6 @@ def MenueC_validateSubmissions() -> None:
                 infoMessage = f"validateSubmissions: student {studentName} is not on the roster"
                 Loghelper.logWarning(f"validateSubmissions: {infoMessage}")
                 print(Fore.LIGHTRED_EX + f"!!! Student {studentName} ist nicht bekannt !!!" + Style.RESET_ALL)
-                submission.state = "Unknown student"
                 continue
 
             # go through the (single) submissions of that particular student
@@ -894,9 +893,12 @@ def MenueE_showGradingRuns() -> None:
     # returns tuples
     gradeRuns = DBHelper.getAllGradeRuns(dbPath)
     print("*" * 80)
-    for gradeRun in gradeRuns:
-        print(Fore.LIGHTGREEN_EX +  f'Id:{gradeRun["Id"]} Timestamp:{gradeRun["Timestamp"]} Semester:{gradeRun["Semester"]} Submission-Count:{gradeRun["SubmissionCount"]} '
-              f'OK-Count:{gradeRun["OKCount"]} ErrorCount:{gradeRun["ErrorCount"]}' + Style.RESET_ALL)
+    if len(gradeRuns) > 0:
+        for gradeRun in gradeRuns:
+            print(Fore.LIGHTGREEN_EX +  f'Id:{gradeRun["Id"]} Timestamp:{gradeRun["Timestamp"]} Semester:{gradeRun["Semester"]} Submission-Count:{gradeRun["SubmissionCount"]} '
+                  f'OK-Count:{gradeRun["OKCount"]} ErrorCount:{gradeRun["ErrorCount"]}' + Style.RESET_ALL)
+    else:
+        print(Fore.LIGHTMAGENTA_EX + f"*** Es sind keine GradeRuns in der Datenbank enthalten ***" + Style.RESET_ALL)
     print("*" * 80)
     print()
 
@@ -905,8 +907,14 @@ Menue F - outputs the current student roster from the database
 '''
 def MenueF_showStudentRoster() -> None:
     rosters = DBHelper.getRoster(dbPath)
-    for roster in rosters:
-        print(Fore.LIGHTCYAN_EX +  f"{roster}" + Style.RESET_ALL)
+    print("*" * 80)
+    if len(rosters) > 0:
+        for roster in rosters:
+            print(Fore.LIGHTCYAN_EX +  f"{roster}" + Style.RESET_ALL)
+    else:
+        print(Fore.LIGHTMAGENTA_EX + f"*** Es sind keine Einträge im Roster enthalten ***" + Style.RESET_ALL)
+    print("*" * 80)
+    print()
 
 '''
 Menue G - outputs the submissions of all students from the database 
@@ -1012,7 +1020,7 @@ def MenueI_setupSimpelgraderConfig() -> None:
                 config[section][entry] = promptInput
                 changeFlag = True
         except Exception as ex:
-            infoMessage = f"setupSimpelgraderIni: error accessing {iniPath} with section={section}/entry={entry}"
+            infoMessage = f"setupSimpelgraderIni: error accessing {configPath} with section={section}/entry={entry}"
             Loghelper.logError(infoMessage)
 
     # save everything in the config file again
@@ -1061,14 +1069,15 @@ def start() -> None:
         # file only
         if os.path.isfile(iniPath):
             configPath = os.path.join(os.getcwd(), iniPath)
-        # check if path exists
-        if not os.path.exists(iniPath):
-            print(Fore.LIGHTRED_EX + f"*** Fehler: Datei {iniPath} nicht gefunden - Programm wird beendet ***" + Style.RESET_ALL)
-            exit(-1)
-    # not ready yet
-    if iniPath != "":
-        configPath = iniPath
-        print(Fore.LIGHTYELLOW_EX +  f"\n*** Verwende Konfigurationsdatei {configPath} ***\n" + Style.RESET_ALL)
+    else:
+        configPath = os.path.join(os.getcwd(), configName)
+
+    # check if path exists
+    if not os.path.exists(configPath):
+        print(Fore.LIGHTRED_EX + f"*** Fehler: Datei {configPath} nicht gefunden - Programm wird beendet ***" + Style.RESET_ALL)
+        exit(-1)
+
+    print(Fore.LIGHTYELLOW_EX +  f"\n*** Verwende Konfigurationsdatei {configPath} ***\n" + Style.RESET_ALL)
 
     initApp()
     infoMessage = f"Starting {appName} (Version {appVersion}) - executing {gradingPlanPath}"

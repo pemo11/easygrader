@@ -197,7 +197,8 @@ def extractNewSubmission(dbPath, zipPath, tmpPath) -> dict:
                     studItemFilePath = os.path.join(studItemPath, studItemFile)
                     if os.path.isfile(studItemFilePath):
                         # move the file to the student directory
-                        shutil.move(studItemFilePath, studPath)
+                        if not os.path.exists(studPath):
+                            shutil.move(studItemFilePath, studPath)
                         # adjust the moved file path
                         studItemFilePathNew = os.path.join(studPath, os.path.basename(studItemFilePath))
                         # append the path of the file to file list of that student

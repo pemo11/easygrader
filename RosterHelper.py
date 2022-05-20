@@ -28,7 +28,7 @@ def saveRosterInDb(dbPath, semester, module, rosterPath) -> None:
         infoMessage = f"saveRosterInDb: Roster from {rosterPath} file was saved in db"
         Loghelper.logInfo(infoMessage)
     except Exception as ex:
-        infoMessage = f"saveRosterInDb: {ex}"
+        infoMessage = f"saveRosterInDb: error reading {rosterPath} ({ex})"
         Loghelper.logError(infoMessage)
 
 '''
@@ -159,7 +159,7 @@ def createStudentRoster(submissionPath, rosterPath, startId=1000) -> bool:
     # write the csv file
     # head line of the csv = "Name","StudentId","EMail","Exercises"
     try:
-        with open(rosterPath, mode="w", encoding="cp1252") as fh:
+        with open(rosterPath, mode="w", encoding="utf8") as fh:
             fh.write("Name,StudentId,EMail,Exercises\n")
             for studName in studDic:
                 fh.write(f"{','.join(studDic[studName])},\n")
