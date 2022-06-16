@@ -268,7 +268,7 @@ def extractNewSubmission(dbPath, zipPath, tmpPath) -> dict:
 '''
 extracts a submission zip file that contains a zip file for each submission - the zip file can contain another zip file, a directory or just files
 '''
-def extractNewSubmission2(dbPath, zipPath, tmpPath) -> dict:
+def extractNewSubmission2(zipPath, tmpPath, dbPath, submissionRegex) -> dict:
 
     # extract the content of the zip file
     with ZipFile(zipPath) as zh:
@@ -277,4 +277,81 @@ def extractNewSubmission2(dbPath, zipPath, tmpPath) -> dict:
     # delete the original zip file to avoid mixups
     os.remove(zipPath)
 
+    # bsp. Alexander Siemens_2375736_assignsubmission_file_GP1_EA2_Siemens_Alexander.zip
+    # pattern1 = r"file_(\w+?)_(\w+?)_([\w_]+)\.zip"
+    # bsp. Submission_001_GP1_EA2_Alexander_Siemens.zip
+    # pattern2 = r"Submission_(\d+)_(\w+?)_(\w+?)_([\w_]+)\.zip"
+    module = ""
+    exercise = ""
+    studentName = ""
+    semester = ""
+    submissionId = 1
+
     zipDic = {}
+    # go through all the zip files
+    for zipFi in [fi for fi in os.listdir(tmpPath) if fi.endswith(".zip")]:
+        if re.search(pattern=submissionRegex, string=zipFi):
+            nameElements = re.findall(pattern=submissionRegex, string=zipFi)[0]
+            module = nameElements[0]
+            exercise = nameElements[1]
+            studentName = nameElements[2]
+        if zipDic.get(exercise) == None:
+            zipDic[exercise] = {}
+        if zipDic[exercise].get(studentName) == None:
+            zipDic[exercise][studentName] = []
+        zipFiPath = os.path.join(tmpPath, zipFi)
+        # zip dir name bilden
+        zipDirname = f"{module}_{exercise}_{studentName}"
+        zipDirpath = os.path.join(tmpPath, zipDirname)
+        os.mkdir(zipDirpath)
+        # zip file extrahieren
+        with ZipFile(zipFiPath) as zh:
+            for name in zh.namelist():
+                zh.extract(name, zipDirpath)
+        os.remove(zipFiPath)
+        # go through all the files
+        for dir, subdir, files in os.walk(zipDirpath):
+            # get all that files that starts with an alpha car and ends with java
+            # geniale Alternative: startswith() kann auch ein Tuple mit Zeichen übergeben werden
+            javaFiles = [fi for fi in files if fi[0].isalpha() and fi.endswith(".java") ]
+            if len(javaFiles) > 0:
+                # create a new submission for the student with the studentId
+                dbHelper = DBHelper()
+                # get the student id for the student name
+                studentId = dbHelper.getStudentId(dbPath, studentName)
+                # id found?
+                if studentId == -1:
+                    infoMessage = f"extractNewSubmission: no id for student {studentName} found - Submission will be skipped"
+                    Loghelper.logWarning(infoMessage)
+                    continue
+                studentId = dbHelper.getStudentId(studentName)
+                # create a new submission with the student id
+                submission = Submission(submissionId, studentId)
+                # assign the exercise too
+                submission.exercise = exercise
+                submission.semester = semester
+                submission.module = module
+                # set the directory path for the submission files
+                submission.path = zipDirpath
+                # set the names of the submission files
+                submission.files = javaFiles
+                # increment the submission Id
+                submissionId += 1
+                zipDic[exercise][studentName].append(submission)
+
+                # files auf die Hauptebene verschieben
+                for fi in javaFiles:
+                    fiPath = os.path.join(dir, fi)
+                    fiDestpath = os.path.join(zipDirpath, fi)
+                    if not os.path.exists(fiDestpath):
+                        shutil.move(fiPath, zipDirpath)
+
+
+
+        # delete all left over directories
+        for dirName in os.listdir(zipDirpath):
+            dirPath = os.path.join(zipDirpath, dirName)
+            if os.path.isdir(dirPath):
+                shutil.rmtree(dirPath)
+
+    return zipDic

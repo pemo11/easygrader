@@ -2,8 +2,8 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 21/05/22
-# Version 0.84
+# last update: 17/06/22
+# Version 0.88
 # =============================================================================
 import random
 import tkinter.filedialog
@@ -44,7 +44,7 @@ import csv
 # =============================================================================
 # Some global variables
 # =============================================================================
-appVersion = "0.84"
+appVersion = "0.88"
 appName = "SimpelGrader"
 # this path contains the path of the directory with the submitted zip file
 submissionPath = ""
@@ -54,6 +54,7 @@ gradingPlanPath = ""
 studentRosterPath = ""
 solutionPath = ""
 simpelgraderDir = ""
+submissionRegex = ""
 submissionDic = None
 dbPath = ""
 gradeModule = ""
@@ -75,7 +76,7 @@ get values for global variables from ini file
 def initVariables():
     global submissionPath, gradingPlanPath, studentRosterPath, submissionDestPath
     global gradeModule, gradeSemester, gradingOperator, deleteSubmissionTree, solutionPath
-    global dbPath
+    global dbPath, submissionRegex
     config = configparser.ConfigParser()
     # configPath had already been set
     config.read(configPath)
@@ -89,6 +90,7 @@ def initVariables():
     gradeSemester = gradeSemester.replace(" ", "")
     gradeSemester = gradeSemester.replace("/", "_")
     gradingOperator = config["run"]["gradingOperator"]
+    submissionRegex = config["run"]["submissionRegex"]
     submissionDestPath = os.path.join(tempfile.gettempdir(), appName.lower(), gradeSemester, gradeModule)
 
 '''
@@ -346,7 +348,8 @@ def MenueB_extractSubmissions() -> None:
     # extract alle the submissions from the downloaded zip file
     # dbPath for getStudentId query - maybe better solution?
     # submissionDic = ZipHelper.extractSubmissions(dbPath, zipPath, submissionDestPath)
-    submissionDic = ZipHelper.extractNewSubmission(dbPath, zipPath, submissionDestPath)
+    # submissionDic = ZipHelper.extractNewSubmission(dbPath, zipPath, submissionDestPath)
+    submissionDic = ZipHelper.extractNewSubmission2(zipPath, submissionDestPath, dbPath, submissionRegex)
 
     # check if every submission is from the roster
     for exercise in submissionDic:
