@@ -264,3 +264,17 @@ def extractNewSubmission(dbPath, zipPath, tmpPath) -> dict:
             submissionDic[exercise][studentName].append(submission)
 
     return submissionDic
+
+'''
+extracts a submission zip file that contains a zip file for each submission - the zip file can contain another zip file, a directory or just files
+'''
+def extractNewSubmission2(dbPath, zipPath, tmpPath) -> dict:
+
+    # extract the content of the zip file
+    with ZipFile(zipPath) as zh:
+        zh.extractall(tmpPath)
+
+    # delete the original zip file to avoid mixups
+    os.remove(zipPath)
+
+    zipDic = {}

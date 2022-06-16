@@ -13,7 +13,7 @@
       </sig:action>
     </sig:actions>
     <sig:tests>
-      <sig:test id="T01" active="True">
+      <sig:test id="T01" active="True" level="A">
         <sig:test-type>checkstyle</sig:test-type>
         <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
         <sig:test-driver></sig:test-driver>
@@ -31,7 +31,7 @@
       <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
     </sig:actions>
     <sig:tests>
-      <sig:test id="T01" active="True">
+      <sig:test id="T01" active="True" level="A">
         <sig:test-type>checkstyle</sig:test-type>
         <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
         <sig:test-driver></sig:test-driver>
@@ -49,7 +49,7 @@
       <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
     </sig:actions>
     <sig:tests>
-      <sig:test id="T01" active="True">
+      <sig:test id="T01" active="True" level="A">
         <sig:test-type>checkstyle</sig:test-type>
         <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
         <sig:test-driver></sig:test-driver>
@@ -67,7 +67,7 @@
       <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
     </sig:actions>
     <sig:tests>
-      <sig:test id="T01" active="True">
+      <sig:test id="T01" active="True" level="A">
         <sig:test-type>checkstyle</sig:test-type>
         <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
         <sig:test-driver></sig:test-driver>
@@ -85,7 +85,7 @@
       <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
     </sig:actions>
     <sig:tests>
-      <sig:test id="T01" active="True">
+      <sig:test id="T01" active="True" level="A">
         <sig:test-type>checkstyle</sig:test-type>
         <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
         <sig:test-driver></sig:test-driver>
@@ -103,7 +103,7 @@
       <sig:action id="A01" active="True" type="java-compile">compile java file</sig:action>
     </sig:actions>
     <sig:tests>
-      <sig:test id="T01" active="True">
+      <sig:test id="T01" active="True" level="A">
         <sig:test-type>checkstyle</sig:test-type>
         <sig:test-description>Checkstyle-Überprüfung mit Omi-Regeln</sig:test-description>
         <sig:test-driver></sig:test-driver>

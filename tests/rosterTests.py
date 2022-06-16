@@ -9,9 +9,12 @@ import unittest
 lib_path = os.path.abspath(os.path.join(__file__, '..'))
 sys.path.append(lib_path)
 
-import RosterHelper
+from RosterHelper import RosterHelper
 
 class TestRunner(unittest.TestCase):
+
+    def __init__(self):
+        self.configPath = "simpelgrader.ini"
 
     '''
     Read matriculation id from a java file
@@ -19,5 +22,6 @@ class TestRunner(unittest.TestCase):
     def testCreateRoster(self):
         submissionPath = os.path.join(tempfile.gettempdir(), "ziptest")
         rosterPath = "testRoster.csv"
+        rosterHelper = RosterHelper(self.configPath)
         result = RosterHelper.createStudentRoster(submissionPath, rosterPath)
         self.assertTrue(result)

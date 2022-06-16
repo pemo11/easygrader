@@ -2,7 +2,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 20/05/22
+# last update: 21/05/22
 # Version 0.84
 # =============================================================================
 import random
@@ -33,8 +33,8 @@ from FeedbackItem import FeedbackItem
 from SubmissionFeedback import SubmissionFeedback
 from SubmissionValidation import SubmissionValidation
 from SubmissionName import SubmissionName
-import RosterHelper
-import JavaHelper
+from RosterHelper import RosterHelper
+from JavaHelper import JavaHelper
 import DBHelper
 from XmlHelper import XmlHelper
 
@@ -52,6 +52,7 @@ submissionPath = ""
 submissionDestPath = ""
 gradingPlanPath = ""
 studentRosterPath = ""
+solutionPath = ""
 simpelgraderDir = ""
 submissionDic = None
 dbPath = ""
@@ -73,7 +74,7 @@ get values for global variables from ini file
 '''
 def initVariables():
     global submissionPath, gradingPlanPath, studentRosterPath, submissionDestPath
-    global gradeModule, gradeSemester, gradingOperator, deleteSubmissionTree
+    global gradeModule, gradeSemester, gradingOperator, deleteSubmissionTree, solutionPath
     global dbPath
     config = configparser.ConfigParser()
     # configPath had already been set
@@ -81,6 +82,7 @@ def initVariables():
     submissionPath = config["path"]["submissionPath"]
     gradingPlanPath = config["path"]["gradingPlanPath"]
     studentRosterPath = config["path"]["studentRosterPath"]
+    solutionPath = config["path"]["solutionPath"]
     dbPath = config["path"]["dbPath"]
     gradeModule = config["run"]["gradeModule"]
     gradeSemester = config["run"]["gradeSemester"]
@@ -201,6 +203,11 @@ def MenueA_preCheck() -> None:
         print(f"!!! {submissionPath} existiert nicht")
         errorFlag = True
     dicCheck["submissionPath"] = (submissionPath, errorFlag)
+    # check if the modelsolution path exists
+    if not os.path.exists(solutionPath):
+        print(f"!!! {solutionPath} existiert nicht")
+        errorFlag = True
+    dicCheck["solutionPath"] = (solutionPath, errorFlag)
     errorFlag = False
     # check if the student roster file exists
     if not os.path.exists(studentRosterPath) or not os.path.isfile(studentRosterPath):
@@ -289,7 +296,8 @@ def MenueB_extractSubmissions() -> None:
         Loghelper.logWarning(infoMessage)
         return
     # validate the roster file first
-    result = RosterHelper.validateRoster(studentRosterPath)
+    rosterHelper = RosterHelper(configPath)
+    result = rosterHelper.validateRoster(studentRosterPath)
     # any errors?
     if result[0] > 0:
         # roster file is not valid exit
@@ -304,7 +312,8 @@ def MenueB_extractSubmissions() -> None:
         print(Fore.YELLOW_EX + f"*** Datei {studentRosterPath} enthält {result[1]} Validierungswarnungen - bitte überprüfen! ***" + Style.RESET_ALL)
 
     # Store the complete student roster in the database
-    RosterHelper.saveRosterInDb(dbPath, gradeSemester, gradeModule, studentRosterPath)
+    rosterHelper = RosterHelper(configPath)
+    rosterHelper.saveRosterInDb(dbPath, gradeSemester, gradeModule, studentRosterPath)
 
     # get the newest zip file in the submission directory
     # zipFiles = [fi for fi in os.listdir(submissionPath) if fi.endswith("zip")]
@@ -392,7 +401,8 @@ def MenueB_extractSubmissions() -> None:
         return
 
     # update the roster with the exercises
-    RosterHelper.updateStudentRoster(dbPath, submissionDic)
+    rosterHelper = RosterHelper(configPath)
+    rosterHelper.updateStudentRoster(dbPath, submissionDic)
 
     print(Fore.LIGHTYELLOW_EX + "*" * 80)
     print(f"*** {submissionProcessedCount} Abgaben wurden verarbeitet ***")
@@ -539,7 +549,7 @@ def MenueD_startGradingRun() -> None:
                 if not xmlHelper.exerciseExists(exercise):
                     infoMessage = f"startGradingRun: no grading plan for exercise {exercise}"
                     Loghelper.logWarning(infoMessage)
-                    print(Fore.LIGHTYELLOW_EX +  f"*** Kein Eintrag für Aufgabe {exercise} - Aufgabe wird nicht bewertet ***" + Style.RESET_ALL)
+                    print(Fore.LIGHTYELLOW_EX +  f"*** Kein Eintrag für Aufgabe {exercise} - die Aufgabe wird nicht bewertet ***" + Style.RESET_ALL)
                     continue
 
                 # check if the exercise is active in the gradingplan
@@ -591,9 +601,11 @@ def MenueD_startGradingRun() -> None:
                             # JUnit test file names follow the pattern <name>Test.java
                             if not javaFile.split(".")[0].lower().endswith("test"):
                                 # compile the java file - the returnCode is either 0 for OK or 1
-                                returnCode,compilerMessage = JavaHelper.compileJava(javaFilePath)
+                                javaHelper = JavaHelper(configPath)
+                                returnCode,compilerMessage = javaHelper.compileJava(javaFilePath)
                             else:
-                                returnCode,compilerMessage = JUnitTestHelper.compileJavaTest(javaFilePath)
+                                junitTestHelper = JUnitTestHelper(configPath)
+                                returnCode,compilerMessage = junitTestHelper.compileJavaTest(javaFilePath)
                             # now the jury verdict...
                             actionPoints = xmlHelper.getActionPoints(exercise, action.id)
                             gradePoints = actionPoints if returnCode == 0 else 0
@@ -670,7 +682,8 @@ def MenueD_startGradingRun() -> None:
                         # a checkstyle test?
                         if test.type.lower() == "checkstyle":
                             # return value is a tuple (returncode, message)
-                            checkstyleResult, checkstyleMessage = CheckstyleTestHelper.runCheckstyle(javaFilePath)
+                            checkstyleTestHelper = CheckstyleTestHelper(configPath)
+                            checkstyleResult, checkstyleMessage = checkstyleTestHelper.runCheckstyle(javaFilePath)
                             testPoints = xmlHelper.getTestPoints(exercise,test.id)
                             points += testPoints if checkstyleResult == 0 else 0
                             # don't forget the points for the grade result
@@ -698,12 +711,13 @@ def MenueD_startGradingRun() -> None:
 
                         # a junit test?
                         elif test.type.lower() == "junit":
-                            dirPath = os.path.dirname(javaFilePath)
+                            # dirPath = os.path.dirname(javaFilePath)
                             testClassName = test.testClass
-                            junitResult,junitXmlMessage = JUnitTestHelper.runJUnitTest(dirPath, testClassName)
+                            jUnitHelper = JUnitTestHelper(configPath)
+                            junitResult,junitXmlMessage = jUnitHelper.runJUnitTest(exercise, testClassName)
                             if junitResult == 0:
                                 # get the points for this exercise
-                                testPoints = xmlHelper.getTestPoints(exercise,test.id)
+                                testPoints = xmlHelper.getTestPoints(exercise, test.id)
                                 points += testPoints
                             problemCount += 1 if junitResult != 0 else 0
                             # TODO: better message
@@ -711,7 +725,7 @@ def MenueD_startGradingRun() -> None:
                             # don't forget the points
                             gradeResult.points = testPoints
                             if junitXmlMessage != "":
-                                gradeResult.message = f"JUnit-Result: {JUnitTestHelper.getJUnitResult(junitXmlMessage)}"
+                                gradeResult.message = f"JUnit-Result: {jUnitHelper.getJUnitResult(junitXmlMessage)}"
                                 jUnitName = f"{studentName}_{exercise}_JUnitResult.xml"
                                 jUnitReportpath = os.path.join(simpelgraderDir, jUnitName)
                                 with open(jUnitReportpath, mode="w", encoding="utf8") as fh:
@@ -1050,7 +1064,8 @@ def MenueJ_createRoster() -> None:
 
     # TODO: generate a new file name for each attempt
     rosterPath = os.path.join(os.path.dirname(studentRosterPath), "Studenten_RosterNeu.csv")
-    if RosterHelper.createStudentRoster(submissionDestPath, rosterPath):
+    rosterHelper = RosterHelper(configPath)
+    if rosterHelper.createStudentRoster(submissionDestPath, rosterPath):
         print(Fore.LIGHTGREEN_EX + f"*** Studenten-Roster wurde unter {rosterPath} gespeichert - bitte exercises-Spalte aktualisieren! ***" + Style.RESET_ALL)
     else:
         print(Fore.LIGHTRED_EX + f"*** Fehler: Studenten-Roster konnte nicht unter {rosterPath} gespeichert werden! ***" + Style.RESET_ALL)
@@ -1097,7 +1112,8 @@ def start() -> None:
 
     # process student roster file if exists
     if os.path.exists(studentRosterPath):
-        RosterHelper.saveRosterInDb(dbPath, gradeSemester, gradeModule,  studentRosterPath)
+        rosterHelper = RosterHelper(configPath)
+        rosterHelper.saveRosterInDb(dbPath, gradeSemester, gradeModule,  studentRosterPath)
 
     exitFlag = False
     while not exitFlag:

@@ -119,7 +119,7 @@ class XmlHelper:
         testElements = self.root.xpath(xPathExpr, namespaces=nsmap)
         testList = []
         for test in testElements:
-            tt = TaskTest(test.attrib["id"], test.attrib["active"], test.find("sig:test-type", namespaces=nsmap).text)
+            tt = TaskTest(test.attrib["id"], test.attrib["level"], test.attrib["active"], test.find("sig:test-type", namespaces=nsmap).text)
             tt.testDescription = test.find("sig:test-description", namespaces=nsmap).text
             if test.find("sig:test-type", namespaces=nsmap).text.lower() == "junit":
                 if test.find("sig:test-class", namespaces=nsmap) != None:
