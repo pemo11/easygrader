@@ -291,10 +291,12 @@ def extractNewSubmission2(zipPath, tmpPath, dbPath, submissionRegex) -> dict:
     # go through all the zip files
     for zipFi in [fi for fi in os.listdir(tmpPath) if fi.endswith(".zip")]:
         if re.search(pattern=submissionRegex, string=zipFi):
-            nameElements = re.findall(pattern=submissionRegex, string=zipFi)[0]
-            module = nameElements[0]
-            exercise = nameElements[1]
-            studentName = nameElements[2]
+            # regex contains named groups -> finditer and not findall
+            elementsIter = re.finditer(pattern=submissionRegex, string=zipFi)
+            for element in elementsIter:
+                module = element["module"]
+                exercise = element["exercise"]
+                studentName = element["student"]
         if zipDic.get(exercise) == None:
             zipDic[exercise] = {}
         if zipDic[exercise].get(studentName) == None:
@@ -316,15 +318,14 @@ def extractNewSubmission2(zipPath, tmpPath, dbPath, submissionRegex) -> dict:
             javaFiles = [fi for fi in files if fi[0].isalpha() and fi.endswith(".java") ]
             if len(javaFiles) > 0:
                 # create a new submission for the student with the studentId
-                dbHelper = DBHelper()
+                # dbHelper = DBHelper()
                 # get the student id for the student name
-                studentId = dbHelper.getStudentId(dbPath, studentName)
+                studentId = DBHelper.getStudentId(dbPath, studentName)
                 # id found?
                 if studentId == -1:
                     infoMessage = f"extractNewSubmission: no id for student {studentName} found - Submission will be skipped"
                     Loghelper.logWarning(infoMessage)
                     continue
-                studentId = dbHelper.getStudentId(studentName)
                 # create a new submission with the student id
                 submission = Submission(submissionId, studentId)
                 # assign the exercise too

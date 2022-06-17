@@ -1,4 +1,5 @@
 # file: DBHelper.py
+# TODO: Convert module to class
 
 import sqlite3
 from sqlite3 import Error
@@ -202,9 +203,11 @@ def storeSubmission(dbPath, timestamp, semester, module, exercise, studentId, fi
         Loghelper.logError(infoMessage)
         return -1
 
+    # convert the list into a string with 'file' etc.
+    filesText = ",".join([f"{file}" for file in files])
     sqlCommand = "Insert Into Submission (Timestamp,Semester,Module,Exercise,StudentId,Files,Path,Complete) "
     sqlCommand += f"Values('{timestamp}','{semester}','{module}','{exercise}',"
-    sqlCommand += f"'{studentId}','{files}','{path}','{complete}')"
+    sqlCommand += f"'{studentId}','{filesText}','{path}','{complete}')"
     try:
         dbCur = dbCon.cursor()
         dbCur.execute(sqlCommand)
@@ -531,7 +534,13 @@ def getStudentId(dbPath, studentName) -> int:
     if len(studentName.split("_")) > 2:
         return -1
 
-    lastName,firstName = studentName.split("_") if len(studentName.split("_")) == 2 else ("",studentName)
+    # TODO: Aus config-Datei einlesen
+    lastnameMode = True
+
+    if lastnameMode:
+        lastName,firstName = studentName.split("_") if len(studentName.split("_")) == 2 else ("",studentName)
+    else:
+        firstName, lastName = studentName.split("_") if len(studentName.split("_")) == 2 else ("", studentName)
 
     if firstName == "":
         sqlCommand = "Select Id From Student Where lower(Lastname) = ?"
