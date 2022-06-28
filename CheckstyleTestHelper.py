@@ -17,9 +17,9 @@ class CheckstyleTestHelper:
         # get the import programm pathes from the ini file
         config = configparser.ConfigParser()
         config.read(configPath)
-        javaLPath = config["path"]["javaLauncherPath"]
-        checkstylePath = config["path"]["checkstylePath"]
-        rulePath = config["path"]["checkstyleRulePath"]
+        self.javaLPath = config["path"]["javaLauncherPath"]
+        self.checkstylePath = config["path"]["checkstylePath"]
+        self.rulePath = config["path"]["checkstyleRulePath"]
 
     # get the temp directory for the application
     tempPath = os.path.join(tempfile.gettempdir(), "simpelgrader")
@@ -30,9 +30,9 @@ class CheckstyleTestHelper:
     def runCheckstyle(self, javaPath) -> int:
         infoMessage = f"Checkstyle run with {javaPath}"
         Loghelper.logInfo(infoMessage)
-        javarDir = os.path.dirname(self.javaPath)
+        javarDir = os.path.dirname(javaPath)
         javaArgs = f"{self.javaLPath} -cp {self.checkstylePath} com.puppycrawl.tools.checkstyle.Main "
-        javaArgs += f"-c {self.rulePath} -f xml {self.javaPath}"
+        javaArgs += f"-c {self.rulePath} -f xml {javaPath}"
          # Timeout for the java-Process
         timeOutSeconds = 5
         try:
@@ -52,4 +52,3 @@ class CheckstyleTestHelper:
 
         # the return text is xml with a checkstyle root and many error elements
         return (exitCode, checkstyleOutput)
-

@@ -19,7 +19,6 @@ from colorama import Fore, Back, Style
 import zipfile
 import tkinter as tk
 from tkinter import filedialog
-import CheckstyleTestHelper
 import CompareTestHelper
 import JUnitTestHelper
 import JavaFileHelper
@@ -34,6 +33,7 @@ from SubmissionValidation import SubmissionValidation
 from SubmissionName import SubmissionName
 from RosterHelper import RosterHelper
 from JavaHelper import JavaHelper
+from CheckstyleTestHelper import CheckstyleTestHelper
 import DBHelper
 from XmlHelper import XmlHelper
 
@@ -189,6 +189,7 @@ def MenueA_preCheck() -> None:
     config.read(configPath)
     print("*" * 80)
     # check if the gradingfile xml file path exists
+    gradingPlanPath = config["path"]["gradingplanPath"]
     if not os.path.exists(gradingPlanPath):
         print(f"!!! {gradingPlanPath} existiert nicht")
         errorFlag = True
@@ -200,23 +201,27 @@ def MenueA_preCheck() -> None:
         dicCheck["gradingPlanValidation"] = ("Keine Ausgabe", result)
     errorFlag = False
     # check if the submission dir path exists
+    submissionPath = config["path"]["submissionPath"]
     if not os.path.exists(submissionPath):
         print(f"!!! {submissionPath} existiert nicht")
         errorFlag = True
     dicCheck["submissionPath"] = (submissionPath, errorFlag)
     # check if the modelsolution path exists
+    solutionPath = config["path"]["solutionPath"]
     if not os.path.exists(solutionPath):
         print(f"!!! {solutionPath} existiert nicht")
         errorFlag = True
     dicCheck["solutionPath"] = (solutionPath, errorFlag)
     errorFlag = False
     # check if the student roster file exists
+    studentRosterPath = config["path"]["studentrosterPath"]
     if not os.path.exists(studentRosterPath) or not os.path.isfile(studentRosterPath):
         print(f"!!! {studentRosterPath} existiert nicht")
         errorFlag = True
     dicCheck["studentRosterPath"] = (studentRosterPath, errorFlag)
     # check if the db file exists
     errorFlag = False
+    dbPath = config["path"]["dbPath"]
     if not os.path.exists(dbPath) or not os.path.isfile(dbPath):
         print(f"!!! {dbPath} existiert nicht")
         errorFlag = True
@@ -447,7 +452,7 @@ def MenueC_validateSubmissions() -> None:
             # go through the (single) submissions of that particular student
             for submission in submissionDic[exercise][studentName]:
                 exercise = submission.exercise
-                files = submission.files.split(",")
+                files = submission.files # .split(",")
                 # get the files from the grading plan
                 exerciseFiles = xmlHelper.getFileList(exercise)
                 # check if all submissions are complete
@@ -564,7 +569,7 @@ def MenueD_startGradingRun() -> None:
                 # get the expected files from the grading plan
                 exerciseFiles = xmlHelper.getFileList(exercise)
                 # get all file names from the submission
-                files = submission.files.split(",")
+                files = submission.files # .split(",")
                 filesPath = submission.path
                 # check if files are missing in submitted files
                 missingFiles = [fi for fi in exerciseFiles if fi not in files]
@@ -744,6 +749,7 @@ def MenueD_startGradingRun() -> None:
                             testMessage = f"jUnit-Result: {True if junitResult == 0 else False} {len(jUnitLines)} errors"
 
                         # a textcompare test?
+                        # PM: 28/06 - TODO: Wenn die test-Java-Datei nicht teil der Abgabe ist, wird sie im Solutionverzeichnis gesucht
                         elif test.type.lower() == "textcompare":
                             classPath = javaFilePath.split(".")[0]
                             # return value is a tuple of three

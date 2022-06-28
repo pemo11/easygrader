@@ -15,7 +15,7 @@ class RosterHelper:
     '''
     def saveRosterInDb(self, dbPath, semester, module, rosterPath) -> None:
         try:
-            with open(rosterPath, mode="r", encoding="utf8") as fh:
+            with open(rosterPath, mode="r", encoding="ISO-8859-1") as fh:
                 csvReader = csv.reader(fh, delimiter=",")
                 # Immer wieder genial
                 keys = next(fh).split(",")
@@ -43,7 +43,7 @@ class RosterHelper:
         errorCount = 0
         warningCount = 0
         try:
-            with open(rosterPath, mode="r", encoding="utf8") as fh:
+            with open(rosterPath, mode="r", encoding="ISO-8859-1") as fh:
                 csvReader = csv.reader(fh, delimiter=",")
                 # Immer wieder genial
                 csvKeys = next(fh).split(",")
