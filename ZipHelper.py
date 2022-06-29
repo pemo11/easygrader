@@ -311,48 +311,49 @@ def extractNewSubmission2(zipPath, tmpPath, dbPath, submissionRegex) -> dict:
             for name in zh.namelist():
                 zh.extract(name, zipDirpath)
         os.remove(zipFiPath)
-        # go through all the files
+        # go through the directory to get all the java files only
+        javaFiles = []
         for dir, subdir, files in os.walk(zipDirpath):
             # get all that files that starts with an alpha car and ends with java
             # geniale Alternative: startswith() kann auch ein Tuple mit Zeichen übergeben werden
-            javaFiles = [fi for fi in files if fi[0].isalpha() and fi.endswith(".java") ]
-            if len(javaFiles) > 0:
-                # create a new submission for the student with the studentId
-                # dbHelper = DBHelper()
-                # get the student id for the student name
-                studentId = DBHelper.getStudentId(dbPath, studentName)
-                # id found?
-                if studentId == -1:
-                    infoMessage = f"extractNewSubmission: no id for student {studentName} found - Submission will be skipped"
-                    Loghelper.logWarning(infoMessage)
-                    continue
-                # create a new submission with the student id
-                submission = Submission(submissionId, studentId)
-                # assign the exercise too
-                submission.exercise = exercise
-                submission.semester = semester
-                submission.module = module
-                # set the directory path for the submission files
-                submission.path = zipDirpath
-                # set the names of the submission files
-                submission.files = javaFiles
-                # increment the submission Id
-                submissionId += 1
-                zipDic[exercise][studentName].append(submission)
+            javaFiles += [os.path.join(dir, fi) for fi in files if fi[0].isalpha() and fi.endswith(".java") ]
+            
+        if len(javaFiles) > 0:
+            # files auf die Hauptebene verschieben
+            for fiPath in javaFiles:
+                fiName = os.path.basename(fiPath)
+                fiDestpath = os.path.join(zipDirpath, fiName)
+                if not os.path.exists(fiDestpath):
+                    shutil.move(fiPath, zipDirpath)
 
-                # files auf die Hauptebene verschieben
-                for fi in javaFiles:
-                    fiPath = os.path.join(dir, fi)
-                    fiDestpath = os.path.join(zipDirpath, fi)
-                    if not os.path.exists(fiDestpath):
-                        shutil.move(fiPath, zipDirpath)
-
-
+        # put only the file names into javaFiles
+        javaFiles = [os.path.basename(fi) for fi in javaFiles]
 
         # delete all left over directories
-        for dirName in os.listdir(zipDirpath):
-            dirPath = os.path.join(zipDirpath, dirName)
-            if os.path.isdir(dirPath):
-                shutil.rmtree(dirPath)
+        for dirPath in [os.path.join(zipDirpath, dirName) for dirName in os.listdir(zipDirpath) if os.path.isdir(os.path.join(zipDirpath, dirName))]:
+            shutil.rmtree(dirPath)
+
+        # create a new submission for the student with the studentId
+        # dbHelper = DBHelper()
+        # get the student id for the student name
+        studentId = DBHelper.getStudentId(dbPath, studentName)
+        # id found?
+        if studentId == -1:
+            infoMessage = f"extractNewSubmission: no id for student {studentName} found - Submission will be skipped"
+            Loghelper.logWarning(infoMessage)
+            continue
+        # create a new submission with the student id
+        submission = Submission(submissionId, studentId)
+        # assign the exercise too
+        submission.exercise = exercise
+        submission.semester = semester
+        submission.module = module
+        # set the directory path for the submission files
+        submission.path = zipDirpath
+        # set the names of the submission files
+        submission.files = javaFiles
+        # increment the submission Id
+        submissionId += 1
+        zipDic[exercise][studentName].append(submission)
 
     return zipDic

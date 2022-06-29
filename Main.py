@@ -1,7 +1,7 @@
 # =============================================================================
 # Automatic grading of Java programming assignments
 # creation date: 03/01/22
-# last update: 27/06/22
+# last update: 29/06/22
 # Version 0.88
 # =============================================================================
 import random
@@ -19,11 +19,12 @@ from colorama import Fore, Back, Style
 import zipfile
 import tkinter as tk
 from tkinter import filedialog
+import DBHelper
 import CompareTestHelper
 import JUnitTestHelper
 import JavaFileHelper
-import ZipHelper
 import Loghelper
+import ZipHelper
 
 from GradeAction import GradeAction
 from GradeResult import GradeResult
@@ -34,7 +35,6 @@ from SubmissionName import SubmissionName
 from RosterHelper import RosterHelper
 from JavaHelper import JavaHelper
 from CheckstyleTestHelper import CheckstyleTestHelper
-import DBHelper
 from XmlHelper import XmlHelper
 
 from Submission import Submission
@@ -164,6 +164,7 @@ def showMenu() -> str:
     menuList.append("Alle Abgaben anzeigen")
     menuList.append("Logdatei anzeigen")
     menuList.append("Config-Datei erstellen (optional)")
+    menuList.append("Abgabeverzeichnis auflisten (optional)")
     menuList.append("Studentenroster nach Einlesen der Abgaben erstellen (optional)")
     print("=" * 80)
     prompt = "Eingabe ("
@@ -1062,9 +1063,27 @@ def MenueI_setupSimpelgraderConfig() -> None:
         initVariables()
 
 '''
-Menue J - creates roster from extracted submission directorx
+Menue J - list the directory with the extracted submissions
 '''
-def MenueJ_createRoster() -> None:
+def MenueJ_listSubmissionDirectory() -> None:
+    # Any submissions in the dic yet?
+    if submissionDic == None or (submissionDic != None and len(submissionDic) == 0):
+        print(Fore.LIGHTRED_EX + "*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***" + Style.RESET_ALL)
+        return
+    print(Fore.LIGHTGREEN_EX + f"*** Der Inhalt von {submissionDestPath} ***" + Style.RESET_ALL)
+    print("=" * 80)
+    for dir, subdir, files in os.walk(submissionDestPath):
+        if dir != submissionDestPath:
+            dirName = os.path.basename(dir)
+            if len(files) > 0:
+                print(f"{dirName} -> {','.join(files)}")
+            else:
+                print(Fore.LIGHTRED_EX + f"{dirName} -> keine Dateien" + Style.RESET_ALL)
+
+'''
+Menue K - creates roster from extracted submission directorx
+'''
+def MenueK_createRoster() -> None:
     # Any submissions in the dic yet?
     if submissionDic == None or (submissionDic != None and len(submissionDic) == 0):
         print(Fore.LIGHTRED_EX + "*** Bitte zuerst alle Abgaben einlesen (Menüpunkt B) ***" + Style.RESET_ALL)
@@ -1144,10 +1163,12 @@ def start() -> None:
             MenueG_showStudentSubmissions()
         elif choice == "H":                 # Show the current log file
             MenueH_showLogfile()
-        elif choice == "I":
-            MenueI_setupSimpelgraderConfig()   # Allow preparing a new config file
-        elif choice == "J":
-            MenueJ_createRoster()           # Creates roster from submissions
+        elif choice == "I":                 # Allow preparing a new config file or update the current one
+            MenueI_setupSimpelgraderConfig()
+        elif choice == "J":                 # List submission directory
+            MenueJ_listSubmissionDirectory()
+        elif choice == "K":                 # Creates roster from submissions
+            MenueK_createRoster()
         else:
             print(f"!!! {choice} ist eine relativ unbekannte Auswahl !!!")
 
